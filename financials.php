@@ -23,6 +23,8 @@ $rates = get_active_rates($db);
 $mileage_rate = $rates['IRS_MILEAGE'] ?? 0.67;
 $tax_percent = $rates['TAX_PERCENT'] ?? 0.25;
 $lead_pay_rate = get_lead_pay_amount($db);
+$std_pd_rate = (float) ($rates['per_diem'] ?? 0);
+$extra_pd_rate = (float) ($rates['extra_pd'] ?? 0);
 
 // --- VIEW MODE (weekly, monthly, yearly) ---
 $view = $_GET['view'] ?? 'yearly';
@@ -129,6 +131,30 @@ foreach ($active_weeks_by_user as $uid => $weeks) {
     }
 }
 
+// --- PER DIEM CALCULATION ---
+$total_std_pd = 0;
+$total_extra_pd = 0;
+
+// Count eligible days for standard PD (days with work that aren't DO/ND)
+$work_days = [];
+foreach ($all_jobs as $j) {
+    if ($j['install_type'] !== 'DO' && $j['install_type'] !== 'ND') {
+        $work_days[$j['install_date']] = true;
+    }
+}
+
+// Also count Sundays in the period as eligible
+$current_date = $start_date;
+while ($current_date <= $end_date) {
+    if (date('N', strtotime($current_date)) == 7) { // Sunday
+        $work_days[$current_date] = true;
+    }
+    $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
+}
+
+$total_std_pd = count($work_days) * $std_pd_rate;
+$job_revenue += $total_std_pd;
+
 // --- FETCH MILEAGE & FUEL ---
 $total_miles = 0;
 $total_fuel = 0;
@@ -136,10 +162,10 @@ $check_table = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND
 
 if ($check_table) {
     if ($is_admin) {
-        $sql = "SELECT log_date, mileage, fuel_cost FROM daily_logs WHERE log_date BETWEEN ? AND ?";
+        $sql = "SELECT log_date, mileage, fuel_cost, extra_per_diem FROM daily_logs WHERE log_date BETWEEN ? AND ?";
         $params = [$start_date, $end_date];
     } else {
-        $sql = "SELECT log_date, mileage, fuel_cost FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?";
+        $sql = "SELECT log_date, mileage, fuel_cost, extra_per_diem FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?";
         $params = [$user_id, $start_date, $end_date];
     }
 
@@ -152,6 +178,11 @@ if ($check_table) {
 
         $total_miles += $miles;
         $total_fuel += $fuel;
+
+        // Extra per diem from daily log
+        if (isset($row['extra_per_diem']) && $row['extra_per_diem'] == 1) {
+            $total_extra_pd += $extra_pd_rate;
+        }
 
         // Breakdown key - use sortable key
         if ($view === 'weekly') {
@@ -173,9 +204,15 @@ if ($check_table) {
     }
 }
 
+// Add extra PD to revenue
+$job_revenue += $total_extra_pd;
+
 $mileage_deduction = $total_miles * $mileage_rate;
 $net_taxable_income = $job_revenue - $mileage_deduction;
 $estimated_tax_due = ($net_taxable_income > 0) ? ($net_taxable_income * $tax_percent) : 0;
+
+// Total Per Diem for display
+$total_per_diem = $total_std_pd + $total_extra_pd;
 
 // Sort breakdown by key for better display
 ksort($breakdown_data);
@@ -378,7 +415,7 @@ ksort($breakdown_data);
             <div class="kpi-card">
                 <div class="kpi-label">Gross Revenue</div>
                 <div class="kpi-value positive">$<?= number_format($job_revenue, 2) ?></div>
-                <div class="kpi-sub">Includes $<?= number_format($total_lead_pay) ?> Lead Pay</div>
+                <div class="kpi-sub">PD: $<?= number_format($total_per_diem) ?> | Lead: $<?= number_format($total_lead_pay) ?></div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Mileage Deduction</div>
