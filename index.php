@@ -21,6 +21,9 @@ if (isset($_GET['logout'])) {
 $db = getDB();
 $user_id = $_SESSION['user_id'];
 
+// --- CSRF PROTECTION ---
+csrf_check();
+
 // --- ROBUST ADMIN CHECK ---
 $is_admin = is_admin();
 
@@ -642,7 +645,7 @@ else {
                         <span id="truckLogIcon">▶</span>
                         <h4 style="margin:0; font-size:0.9rem;">🚛 Daily Truck Log</h4>
                     </div>
-                    <form method="post" style="margin:0;"><?php if ($is_day_locked): ?>
+                    <form method="post" style="margin:0;"><?= csrf_field() ?><?php if ($is_day_locked): ?>
                             <button type="submit" name="toggle_lock" value="unlock" class="btn btn-small btn-secondary">🔓
                                 Unlock</button>
                         <?php else: ?>
@@ -691,6 +694,7 @@ else {
 
                     <?php else: ?>
                         <form method="post" style="display:flex; flex-direction:column; gap:10px;">
+                            <?= csrf_field() ?>
                             <div style="display:flex; gap:10px;">
                                 <div style="flex:1;">
                                     <label style="font-size:0.75rem;">Odometer</label>
@@ -745,6 +749,7 @@ else {
             <?php if (!$is_day_locked): ?>
                 <div class="box">
                     <form method="post">
+                        <?= csrf_field() ?>
                         <div class="grid-container">
                             <div><label>Date</label><input type="date" name="install_date" value="<?= $selected_date ?>" required>
                             </div>

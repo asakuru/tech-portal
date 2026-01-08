@@ -17,6 +17,9 @@ $user_id = $_SESSION['user_id'];
 // --- ROBUST ADMIN CHECK ---
 $is_admin = is_admin();
 
+// --- CSRF PROTECTION ---
+csrf_check();
+
 $job_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $msg = "";
 $job = false;
@@ -320,6 +323,7 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
 
         <div class="box">
             <form method="post">
+                <?= csrf_field() ?>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <h3 style="margin:0;">Edit Job: <?= htmlspecialchars($job['ticket_number']) ?></h3>
                     <button type="submit" name="delete_job" onclick="return confirm('Delete?')" class="btn"

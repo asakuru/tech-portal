@@ -30,6 +30,9 @@ if (!is_dir($backup_dir)) {
 $msg = "";
 $error = "";
 
+// --- CSRF PROTECTION ---
+csrf_check();
+
 // --- ACTIONS ---
 
 // 1. CREATE SNAPSHOT (DB ONLY)
@@ -140,7 +143,8 @@ if (isset($_GET['download'])) {
 $files = glob($backup_dir . '/*.{db,zip}', GLOB_BRACE);
 if ($files) {
     usort($files, function ($a, $b) {
-        return filemtime($b) - filemtime($a); });
+        return filemtime($b) - filemtime($a);
+    });
 } else {
     $files = [];
 }
@@ -211,7 +215,8 @@ if ($files) {
         <?php if ($msg): ?>
             <div class="alert" style="border-left:4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>
         <?php if ($error): ?>
-            <div class="alert" style="background:var(--danger-bg); color:var(--danger-text); border:none;"><?= $error ?></div>
+            <div class="alert" style="background:var(--danger-bg); color:var(--danger-text); border:none;"><?= $error ?>
+            </div>
         <?php endif; ?>
 
         <div class="box" style="text-align:center; padding:30px;">
@@ -221,6 +226,7 @@ if ($files) {
                     <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">Backs up only your data
                         (Jobs, Customers, Settings).</p>
                     <form method="post">
+                        <?= csrf_field() ?>
                         <button type="submit" name="create_db_backup" class="btn btn-full"
                             style="background:var(--primary);">💾 Backup Data Only (.db)</button>
                     </form>
@@ -230,6 +236,7 @@ if ($files) {
                     <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">Backs up everything: Data
                         + PHP Code + Styles.</p>
                     <form method="post">
+                        <?= csrf_field() ?>
                         <button type="submit" name="create_full_backup" class="btn btn-full" style="background:#000;">📦
                             Backup Everything (.zip)</button>
                     </form>
@@ -275,6 +282,7 @@ if ($files) {
                                         <form method="post"
                                             onsubmit="return confirm('⚠️ WARNING: This will OVERWRITE your current live data with this backup.\n\nAny data entered AFTER this backup date will be LOST.\n\nAre you sure?');"
                                             style="display:inline;">
+                                            <?= csrf_field() ?>
                                             <input type="hidden" name="restore_file" value="<?= $name ?>">
                                             <button type="submit" class="btn-small btn-warning" title="Restore this backup">↺
                                                 Restore</button>
@@ -285,6 +293,7 @@ if ($files) {
 
                                     <form method="post" onsubmit="return confirm('Delete this backup?');"
                                         style="display:inline;">
+                                        <?= csrf_field() ?>
                                         <input type="hidden" name="delete_file" value="<?= $name ?>">
                                         <button type="submit" class="btn-small btn-danger" style="margin-left:5px;">✖</button>
                                     </form>
