@@ -1,0 +1,741 @@
+/* --- GLOBAL VARIABLES --- */
+:root {
+    /* Light Mode (Default) */
+    --bg-body: #f4f6f8;
+    --bg-card: #ffffff;
+    --bg-input: #ffffff;
+    
+    --text-main: #2c3e50;
+    --text-muted: #6c757d;
+    --border: #e1e4e8;
+    
+    --primary: #2563eb;       /* Brand Blue */
+    --primary-hover: #1d4ed8;
+    --accent: #0ea5e9;        /* Sky Blue */
+    
+    --nav-bg: #1e293b;        /* Dark Slate (Sidebar Color) */
+    --nav-text: #f8fafc;
+    
+    --success-bg: #dcfce7;
+    --success-text: #166534;
+    --danger-bg: #fee2e2;
+    --danger-text: #991b1b;
+    
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    --radius: 8px;
+}
+
+/* --- DARK MODE OVERRIDES --- */
+body.dark-mode {
+    --bg-body: #0f172a;       /* Very Dark Blue */
+    --bg-card: #1e293b;       /* Slate */
+    --bg-input: #334155;      /* Lighter Slate */
+    
+    --text-main: #e2e8f0;     /* Off-White */
+    --text-muted: #94a3b8;    /* Gray-Blue */
+    --border: #334155;
+    
+    --primary: #3b82f6;       /* Bright Blue */
+    --primary-hover: #60a5fa;
+    
+    --nav-bg: #020617;        /* Almost Black */
+    
+    --success-bg: #064e3b;    /* Dark Green */
+    --success-text: #6ee7b7;  /* Mint */
+    --danger-bg: #7f1d1d;     /* Dark Red */
+    --danger-text: #fca5a5;   /* Light Red */
+    
+    --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+/* --- BASE STYLES --- */
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    margin: 0;
+    padding-top: 70px; /* Space for fixed navbar */
+    transition: background 0.3s ease, color 0.3s ease;
+    line-height: 1.5;
+}
+
+/* --- NAVBAR --- */
+.navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    background-color: var(--nav-bg);
+    color: var(--nav-text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.nav-brand {
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+    background: linear-gradient(to right, #60a5fa, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-links a {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: #fff;
+}
+
+.logout-btn {
+    background: rgba(255,255,255,0.1);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.theme-toggle {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* --- LAYOUT --- */
+.container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 0 15px;
+}
+
+/* --- CARDS --- */
+.box {
+    background-color: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 25px 0 15px 0;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 5px;
+    letter-spacing: 1px;
+}
+
+h2, h3 {
+    margin-top: 0;
+    color: var(--text-main);
+}
+
+/* --- FORMS --- */
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.full-width {
+    grid-column: span 2;
+}
+
+label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+/* --- BUTTONS (SLEEK SIDEBAR STYLE) --- */
+button, .btn {
+    display: inline-block;
+    padding: 12px 20px;
+    
+    /* Matches Sidebar (Dark Slate) */
+    background-color: var(--nav-bg); 
+    color: #ffffff;
+    
+    /* Subtle Border */
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    
+    border-radius: 6px;
+    font-weight: 700; /* Bolder text */
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase; /* Tech Look */
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Hover Effect: Light up Brand Blue */
+button:hover, .btn:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Size Variants */
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    width: auto;
+    margin: 0;
+}
+
+/* Button Full Width override if needed */
+.btn-full {
+    width: 100%;
+}
+
+/* --- BUTTON VARIANTS (Outline Style) --- */
+
+/* Save/Submit (Primary) - Kept default dark style above */
+
+/* Delete / Danger */
+/* Default: Dark background, Red Text/Border. Hover: Red Background */
+.btn-danger { 
+    background-color: var(--bg-card); 
+    color: #ef4444; 
+    border: 1px solid #ef4444; 
+}
+.btn-danger:hover { 
+    background-color: #ef4444; 
+    color: white;
+    border-color: #ef4444;
+}
+
+/* Secondary / Draft */
+/* Default: Transparent/Gray. Hover: Slight Darkening */
+.btn-secondary { 
+    background-color: transparent; 
+    color: var(--text-muted); 
+    border: 1px solid var(--border);
+    box-shadow: none;
+}
+.btn-secondary:hover { 
+    background-color: var(--bg-input); 
+    color: var(--text-main); 
+    border-color: var(--text-muted);
+}
+
+/* --- CHECKBOXES --- */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background-color: var(--bg-input);
+    transition: border-color 0.2s;
+}
+
+.checkbox-group:hover {
+    border-color: var(--text-muted);
+}
+
+.checkbox-group input {
+    width: auto;
+    margin-right: 12px;
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    margin: 0;
+    cursor: pointer;
+}
+
+/* --- TABLES --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 12px;
+    border-bottom: 2px solid var(--border);
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    font-size: 0.9rem;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* --- ALERTS --- */
+.alert {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+    padding: 15px;
+    border-radius: var(--radius);
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+    border: 1px solid currentColor;
+}
+
+/* --- ADMIN STATS GRID --- */
+.stats-grid {
+    display: grid;
+    /* Auto-fit columns, min width 130px */
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-box {
+    background-color: var(--bg-card);
+    padding: 15px;
+    border-radius: var(--radius);
+    text-align: center;
+    border: 1px solid var(--border);
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-val {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-top: 5px;
+}
+
+/* =======================================================
+   FULL CALENDAR IMPLEMENTATION
+   ======================================================= */
+
+.calendar-container {
+    max-width: 1100px;
+    margin: 20px auto;
+    background-color: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.calendar-container * {
+    box-sizing: border-box;
+}
+
+/* Header */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: var(--nav-bg);
+    color: var(--nav-text);
+}
+
+.calendar-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--nav-text);
+}
+
+.btn-nav {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.btn-nav:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Grid System */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+}
+
+/* Day Names */
+.day-name {
+    background: var(--bg-body);
+    color: var(--text-muted);
+    font-weight: 700;
+    text-align: center;
+    padding: 15px 5px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+/* Individual Day Cells */
+.day-cell {
+    background: var(--bg-card);
+    min-height: 100px; /* Tall enough for money */
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: var(--text-main);
+}
+
+.day-cell:hover {
+    background-color: var(--bg-input);
+}
+
+.day-cell.empty {
+    background-color: var(--bg-body);
+    cursor: default;
+}
+
+/* Date Number and Badges Area */
+.date-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.date-number {
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+/* Day Off Badge */
+.badge-do {
+    background: var(--text-muted);
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+/* Days with Jobs Highlight */
+.day-cell.has-jobs {
+    background-color: rgba(37, 99, 235, 0.05); /* Light Primary Tint */
+}
+
+.day-cell.has-jobs:hover {
+    background-color: rgba(37, 99, 235, 0.1);
+}
+
+/* Money Text on Calendar */
+.daily-total {
+    font-weight: 800;
+    color: var(--success-text);
+    font-size: 1rem;
+    text-align: right;
+    margin-top: auto; 
+}
+
+.daily-total.zero {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.9rem;
+}
+
+/* =======================================================
+   UNIFIED MODAL (POPUP)
+   ======================================================= */
+
+.modal {
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0,0,0,0.7); 
+    z-index: 2000; 
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    background-color: var(--bg-card);
+    margin: 10% auto; 
+    padding: 0;
+    border-radius: 12px; 
+    max-width: 500px; 
+    width: 90%; 
+    position: relative;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* Simple text modals (Entry/Admin) */
+#codeModal .modal-content {
+    padding: 20px;
+}
+
+/* Header inside modal */
+.modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-body);
+}
+
+.modal-header h2, .modal h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-main);
+}
+
+/* Close Button */
+.close-btn, .close-modal {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+    line-height: 1;
+    float: right;
+}
+.close-btn:hover, .close-modal:hover { color: var(--text-main); }
+
+#modalBody {
+    padding: 20px;
+    color: var(--text-main);
+}
+
+/* Job List inside Calendar Modal */
+.job-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.job-list li {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.job-list li:last-child {
+    border-bottom: none;
+}
+
+.job-code {
+    font-weight: 700;
+    color: var(--primary);
+    margin-right: 10px;
+    background: rgba(37, 99, 235, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+/* Copy Area */
+.copy-area {
+    width: 100%;
+    height: 150px;
+    margin: 15px 0;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    resize: none;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+/* --- ADMIN CALENDAR BADGES (Monthly List View) --- */
+.calendar-wrapper {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 25px;
+}
+
+.cal-header {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding-bottom: 5px;
+    border-bottom: 2px solid var(--border);
+}
+
+.cal-day {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    min-height: 80px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.cal-day.empty {
+    background: transparent;
+    border: none;
+}
+
+.day-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.day-num {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.day-badges {
+    display: flex;
+    gap: 2px;
+}
+
+.badge {
+    font-size: 0.6rem;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 700;
+}
+
+.badge-off { background: var(--text-muted); color: white; }
+.badge-job { background: var(--primary); color: white; }
+
+.day-money {
+    text-align: right;
+}
+
+.day-total {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.day-sub {
+    font-size: 0.65rem;
+    color: var(--success-text);
+}
+
+/* --- MOBILE RESPONSIVENESS --- */
+@media (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .full-width {
+        grid-column: span 1;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    /* Card Table View */
+    thead { display: none; }
+    
+    tr {
+        display: block;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 15px;
+        padding: 15px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    td {
+        display: block;
+        border: none;
+        padding: 4px 0;
+    }
+    
+    td:last-child {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* Calendar Mobile Fixes */
+    .day-name { font-size: 0.7rem; padding: 5px; }
+    .day-cell { min-height: 80px; padding: 5px; }
+    .daily-total { font-size: 0.8rem; }
+    .calendar-header h2 { font-size: 1.2rem; }
+}

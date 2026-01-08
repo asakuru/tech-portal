@@ -1,0 +1,19 @@
+# Database (contains sensitive user data)
+tech_portal.db
+
+# Error logs
+error_log
+
+# Backup files
+backups/
+
+# Runtime data
+closed_days.txt
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor folders
+.vscode/
+.idea/
