@@ -200,20 +200,28 @@ foreach ($work_dates as $wdate => $val) {
     $breakdown_data[$key]['pd'] += $std_pd_rate;
 }
 
-// Add Sundays in weeks with work (if not already a work day)
-foreach ($weeks_with_work as $sunday => $val) {
-    if (!isset($work_dates[$sunday]) && $sunday >= $start_date && $sunday <= $end_date) {
+// Add per diem for ALL Sundays in the date range
+$current_sunday = $start_date;
+// Find first Sunday in range
+while (date('N', strtotime($current_sunday)) != 7) {
+    $current_sunday = date('Y-m-d', strtotime("$current_sunday +1 day"));
+}
+// Iterate through all Sundays
+while ($current_sunday <= $end_date) {
+    // Only add if not already a work day (avoid double-counting)
+    if (!isset($work_dates[$current_sunday])) {
         $total_std_pd += $std_pd_rate;
 
         // Add PD to breakdown using helper functions
-        $key = getBreakdownKey($sunday, $view);
-        $label = getBreakdownLabel($sunday, $view);
+        $key = getBreakdownKey($current_sunday, $view);
+        $label = getBreakdownLabel($current_sunday, $view);
 
         if (!isset($breakdown_data[$key])) {
             $breakdown_data[$key] = ['label' => $label, 'work' => 0, 'pd' => 0, 'miles' => 0, 'fuel' => 0];
         }
         $breakdown_data[$key]['pd'] += $std_pd_rate;
     }
+    $current_sunday = date('Y-m-d', strtotime("$current_sunday +7 days"));
 }
 
 $job_revenue += $total_std_pd;
