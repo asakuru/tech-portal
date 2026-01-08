@@ -123,9 +123,9 @@ foreach ($all_jobs as $j) {
     $label = getBreakdownLabel($j['install_date'], $view);
 
     if (!isset($breakdown_data[$key])) {
-        $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
+        $breakdown_data[$key] = ['label' => $label, 'work' => 0, 'pd' => 0, 'miles' => 0, 'fuel' => 0];
     }
-    $breakdown_data[$key]['rev'] += $pay;
+    $breakdown_data[$key]['work'] += $pay;
 
     // Track weeks for Lead Pay
     if ($j['install_type'] !== 'DO' && $j['install_type'] !== 'ND') {
@@ -174,9 +174,9 @@ foreach ($work_dates as $wdate => $val) {
     $label = getBreakdownLabel($wdate, $view);
 
     if (!isset($breakdown_data[$key])) {
-        $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
+        $breakdown_data[$key] = ['label' => $label, 'work' => 0, 'pd' => 0, 'miles' => 0, 'fuel' => 0];
     }
-    $breakdown_data[$key]['rev'] += $std_pd_rate;
+    $breakdown_data[$key]['pd'] += $std_pd_rate;
 }
 
 // Add Sundays in weeks with work (if not already a work day)
@@ -189,25 +189,13 @@ foreach ($weeks_with_work as $sunday => $val) {
         $label = getBreakdownLabel($sunday, $view);
 
         if (!isset($breakdown_data[$key])) {
-            $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
+            $breakdown_data[$key] = ['label' => $label, 'work' => 0, 'pd' => 0, 'miles' => 0, 'fuel' => 0];
         }
-        $breakdown_data[$key]['rev'] += $std_pd_rate;
+        $breakdown_data[$key]['pd'] += $std_pd_rate;
     }
 }
 
 $job_revenue += $total_std_pd;
-
-// DEBUG: Showing debug data - REMOVE AFTER FIXING
-echo "<pre style='background:#fff;color:#000;padding:10px;margin:10px;border:2px solid red;'>";
-echo "DEBUG - View: $view\n";
-echo "std_pd_rate: $std_pd_rate\n";
-echo "total_std_pd: $total_std_pd\n";
-echo "work_dates count: " . count($work_dates) . "\n";
-echo "breakdown_data keys: " . implode(', ', array_keys($breakdown_data)) . "\n";
-foreach ($breakdown_data as $k => $d) {
-    echo "  $k => rev: {$d['rev']}\n";
-}
-echo "</pre>";
 
 // --- FETCH MILEAGE & FUEL ---
 $total_miles = 0;
@@ -238,7 +226,7 @@ if ($check_table) {
         $label = getBreakdownLabel($row['log_date'], $view);
 
         if (!isset($breakdown_data[$key])) {
-            $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
+            $breakdown_data[$key] = ['label' => $label, 'work' => 0, 'pd' => 0, 'miles' => 0, 'fuel' => 0];
         }
         $breakdown_data[$key]['miles'] += $miles;
         $breakdown_data[$key]['fuel'] += $fuel;
@@ -246,7 +234,7 @@ if ($check_table) {
         // Extra per diem from daily log - add to total AND breakdown
         if (isset($row['extra_per_diem']) && $row['extra_per_diem'] == 1) {
             $total_extra_pd += $extra_pd_rate;
-            $breakdown_data[$key]['rev'] += $extra_pd_rate;
+            $breakdown_data[$key]['pd'] += $extra_pd_rate;
         }
     }
 }
@@ -487,12 +475,14 @@ ksort($breakdown_data);
             </div>
         </div>
 
-        <div class="box" style="padding:0; overflow:hidden;">
+        <div class="box" style="padding:0; overflow:hidden; overflow-x:auto;">
             <table class="data-table">
                 <thead>
                     <tr>
                         <th><?= $view === 'weekly' ? 'Day' : ($view === 'monthly' ? 'Week' : 'Month') ?></th>
-                        <th style="text-align:right;">Revenue</th>
+                        <th style="text-align:right;">Work</th>
+                        <th style="text-align:right;">Per Diem</th>
+                        <th style="text-align:right;">Gross</th>
                         <th style="text-align:right;">Miles</th>
                         <th style="text-align:right;">Fuel</th>
                         <th style="text-align:right;">Deduction</th>
@@ -503,17 +493,20 @@ ksort($breakdown_data);
                     <?php
                     $has_data = false;
                     foreach ($breakdown_data as $b_data):
+                        $b_gross = $b_data['work'] + $b_data['pd'];
                         $b_ded = $b_data['miles'] * $mileage_rate;
-                        $b_net = $b_data['rev'] - $b_ded;
+                        $b_net = $b_gross - $b_ded;
 
-                        if ($b_data['rev'] == 0 && $b_data['miles'] == 0 && $b_data['fuel'] == 0)
+                        if ($b_gross == 0 && $b_data['miles'] == 0 && $b_data['fuel'] == 0)
                             continue;
                         $has_data = true;
                         ?>
                         <tr>
                             <td style="font-weight:bold;"><?= htmlspecialchars($b_data['label']) ?></td>
-                            <td style="text-align:right; color:var(--success-text);">
-                                $<?= number_format($b_data['rev'], 2) ?></td>
+                            <td style="text-align:right;">$<?= number_format($b_data['work'], 2) ?></td>
+                            <td style="text-align:right; color:var(--primary);">$<?= number_format($b_data['pd'], 2) ?></td>
+                            <td style="text-align:right; color:var(--success-text); font-weight:bold;">
+                                $<?= number_format($b_gross, 2) ?></td>
                             <td style="text-align:right;"><?= number_format($b_data['miles']) ?></td>
                             <td style="text-align:right; color:var(--danger-text);">
                                 $<?= number_format($b_data['fuel'], 2) ?></td>
