@@ -197,6 +197,18 @@ foreach ($weeks_with_work as $sunday => $val) {
 
 $job_revenue += $total_std_pd;
 
+// DEBUG: Showing debug data - REMOVE AFTER FIXING
+echo "<pre style='background:#fff;color:#000;padding:10px;margin:10px;border:2px solid red;'>";
+echo "DEBUG - View: $view\n";
+echo "std_pd_rate: $std_pd_rate\n";
+echo "total_std_pd: $total_std_pd\n";
+echo "work_dates count: " . count($work_dates) . "\n";
+echo "breakdown_data keys: " . implode(', ', array_keys($breakdown_data)) . "\n";
+foreach ($breakdown_data as $k => $d) {
+    echo "  $k => rev: {$d['rev']}\n";
+}
+echo "</pre>";
+
 // --- FETCH MILEAGE & FUEL ---
 $total_miles = 0;
 $total_fuel = 0;
