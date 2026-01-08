@@ -93,17 +93,20 @@ foreach ($all_jobs as $j) {
     $job_revenue += $pay;
     $j_uid = $j['user_id'];
 
-    // Breakdown key based on view
+    // Breakdown key based on view - use sortable key
     if ($view === 'weekly') {
-        $key = date('D m/d', strtotime($j['install_date'])); // Mon 01/06
+        $key = $j['install_date']; // Use actual date for sorting
+        $label = date('D m/d', strtotime($j['install_date'])); // Mon 01/06
     } elseif ($view === 'monthly') {
-        $key = 'Week ' . date('W', strtotime($j['install_date']));
+        $key = date('W', strtotime($j['install_date']));
+        $label = 'Week ' . $key;
     } else {
-        $key = date('M', strtotime($j['install_date']));
+        $key = date('m', strtotime($j['install_date'])); // Use month number for sorting
+        $label = date('M', strtotime($j['install_date']));
     }
 
     if (!isset($breakdown_data[$key])) {
-        $breakdown_data[$key] = ['label' => $key, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
+        $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
     }
     $breakdown_data[$key]['rev'] += $pay;
 
@@ -150,17 +153,20 @@ if ($check_table) {
         $total_miles += $miles;
         $total_fuel += $fuel;
 
-        // Breakdown key
+        // Breakdown key - use sortable key
         if ($view === 'weekly') {
-            $key = date('D m/d', strtotime($row['log_date']));
+            $key = $row['log_date']; // Use actual date for sorting
+            $label = date('D m/d', strtotime($row['log_date']));
         } elseif ($view === 'monthly') {
-            $key = 'Week ' . date('W', strtotime($row['log_date']));
+            $key = date('W', strtotime($row['log_date']));
+            $label = 'Week ' . $key;
         } else {
-            $key = date('M', strtotime($row['log_date']));
+            $key = date('m', strtotime($row['log_date']));
+            $label = date('M', strtotime($row['log_date']));
         }
 
         if (!isset($breakdown_data[$key])) {
-            $breakdown_data[$key] = ['label' => $key, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
+            $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
         }
         $breakdown_data[$key]['miles'] += $miles;
         $breakdown_data[$key]['fuel'] += $fuel;
