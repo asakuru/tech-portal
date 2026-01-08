@@ -518,7 +518,8 @@ ksort($breakdown_data);
                         $b_ded = $b_data['miles'] * $mileage_rate;
                         $b_net = $b_gross - $b_ded;
 
-                        if ($b_gross == 0 && $b_data['miles'] == 0 && $b_data['fuel'] == 0)
+                        // Only skip empty rows for monthly/yearly views - show all 7 days in weekly
+                        if ($view !== 'weekly' && $b_gross == 0 && $b_data['miles'] == 0 && $b_data['fuel'] == 0)
                             continue;
                         $has_data = true;
                         ?>
