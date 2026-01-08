@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/ravenscv/fuzzysolution.com/triage
+    - /bin/cp -R .htaccess *.php *.css *.js *.json *.txt $DEPLOYPATH/ 2>/dev/null || true
