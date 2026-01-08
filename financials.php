@@ -150,16 +150,52 @@ foreach ($all_jobs as $j) {
     }
 }
 
-// Count eligible PD days: work days + Sundays in weeks with work
-$pd_days = count($work_dates); // Each work day gets PD
+// Add standard per diem to breakdown data for each work day
+foreach ($work_dates as $wdate => $val) {
+    $total_std_pd += $std_pd_rate;
+
+    // Add PD to breakdown
+    if ($view === 'weekly') {
+        $key = $wdate;
+        $label = date('D m/d', strtotime($wdate));
+    } elseif ($view === 'monthly') {
+        $key = date('W', strtotime($wdate));
+        $label = 'Week ' . $key;
+    } else {
+        $key = date('m', strtotime($wdate));
+        $label = date('M', strtotime($wdate));
+    }
+
+    if (!isset($breakdown_data[$key])) {
+        $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
+    }
+    $breakdown_data[$key]['rev'] += $std_pd_rate;
+}
+
+// Add Sundays in weeks with work (if not already a work day)
 foreach ($weeks_with_work as $sunday => $val) {
-    // Only add Sunday if it wasn't already a work day
     if (!isset($work_dates[$sunday]) && $sunday >= $start_date && $sunday <= $end_date) {
-        $pd_days++;
+        $total_std_pd += $std_pd_rate;
+
+        // Add PD to breakdown
+        if ($view === 'weekly') {
+            $key = $sunday;
+            $label = date('D m/d', strtotime($sunday));
+        } elseif ($view === 'monthly') {
+            $key = date('W', strtotime($sunday));
+            $label = 'Week ' . $key;
+        } else {
+            $key = date('m', strtotime($sunday));
+            $label = date('M', strtotime($sunday));
+        }
+
+        if (!isset($breakdown_data[$key])) {
+            $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
+        }
+        $breakdown_data[$key]['rev'] += $std_pd_rate;
     }
 }
 
-$total_std_pd = $pd_days * $std_pd_rate;
 $job_revenue += $total_std_pd;
 
 // --- FETCH MILEAGE & FUEL ---
@@ -186,11 +222,6 @@ if ($check_table) {
         $total_miles += $miles;
         $total_fuel += $fuel;
 
-        // Extra per diem from daily log
-        if (isset($row['extra_per_diem']) && $row['extra_per_diem'] == 1) {
-            $total_extra_pd += $extra_pd_rate;
-        }
-
         // Breakdown key - use sortable key
         if ($view === 'weekly') {
             $key = $row['log_date']; // Use actual date for sorting
@@ -208,6 +239,12 @@ if ($check_table) {
         }
         $breakdown_data[$key]['miles'] += $miles;
         $breakdown_data[$key]['fuel'] += $fuel;
+
+        // Extra per diem from daily log - add to total AND breakdown
+        if (isset($row['extra_per_diem']) && $row['extra_per_diem'] == 1) {
+            $total_extra_pd += $extra_pd_rate;
+            $breakdown_data[$key]['rev'] += $extra_pd_rate;
+        }
     }
 }
 
