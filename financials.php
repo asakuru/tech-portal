@@ -469,6 +469,9 @@ ksort($breakdown_data);
         </div>
 
         <div class="info-bar">
+            <div><strong>Total Miles:</strong>
+                <?= number_format($total_miles) ?>
+            </div>
             <div><strong>IRS Rate:</strong> $<?= number_format($mileage_rate, 3) ?>/mi</div>
             <div><strong>Tax Rate:</strong> <?= $tax_percent * 100 ?>%</div>
             <div><a href="settings.php" style="color:var(--primary); text-decoration:none;">Change Rates &rarr;</a>
