@@ -53,14 +53,24 @@ if ($view === 'weekly') {
     $next_link = "?view=weekly&week=" . date('W', $next_ts) . "&year=" . date('o', $next_ts);
 
 } elseif ($view === 'monthly') {
-    $start_date = "$year-$month-01";
-    $days_in_month = date('t', strtotime($start_date));
-    $end_date = "$year-$month-$days_in_month";
-    $period_label = date('F Y', strtotime($start_date));
+    // Base date range for the month
+    $month_start = "$year-$month-01";
+    $days_in_month = date('t', strtotime($month_start));
+    $month_end = "$year-$month-$days_in_month";
+    $period_label = date('F Y', strtotime($month_start));
+
+    // Extend to include full weeks at boundaries
+    // Find the Monday of the week containing the first day
+    $first_day_dow = date('N', strtotime($month_start)); // 1=Mon, 7=Sun
+    $start_date = date('Y-m-d', strtotime($month_start . " -" . ($first_day_dow - 1) . " days"));
+
+    // Find the Sunday of the week containing the last day
+    $last_day_dow = date('N', strtotime($month_end));
+    $end_date = date('Y-m-d', strtotime($month_end . " +" . (7 - $last_day_dow) . " days"));
 
     // Navigation
-    $prev_ts = strtotime("$start_date -1 month");
-    $next_ts = strtotime("$start_date +1 month");
+    $prev_ts = strtotime("$month_start -1 month");
+    $next_ts = strtotime("$month_start +1 month");
     $prev_link = "?view=monthly&month=" . date('m', $prev_ts) . "&year=" . date('Y', $prev_ts);
     $next_link = "?view=monthly&month=" . date('m', $next_ts) . "&year=" . date('Y', $next_ts);
 
@@ -99,6 +109,17 @@ function getBreakdownLabel($date, $view)
 $job_revenue = 0;
 $active_weeks_by_user = [];
 $breakdown_data = [];
+
+// For weekly view, pre-populate all 7 days so they all show in the table
+if ($view === 'weekly') {
+    $current_day = $start_date;
+    for ($i = 0; $i < 7; $i++) {
+        $key = getBreakdownKey($current_day, $view);
+        $label = getBreakdownLabel($current_day, $view);
+        $breakdown_data[$key] = ['label' => $label, 'work' => 0, 'pd' => 0, 'miles' => 0, 'fuel' => 0];
+        $current_day = date('Y-m-d', strtotime("$current_day +1 day"));
+    }
+}
 
 // Get Jobs
 if ($is_admin) {
