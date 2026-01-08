@@ -133,10 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
 
             <button type="submit">Log In</button>
         </form>
-
-        <div style="margin-top:20px; text-align:center; font-size:0.8rem; color:var(--text-muted);">
-            Default: <strong>admin</strong> / <strong>password</strong>
-        </div>
     </div>
 
     <script>
