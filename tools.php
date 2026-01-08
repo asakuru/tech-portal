@@ -197,20 +197,20 @@ if (isset($_GET['q'])) {
                         if (trim($addr) === '')
                             $addr = $r['cust_address']; // Fallback to old field
                         ?>
-                        <a href="edit_job.php?id=<?= $r['id'] ?>" class="result-card">
+                        <a href="edit_job.php?id=<?= htmlspecialchars($r['id']) ?>" class="result-card">
                             <div>
                                 <div class="res-date">
-                                    <?= $d ?>
-                                    <span class="tag"><?= $r['install_type'] ?></span>
+                                    <?= htmlspecialchars($d) ?>
+                                    <span class="tag"><?= htmlspecialchars($r['install_type']) ?></span>
                                 </div>
                                 <div class="res-title">
-                                    <?= $r['ticket_number'] ?>
+                                    <?= htmlspecialchars($r['ticket_number']) ?>
                                 </div>
                                 <div class="res-sub">
-                                    <?= $name ?>
+                                    <?= htmlspecialchars($name) ?>
                                 </div>
                                 <div class="res-addr">
-                                    📍 <?= $addr ?>
+                                    📍 <?= htmlspecialchars($addr) ?>
                                 </div>
                             </div>
                             <div>
