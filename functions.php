@@ -4,6 +4,18 @@
  * Centralized logic for the Tech Portal.
  */
 
+// --- 0. ADMIN CHECK ---
+/**
+ * Check if the current user is an admin.
+ * Centralizes the admin logic to avoid duplication across files.
+ * @return bool True if the user is an admin, false otherwise.
+ */
+function is_admin() {
+    $user_id = $_SESSION['user_id'] ?? 0;
+    $role = strtolower($_SESSION['role'] ?? '');
+    return ($role === 'admin' || $role === 'administrator' || $user_id == 1);
+}
+
 // --- 1. RATE FETCHER ---
 function get_active_rates($db) {
     $rates = [];
