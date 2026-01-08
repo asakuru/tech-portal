@@ -135,24 +135,31 @@ foreach ($active_weeks_by_user as $uid => $weeks) {
 $total_std_pd = 0;
 $total_extra_pd = 0;
 
-// Count eligible days for standard PD (days with work that aren't DO/ND)
-$work_days = [];
+// Track weeks with billable work and all work dates
+$work_dates = [];
+$weeks_with_work = [];
+
 foreach ($all_jobs as $j) {
+    $jdate = $j['install_date'];
     if ($j['install_type'] !== 'DO' && $j['install_type'] !== 'ND') {
-        $work_days[$j['install_date']] = true;
+        $work_dates[$jdate] = true;
+        // Track the week (Sunday of that week)
+        $day_of_week = date('w', strtotime($jdate));
+        $sunday_of_week = date('Y-m-d', strtotime("$jdate -$day_of_week days"));
+        $weeks_with_work[$sunday_of_week] = true;
     }
 }
 
-// Also count Sundays in the period as eligible
-$current_date = $start_date;
-while ($current_date <= $end_date) {
-    if (date('N', strtotime($current_date)) == 7) { // Sunday
-        $work_days[$current_date] = true;
+// Count eligible PD days: work days + Sundays in weeks with work
+$pd_days = count($work_dates); // Each work day gets PD
+foreach ($weeks_with_work as $sunday => $val) {
+    // Only add Sunday if it wasn't already a work day
+    if (!isset($work_dates[$sunday]) && $sunday >= $start_date && $sunday <= $end_date) {
+        $pd_days++;
     }
-    $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
 }
 
-$total_std_pd = count($work_days) * $std_pd_rate;
+$total_std_pd = $pd_days * $std_pd_rate;
 $job_revenue += $total_std_pd;
 
 // --- FETCH MILEAGE & FUEL ---
@@ -415,7 +422,8 @@ ksort($breakdown_data);
             <div class="kpi-card">
                 <div class="kpi-label">Gross Revenue</div>
                 <div class="kpi-value positive">$<?= number_format($job_revenue, 2) ?></div>
-                <div class="kpi-sub">PD: $<?= number_format($total_per_diem) ?> | Lead: $<?= number_format($total_lead_pay) ?></div>
+                <div class="kpi-sub">PD: $<?= number_format($total_per_diem) ?> | Lead:
+                    $<?= number_format($total_lead_pay) ?></div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Mileage Deduction</div>
