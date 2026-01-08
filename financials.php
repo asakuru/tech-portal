@@ -72,6 +72,29 @@ if ($view === 'weekly') {
     $next_link = "?view=yearly&year=" . ($year + 1);
 }
 
+// --- HELPER: GENERATE BREAKDOWN KEY ---
+function getBreakdownKey($date, $view)
+{
+    if ($view === 'weekly') {
+        return $date; // Use actual date for sorting
+    } elseif ($view === 'monthly') {
+        return date('W', strtotime($date)); // Week number
+    } else {
+        return date('m', strtotime($date)); // Month number
+    }
+}
+
+function getBreakdownLabel($date, $view)
+{
+    if ($view === 'weekly') {
+        return date('D m/d', strtotime($date)); // Mon 01/06
+    } elseif ($view === 'monthly') {
+        return 'Week ' . date('W', strtotime($date));
+    } else {
+        return date('M', strtotime($date)); // Jan, Feb, etc
+    }
+}
+
 // --- FETCH DATA ---
 $job_revenue = 0;
 $active_weeks_by_user = [];
@@ -95,17 +118,9 @@ foreach ($all_jobs as $j) {
     $job_revenue += $pay;
     $j_uid = $j['user_id'];
 
-    // Breakdown key based on view - use sortable key
-    if ($view === 'weekly') {
-        $key = $j['install_date']; // Use actual date for sorting
-        $label = date('D m/d', strtotime($j['install_date'])); // Mon 01/06
-    } elseif ($view === 'monthly') {
-        $key = date('W', strtotime($j['install_date']));
-        $label = 'Week ' . $key;
-    } else {
-        $key = date('m', strtotime($j['install_date'])); // Use month number for sorting
-        $label = date('M', strtotime($j['install_date']));
-    }
+    // Breakdown key based on view - use helper functions
+    $key = getBreakdownKey($j['install_date'], $view);
+    $label = getBreakdownLabel($j['install_date'], $view);
 
     if (!isset($breakdown_data[$key])) {
         $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
@@ -154,17 +169,9 @@ foreach ($all_jobs as $j) {
 foreach ($work_dates as $wdate => $val) {
     $total_std_pd += $std_pd_rate;
 
-    // Add PD to breakdown
-    if ($view === 'weekly') {
-        $key = $wdate;
-        $label = date('D m/d', strtotime($wdate));
-    } elseif ($view === 'monthly') {
-        $key = date('W', strtotime($wdate));
-        $label = 'Week ' . $key;
-    } else {
-        $key = date('m', strtotime($wdate));
-        $label = date('M', strtotime($wdate));
-    }
+    // Add PD to breakdown using helper functions
+    $key = getBreakdownKey($wdate, $view);
+    $label = getBreakdownLabel($wdate, $view);
 
     if (!isset($breakdown_data[$key])) {
         $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
@@ -177,17 +184,9 @@ foreach ($weeks_with_work as $sunday => $val) {
     if (!isset($work_dates[$sunday]) && $sunday >= $start_date && $sunday <= $end_date) {
         $total_std_pd += $std_pd_rate;
 
-        // Add PD to breakdown
-        if ($view === 'weekly') {
-            $key = $sunday;
-            $label = date('D m/d', strtotime($sunday));
-        } elseif ($view === 'monthly') {
-            $key = date('W', strtotime($sunday));
-            $label = 'Week ' . $key;
-        } else {
-            $key = date('m', strtotime($sunday));
-            $label = date('M', strtotime($sunday));
-        }
+        // Add PD to breakdown using helper functions
+        $key = getBreakdownKey($sunday, $view);
+        $label = getBreakdownLabel($sunday, $view);
 
         if (!isset($breakdown_data[$key])) {
             $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
@@ -222,17 +221,9 @@ if ($check_table) {
         $total_miles += $miles;
         $total_fuel += $fuel;
 
-        // Breakdown key - use sortable key
-        if ($view === 'weekly') {
-            $key = $row['log_date']; // Use actual date for sorting
-            $label = date('D m/d', strtotime($row['log_date']));
-        } elseif ($view === 'monthly') {
-            $key = date('W', strtotime($row['log_date']));
-            $label = 'Week ' . $key;
-        } else {
-            $key = date('m', strtotime($row['log_date']));
-            $label = date('M', strtotime($row['log_date']));
-        }
+        // Breakdown key - use helper functions
+        $key = getBreakdownKey($row['log_date'], $view);
+        $label = getBreakdownLabel($row['log_date'], $view);
 
         if (!isset($breakdown_data[$key])) {
             $breakdown_data[$key] = ['label' => $label, 'rev' => 0, 'miles' => 0, 'fuel' => 0];
