@@ -287,7 +287,8 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             if (!isNaN(val) && val > 0) el.value = (val * -1).toFixed(2);
         }
 
-        function copyNotes() {
+        // LIVE PREVIEW LOGIC
+        function generateNotesString() {
             let notes = "";
             let t = document.getElementsByName('install_type')[0].value;
             // In edit mode F002 is just 'F002', so we check against codes directly.
@@ -304,7 +305,8 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 addField('//SUPERVISOR CONTACTED//', 'supervisor');
                 addField('//WHAT WAS TO DECIDED OUTCOME//', 'outcome');
 
-                let misc = document.getElementById('misc_notes').value;
+                let miscEl = document.getElementsByName('misc_notes')[0];
+                let misc = miscEl ? miscEl.value : "";
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
             } else if (isRepair) {
                 // F008 REPAIR SPECIFIC FORMAT
@@ -321,7 +323,8 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 addField('DID YOU REPLACE ANY EQUIPMENT//-----//', 'equip_replaced');
                 addField('IS CUSTOMER SERVICE RESTORED//-----//', 'service_restored');
 
-                let misc = document.getElementById('misc_notes').value;
+                let miscEl = document.getElementsByName('misc_notes')[0];
+                let misc = miscEl ? miscEl.value : "";
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
             } else {
                 // NEW STRICT FORMAT
@@ -399,17 +402,28 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 notes += (ontSig ? ontSig + " db @ ONT" : "N/A @ ONT") + "\n\n";
 
                 // MISC
-                let misc = document.getElementById('misc_notes').value;
+                let miscEl = document.getElementsByName('misc_notes')[0];
+                let misc = miscEl ? miscEl.value : "";
                 notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + (misc.trim() !== "" ? misc.trim() : "No additional work.") + "\n\n";
             }
-            notes = notes.trim();
+            return notes.trim();
+        }
 
-            if (notes.trim() === "") {
-                notes = document.getElementsByName('addtl_work')[0].value;
-            } else {
-                document.getElementsByName('addtl_work')[0].value = notes;
+        function updatePreview() {
+            let notes = generateNotesString();
+            if (notes === "") notes = "No additional work.";
+            let el = document.getElementsByName('addtl_work')[0];
+            if(el) {
+                el.value = notes;
+                // autoResize(el); // autoResize might not be defined in edit_job.php?? checking.. yes it is usually.
             }
+        }
 
+        function copyNotes() {
+            let notes = generateNotesString();
+            if (notes === "") notes = "No additional work.";
+            updatePreview();
+            
             navigator.clipboard.writeText(notes).then(function () {
                 let btn = document.getElementById('copyBtn');
                 let origText = btn.innerText;
@@ -417,6 +431,18 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 setTimeout(() => { btn.innerText = origText; }, 2000);
             });
         }
+        
+        function initLivePreview() {
+            let inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(el => {
+                el.addEventListener('input', updatePreview);
+                el.addEventListener('change', updatePreview);
+            });
+        }
+        
+        window.addEventListener('DOMContentLoaded', () => {
+             initLivePreview();
+        });
     </script>
 </head>
 

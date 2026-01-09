@@ -489,7 +489,8 @@ else {
                 if (mpgWrapper) { mpgWrapper.style.borderColor = "var(--border)"; mpgBox.style.color = "var(--text-muted)"; }
             }
         }
-        function copyNotes() {
+        // LIVE PREVIEW LOGIC
+        function generateNotesString() {
             let notes = "";
             let t = document.getElementById('install_type').value;
             let isMissed = (t === 'F009' || t === 'F011');
@@ -505,7 +506,8 @@ else {
                 addField('//SUPERVISOR CONTACTED//', 'supervisor');
                 addField('//WHAT WAS TO DECIDED OUTCOME//', 'outcome');
                 
-                let misc = document.getElementById('misc_notes').value;
+                let miscEl = document.getElementsByName('misc_notes')[0];
+                let misc = miscEl ? miscEl.value : "";
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
             } else if (isRepair) {
                 // F008 REPAIR SPECIFIC FORMAT
@@ -522,7 +524,8 @@ else {
                 addField('DID YOU REPLACE ANY EQUIPMENT//-----//', 'equip_replaced');
                 addField('IS CUSTOMER SERVICE RESTORED//-----//', 'service_restored');
 
-                let misc = document.getElementById('misc_notes').value;
+                let miscEl = document.getElementsByName('misc_notes')[0];
+                let misc = miscEl ? miscEl.value : "";
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
             } else {
                 // NEW STRICT FORMAT for installs
@@ -601,17 +604,42 @@ else {
                 notes += (ontSig ? ontSig + " db @ ONT" : "N/A @ ONT") + "\n\n";
 
                 // MISC
-                let misc = document.getElementById('misc_notes').value;
+                let miscEl = document.getElementsByName('misc_notes')[0];
+                let misc = miscEl ? miscEl.value : "";
                 notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + (misc.trim() !== "" ? misc.trim() : "No additional work.") + "\n\n";
             }
             
-            notes = notes.trim();
-            
-            // Populate preview
-            document.getElementsByName('addtl_work')[0].value = notes;
+            return notes.trim();
+        }
 
+        function updatePreview() {
+            let notes = generateNotesString();
+            if (notes === "") notes = "No specific notes.";
+            let el = document.getElementsByName('addtl_work')[0];
+            if(el) {
+                el.value = notes;
+                autoResize(el);
+            }
+        }
+
+        function copyNotes() {
+            let notes = generateNotesString();
+            if (notes === "") notes = "No specific notes.";
+            updatePreview();
             navigator.clipboard.writeText(notes).then(function () { alert("Copied!"); });
         }
+        
+        function initLivePreview() {
+            let inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(el => {
+                el.addEventListener('input', updatePreview);
+                el.addEventListener('change', updatePreview);
+            });
+        }
+        
+        window.addEventListener('DOMContentLoaded', () => {
+             initLivePreview();
+        });
         // COLLAPSIBLE TRUCK LOG
         function toggleTruckLog() {
             let content = document.getElementById('truckLogContent');
