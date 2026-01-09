@@ -95,20 +95,58 @@ while ($row = $stmt->fetch()) {
     ];
 }
 
-// B. PER DIEM & VEHICLE EXPENSES
-$pd_days = 0;
-$extra_pd_days = 0;
+// B. PER DIEM & VEHICLE EXPENSES (Aligned with financials.php logic)
 $total_miles = 0;
 $total_fuel = 0;
 
-$current_check_date = $start_date;
-for ($i = 0; $i < 7; $i++) {
-    if (!isset($do_dates[$current_check_date])) {
-        $pd_days++;
+// Track work dates = days with billable jobs (not DO, not ND)
+// ND still gets per diem, just like Sundays
+$work_dates = [];
+$nd_dates = [];
+
+foreach ($local_jobs as $ticket => $job) {
+    $jtype = $job['type'];
+    $jdate = $job['full_date'];
+
+    if ($jtype === 'ND') {
+        $nd_dates[$jdate] = true; // ND gets PD but isn't "work"
+    } elseif ($jtype !== 'DO') {
+        $work_dates[$jdate] = true; // Actual billable work
     }
-    $current_check_date = date('Y-m-d', strtotime("$current_check_date +1 day"));
 }
 
+// Calculate Standard Per Diem:
+// 1. Per diem for each WORK day (billable jobs)
+// 2. Per diem for each ND day (Not Designated = still gets PD)
+// 3. Per diem for Sunday (if not already counted as work or ND)
+
+$pd_days = 0;
+$pd_rate = $rates['per_diem'] ?? 0;
+
+// Add PD for work days
+foreach ($work_dates as $wdate => $val) {
+    $pd_days++;
+}
+
+// Add PD for ND days
+foreach ($nd_dates as $ndate => $val) {
+    $pd_days++;
+}
+
+// Add PD for Sunday (if not already counted)
+$sunday_date = $start_date;
+while (date('N', strtotime($sunday_date)) != 7) {
+    $sunday_date = date('Y-m-d', strtotime("$sunday_date +1 day"));
+}
+if ($sunday_date <= $end_date) {
+    // Only add if Sunday wasn't already a work day or ND day
+    if (!isset($work_dates[$sunday_date]) && !isset($nd_dates[$sunday_date])) {
+        $pd_days++;
+    }
+}
+
+// Fetch daily logs for Extra PD, Mileage, Fuel
+$extra_pd_days = 0;
 try {
     $stmt = $db->prepare("SELECT log_date, extra_per_diem, mileage, fuel_cost FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
     $stmt->execute([$_SESSION['user_id'], $start_date, $end_date]);
@@ -124,8 +162,7 @@ try {
 
 // Standard PD
 if ($pd_days > 0) {
-    $r = $rates['per_diem'] ?? 0;
-    addToTally($code_tally, 'Per Diem', $pd_days, $r, 'Standard Per Diem (7 Days - DO)');
+    addToTally($code_tally, 'Per Diem', $pd_days, $pd_rate, 'Standard Per Diem (Work Days + ND + Sun)');
 }
 // Extra PD (from Logs)
 if ($extra_pd_days > 0) {
@@ -236,7 +273,8 @@ if ($comparison_mode) {
     }
 }
 usort($display_rows, function ($a, $b) {
-    return $a['full_date'] <=> $b['full_date']; });
+    return $a['full_date'] <=> $b['full_date'];
+});
 ?>
 
 <!DOCTYPE html>
@@ -546,7 +584,8 @@ usort($display_rows, function ($a, $b) {
                                             <?= ($row['diff'] != 0) ? number_format($row['diff'], 2) : '-' ?>
                                         </td>
                                         <td style="padding-left:10px;" class="<?= htmlspecialchars($st_class) ?>">
-                                            <?= htmlspecialchars($row['status']) ?></td>
+                                            <?= htmlspecialchars($row['status']) ?>
+                                        </td>
                                     <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
