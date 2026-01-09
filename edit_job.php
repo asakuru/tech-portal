@@ -79,15 +79,23 @@ if ($job) {
         $parsed['why_missed'] = str_replace(['-----//', '-----'], '', extract_val('//WHY MISSED//', $notes));
         $parsed['supervisor'] = str_replace(['-----//', '-----'], '', extract_val('//SUPERVISOR CONTACTED//', $notes));
         $parsed['outcome'] = str_replace(['-----//', '-----'], '', extract_val('//WHAT WAS TO DECIDED OUTCOME//', $notes));
-        $parsed['complaint'] = str_replace(['-----//', '-----'], '', extract_val('//WHAT IS THE COMPLAINT//', $notes));
-        $parsed['resolution'] = str_replace(['-----//', '-----'], '', extract_val('//WHAT DID YOU DO TO RESOLVE THE ISSUE//', $notes));
+        // Try both formats: with and without -----// suffix
+        $complaint = extract_val('//WHAT IS THE COMPLAINT//-----//', $notes);
+        if ($complaint === '') $complaint = extract_val('//WHAT IS THE COMPLAINT//', $notes);
+        $parsed['complaint'] = str_replace(['-----//', '-----'], '', $complaint);
+
+        $resolution = extract_val('//WHAT DID YOU DO TO RESOLVE THE ISSUE//-----//', $notes);
+        if ($resolution === '') $resolution = extract_val('//WHAT DID YOU DO TO RESOLVE THE ISSUE//', $notes);
+        $parsed['resolution'] = str_replace(['-----//', '-----'], '', $resolution);
         
-        // Try strict F008 headers first (no slashes), then fallback to standard/legacy
-        $equip = extract_val('DID YOU REPLACE ANY EQUIPMENT', $notes);
+        // Try strict F008 headers first (with suffix), then fallback to other formats
+        $equip = extract_val('DID YOU REPLACE ANY EQUIPMENT//-----//', $notes);
+        if ($equip === '') $equip = extract_val('DID YOU REPLACE ANY EQUIPMENT', $notes);
         if ($equip === '') $equip = extract_val('//DID YOU REPLACE ANY EQUIPMENT//', $notes);
         $parsed['equip_replaced'] = str_replace(['-----//', '-----'], '', $equip);
 
-        $restored = extract_val('IS CUSTOMER SERVICE RESTORED', $notes);
+        $restored = extract_val('IS CUSTOMER SERVICE RESTORED//-----//', $notes);
+        if ($restored === '') $restored = extract_val('IS CUSTOMER SERVICE RESTORED', $notes);
         if ($restored === '') $restored = extract_val('//IS CUSTOMER SERVICE RESTORED//', $notes);
         $parsed['service_restored'] = str_replace(['-----//', '-----'], '', $restored);
         $parsed['misc_notes'] = extract_val('//ADDITIONAL WORK NOT LISTED ABOVE//', $notes);
@@ -504,8 +512,10 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                         <div><input type="text" name="cust_zip" value="<?= htmlspecialchars($job['cust_zip']) ?>"
                                 placeholder="Zip"></div>
                     </div>
-                    <input type="hidden" name="cust_state" value="<?= htmlspecialchars($job['cust_state']) ?>">
-                    <input type="hidden" name="cust_phone" value="<?= htmlspecialchars($job['cust_phone']) ?>">
+                    <div class="grid-container" style="margin-top:10px;">
+                        <div><input type="text" name="cust_state" value="<?= htmlspecialchars($job['cust_state']) ?>" placeholder="State"></div>
+                        <div><input type="text" name="cust_phone" value="<?= htmlspecialchars($job['cust_phone']) ?>" placeholder="Phone"></div>
+                    </div>
                 </div>
 
                 <div style="margin-top:15px;">
