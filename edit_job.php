@@ -400,7 +400,8 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 notes += "//PHONE INBOUND OUTBOUND TEST PERFORMED//\n" + getCheck('phone_test') + "\n\n";
 
                 // COPPER
-                notes += "//OLD AERIAL COPPER LINE REMOVED//\n" + getCheck('copper_removed') + "\n\n";
+                let copperRem = getCheck('copper_removed');
+                notes += "//OLD AERIAL COPPER LINE REMOVED//\n" + (copperRem === 'Yes' ? 'Yes, removed old copper per client request.' : 'No') + "\n\n";
 
                 // TICI
                 let hub = getVal('tici_hub');
