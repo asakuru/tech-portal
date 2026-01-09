@@ -741,6 +741,24 @@ usort($display_rows, function ($a, $b) {
                                     <td style="<?= $status_color ?>"><?= $status_text ?></td>
                                 </tr>
                             <?php endforeach; ?>
+                            <?php
+                            // Calculate totals
+                            $total_local_qty = 0;
+                            $total_scrub_qty = 0;
+                            $total_local_amount = 0;
+                            foreach ($code_variance as $v) {
+                                $total_local_qty += $v['local_qty'];
+                                $total_scrub_qty += $v['scrub_qty'];
+                                $total_local_amount += $v['local_total'];
+                            }
+                            ?>
+                            <tr style="border-top:2px solid #000; font-weight:bold; background:#f0f0f0;">
+                                <td colspan="2" style="text-align:right;">TOTALS:</td>
+                                <td style="text-align:center;"><?= $total_local_qty ?></td>
+                                <td style="text-align:center;"><?= $total_scrub_qty ?></td>
+                                <td class="num">$<?= number_format($total_local_amount, 2) ?></td>
+                                <td><?= ($total_local_qty == $total_scrub_qty) ? '✓' : '⚠️' ?></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -788,7 +806,7 @@ usort($display_rows, function ($a, $b) {
                                     <td><?= htmlspecialchars($row['date']) ?></td>
                                     <td><?= htmlspecialchars($row['ticket']) ?></td>
                                     <td><?= htmlspecialchars($row['type']) ?></td>
-                                    <td><?= htmlspecialchars(substr($row['cust'], 0, 10)) ?></td>
+                                    <td><?= htmlspecialchars(substr($row['cust'] ?? 'Unknown', 0, 20)) ?></td>
                                     <td class="num"><?= ($row['pay'] > 0) ? number_format($row['pay'], 2) : '-' ?></td>
 
                                     <?php if ($comparison_mode): ?>
