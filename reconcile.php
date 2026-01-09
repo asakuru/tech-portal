@@ -288,8 +288,14 @@ if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
 
 // --- 4. BUILD CODE COMPARISON TABLE ---
 if ($comparison_mode) {
-    // Compare local tally against scrub codes
+    // Normalize local codes to uppercase for matching
+    $normalized_code_tally = [];
     foreach ($code_tally as $code => $data) {
+        $normalized_code_tally[strtoupper($code)] = $data;
+    }
+    
+    // Compare local tally against scrub codes
+    foreach ($normalized_code_tally as $code => $data) {
         $local_qty = $data['count'];
         $local_total = $data['total'];
         $scrub_qty = $scrub_codes[$code] ?? 0;
@@ -313,10 +319,11 @@ if ($comparison_mode) {
     }
 
     // Remaining scrub codes = EXTRA (in pasted text but NOT in DB)
+    // Only include if qty > 0
     foreach ($scrub_codes as $code => $qty) {
         if ($qty > 0) {
             $code_variance[$code] = [
-                'desc' => 'From Scrub Report',
+                'desc' => '(Not in your records)',
                 'local_qty' => 0,
                 'local_total' => 0,
                 'scrub_qty' => $qty,
