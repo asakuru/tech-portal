@@ -281,64 +281,105 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
         }
 
         function copyNotes() {
-            // Reconstruct notes client-side just for clipboard
             let notes = "";
-            let addField = (header, id) => {
-                let el = document.getElementsByName(id)[0];
-                if (el && el.value.trim() !== "") notes += header + "\n" + el.value.trim() + "\n\n";
-            };
-            addField('//WHY MISSED//-----//', 'why_missed');
-            addField('//SUPERVISOR CONTACTED//-----//', 'supervisor');
-            addField('//WHAT WAS TO DECIDED OUTCOME//-----//', 'outcome');
-            addField('//WHAT IS THE COMPLAINT//-----//', 'complaint');
-            addField('//WHAT DID YOU DO TO RESOLVE THE ISSUE//-----//', 'resolution');
-            addField('//DID YOU REPLACE ANY EQUIPMENT//-----//', 'equip_replaced');
-            addField('//IS CUSTOMER SERVICE RESTORED//-----//', 'service_restored');
+            let t = document.getElementsByName('install_type')[0].value;
+            // In edit mode F002 is just 'F002', so we check against codes directly.
+            let isSimple = (t === 'F009' || t === 'F011' || t === 'F008');
 
-            let misc = document.getElementById('misc_notes').value;
-            if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
+            if (isSimple) {
+                // OLD FORMAT for simple jobs
+                let addField = (header, id) => {
+                    let el = document.getElementsByName(id)[0];
+                    if (el && el.value.trim() !== "") notes += header + "\n" + el.value.trim() + "\n\n";
+                };
+                addField('//WHY MISSED//-----//', 'why_missed');
+                addField('//SUPERVISOR CONTACTED//-----//', 'supervisor');
+                addField('//WHAT WAS TO DECIDED OUTCOME//-----//', 'outcome');
+                addField('//WHAT IS THE COMPLAINT//-----//', 'complaint');
+                addField('//WHAT DID YOU DO TO RESOLVE THE ISSUE//-----//', 'resolution');
+                addField('//DID YOU REPLACE ANY EQUIPMENT//-----//', 'equip_replaced');
+                addField('//IS CUSTOMER SERVICE RESTORED//-----//', 'service_restored');
 
-            // Add Tech Specs if present
-            let addSpec = (label, name) => {
-                let el = document.getElementsByName(name)[0];
-                if (el && el.value.trim() !== "") notes += label + ": " + el.value.trim() + "\n";
-            }
-            if (!document.getElementById('groupTechStandard').style.display || document.getElementById('groupTechStandard').style.display !== 'none') {
-                let techNotes = "";
+                let misc = document.getElementById('misc_notes').value;
+                if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
+            } else {
+                // NEW STRICT FORMAT
+                let getVal = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.value.trim()!=='') ? el.value.trim() : ""; };
+                let getCheck = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.checked) ? "Yes" : "No"; };
                 
-                // Capture check boxes
-                let checks = ['nid_installed', 'copper_removed', 'exterior_sealed', 'unbreakable_wifi', 'whole_home_wifi', 'cust_education', 'phone_test'];
-                let checkLabels = ['NID Installed', 'Copper Removed', 'Exterior Sealed', 'Unbreakable WiFi', 'Whole Home WiFi', 'Cust Education', 'Phone Test'];
-                let checkStr = [];
-                checks.forEach((n, i) => {
-                   let el = document.getElementsByName(n)[0];
-                   if(el && el.checked) checkStr.push(checkLabels[i]); 
-                });
-                if(checkStr.length > 0) techNotes += "Completed: " + checkStr.join(', ') + "\n";
+                // TYPE - In edit mode we only have the code (e.g. F002), so we display that unless we map it.
+                // Given constraints, I'll display the code or best guess.
+                // Actually, let's try to pass the description via a map if possible, but simplest is Code for now.
+                notes += "//WHAT TYPE OF INSTALL//\n" + t + "\n\n";
 
-                // helper for temp string
-                let getVal = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.value.trim()!=='') ? el.value.trim() : null; };
-                
-                let ont = getVal('ont_serial'); if(ont) techNotes += "ONT: " + ont + "\n";
-                let eeros = getVal('eeros_serial'); if(eeros) techNotes += "Router: " + eeros + "\n";
-                let wifi = getVal('wifi_name'); if(wifi) techNotes += "WiFi: " + wifi;
-                let pass = getVal('wifi_pass'); if(pass) techNotes += " / " + pass + "\n";
-                else if(wifi) techNotes += "\n";
-                
-                let hub = getVal('tici_hub');
-                let ont_sig = getVal('tici_ont');
-                if(hub || ont_sig) techNotes += "Light Levels: HUB " + (hub||'--') + " / ONT " + (ont_sig||'--') + "\n";
-                
-                let spans = getVal('spans'); if(spans) techNotes += "Spans: " + spans + "\n";
-                let drop = getVal('drop_length'); if(drop) techNotes += "Drop: " + drop + "'\n";
-                let jacks = getVal('jacks_installed'); if(jacks) techNotes += "Jacks: " + jacks + "\n";
-                
+                // DROP
+                let drop = getVal('drop_length');
+                notes += "//DROP//\n" + (drop ? drop + "'" : "No") + "\n\n";
+
+                // SPANS
+                let spans = getVal('spans');
+                notes += "//SPANS//\n" + (spans ? spans + " Spans" : "No") + "\n\n";
+
+                // PATH
                 let path = getVal('path_notes');
-                if(path) techNotes += "Path: " + path + "\n";
+                notes += "//PATH//\n" + (path ? path : "Standard path.") + "\n\n";
 
-                if (techNotes !== "") {
-                    notes += "//TECH SPECS//\n" + techNotes;
-                }
+                // CONDUIT
+                let cond = getVal('conduit_ft');
+                notes += "//UNDERGROUND CONDUIT PULLED//\n" + (cond ? cond + "'" : "No") + "\n\n";
+
+                // NID
+                notes += "//NID INSTALLED//\n" + getCheck('nid_installed') + "\n\n";
+
+                // SEALED
+                notes += "//EXTERIOR PENETRATION SEALED//\n" + getCheck('exterior_sealed') + "\n\n";
+
+                // SOFT JUMPER
+                let soft = getVal('soft_jumper');
+                notes += "//FOOTAGE OF SOFT JUMPER INSTALLED//\n" + (soft ? soft + "'" : "No") + "\n\n";
+
+                // ONT
+                let ont = getVal('ont_serial');
+                notes += "//ONT INSTALLED S/N//\n" + (ont ? ont : "N/A") + "\n\n";
+
+                // CAT6
+                let cat = getVal('cat6_lines');
+                notes += "//CAT 6 LINES INSTALLED//\n" + (cat ? cat : "No") + "\n\n";
+
+                // JACKS
+                let jacks = getVal('jacks_installed');
+                notes += "//JACKS INSTALLED//\n" + (jacks ? jacks : "0") + "\n\n";
+
+                // EEROS
+                let eeros = getVal('eeros_serial');
+                notes += "//EEROS INSTALLED S/N//\n" + (eeros ? eeros : "N/A") + "\n\n";
+
+                // WIFI FEATURES
+                let unbreak = getCheck('unbreakable_wifi');
+                notes += "//UNBREAKABLE WIFI INSTALLED, OR REMOVED//\n" + (unbreak === 'Yes' ? 'Yes' : 'N/A') + "\n\n";
+
+                let whole = getCheck('whole_home_wifi');
+                notes += "//WHOLE HOME WIFI INSTALLED, OR REMOVED//\n" + (whole === 'Yes' ? 'Yes' : 'N/A') + "\n\n";
+
+                // EDUCATION
+                notes += "//CUSTOMER EDUCATION PERFORMED//\n" + getCheck('cust_education') + "\n\n";
+
+                // PHONE TEST
+                notes += "//PHONE INBOUND OUTBOUND TEST PERFORMED//\n" + getCheck('phone_test') + "\n\n";
+
+                // COPPER
+                notes += "//OLD AERIAL COPPER LINE REMOVED//\n" + getCheck('copper_removed') + "\n\n";
+
+                // TICI
+                let hub = getVal('tici_hub');
+                let ontSig = getVal('tici_ont');
+                notes += "//TICI BEFORE AND AFTER//\n";
+                notes += (hub ? hub + " db @ HUB" : "N/A @ HUB") + "\n";
+                notes += (ontSig ? ontSig + " db @ ONT" : "N/A @ ONT") + "\n\n";
+
+                // MISC
+                let misc = document.getElementById('misc_notes').value;
+                notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + (misc.trim() !== "" ? misc.trim() : "No additional work.") + "\n\n";
             }
             notes = notes.trim();
 
