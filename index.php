@@ -501,9 +501,9 @@ else {
                     let el = document.getElementsByName(name)[0];
                     if (el && el.value.trim() !== "") notes += header + "\n" + el.value.trim() + "\n\n";
                 };
-                addField('//WHY MISSED//-----//', 'why_missed');
-                addField('//SUPERVISOR CONTACTED//-----//', 'supervisor');
-                addField('//WHAT WAS TO DECIDED OUTCOME//-----//', 'outcome');
+                addField('//WHY MISSED//', 'why_missed');
+                addField('//SUPERVISOR CONTACTED//', 'supervisor');
+                addField('//WHAT WAS TO DECIDED OUTCOME//', 'outcome');
                 
                 let misc = document.getElementById('misc_notes').value;
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";

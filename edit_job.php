@@ -76,13 +76,20 @@ if ($job) {
             }
             return '';
         }
-        $parsed['why_missed'] = extract_val('//WHY MISSED//-----//', $notes);
-        $parsed['supervisor'] = extract_val('//SUPERVISOR CONTACTED//-----//', $notes);
-        $parsed['outcome'] = extract_val('//WHAT WAS TO DECIDED OUTCOME//-----//', $notes);
-        $parsed['complaint'] = extract_val('//WHAT IS THE COMPLAINT//-----//', $notes);
-        $parsed['resolution'] = extract_val('//WHAT DID YOU DO TO RESOLVE THE ISSUE//-----//', $notes);
-        $parsed['equip_replaced'] = extract_val('//DID YOU REPLACE ANY EQUIPMENT//-----//', $notes);
-        $parsed['service_restored'] = extract_val('//IS CUSTOMER SERVICE RESTORED//-----//', $notes);
+        $parsed['why_missed'] = str_replace(['-----//', '-----'], '', extract_val('//WHY MISSED//', $notes));
+        $parsed['supervisor'] = str_replace(['-----//', '-----'], '', extract_val('//SUPERVISOR CONTACTED//', $notes));
+        $parsed['outcome'] = str_replace(['-----//', '-----'], '', extract_val('//WHAT WAS TO DECIDED OUTCOME//', $notes));
+        $parsed['complaint'] = str_replace(['-----//', '-----'], '', extract_val('//WHAT IS THE COMPLAINT//', $notes));
+        $parsed['resolution'] = str_replace(['-----//', '-----'], '', extract_val('//WHAT DID YOU DO TO RESOLVE THE ISSUE//', $notes));
+        
+        // Try strict F008 headers first (no slashes), then fallback to standard/legacy
+        $equip = extract_val('DID YOU REPLACE ANY EQUIPMENT', $notes);
+        if ($equip === '') $equip = extract_val('//DID YOU REPLACE ANY EQUIPMENT//', $notes);
+        $parsed['equip_replaced'] = str_replace(['-----//', '-----'], '', $equip);
+
+        $restored = extract_val('IS CUSTOMER SERVICE RESTORED', $notes);
+        if ($restored === '') $restored = extract_val('//IS CUSTOMER SERVICE RESTORED//', $notes);
+        $parsed['service_restored'] = str_replace(['-----//', '-----'], '', $restored);
         $parsed['misc_notes'] = extract_val('//ADDITIONAL WORK NOT LISTED ABOVE//', $notes);
 
         // FALLBACK: If we have notes but parsing yielded nothing (headers mismatch?),
@@ -293,9 +300,9 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                     let el = document.getElementsByName(id)[0];
                     if (el && el.value.trim() !== "") notes += header + "\n" + el.value.trim() + "\n\n";
                 };
-                addField('//WHY MISSED//-----//', 'why_missed');
-                addField('//SUPERVISOR CONTACTED//-----//', 'supervisor');
-                addField('//WHAT WAS TO DECIDED OUTCOME//-----//', 'outcome');
+                addField('//WHY MISSED//', 'why_missed');
+                addField('//SUPERVISOR CONTACTED//', 'supervisor');
+                addField('//WHAT WAS TO DECIDED OUTCOME//', 'outcome');
 
                 let misc = document.getElementById('misc_notes').value;
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
