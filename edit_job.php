@@ -84,6 +84,17 @@ if ($job) {
         $parsed['equip_replaced'] = extract_val('//DID YOU REPLACE ANY EQUIPMENT//-----//', $notes);
         $parsed['service_restored'] = extract_val('//IS CUSTOMER SERVICE RESTORED//-----//', $notes);
         $parsed['misc_notes'] = extract_val('//ADDITIONAL WORK NOT LISTED ABOVE//', $notes);
+
+        // FALLBACK: If we have notes but parsing yielded nothing (headers mismatch?),
+        // put the raw notes into misc_notes to prevent data loss.
+        $has_data = false;
+        foreach ($parsed as $k => $v) {
+            if (!empty($v) && $k !== 'hub_val' && $k !== 'ont_val') $has_data = true;
+        }
+
+        if (!$has_data && !empty(trim($notes))) {
+            $parsed['misc_notes'] = $notes;
+        }
     }
 
     $tici = $job['tici_signal'] ?? '';
@@ -287,7 +298,11 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             let misc = document.getElementById('misc_notes').value;
             if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim();
 
-            if (notes.trim() === "") notes = document.getElementsByName('addtl_work')[0].value;
+            if (notes.trim() === "") {
+                notes = document.getElementsByName('addtl_work')[0].value;
+            } else {
+                document.getElementsByName('addtl_work')[0].value = notes;
+            }
 
             navigator.clipboard.writeText(notes).then(function () {
                 let btn = document.getElementById('copyBtn');

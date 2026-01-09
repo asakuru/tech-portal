@@ -505,6 +505,10 @@ else {
             let misc = document.getElementById('misc_notes').value;
             if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim();
             if (notes.trim() === "") notes = "No specific notes.";
+            
+            // Populate preview
+            document.getElementsByName('addtl_work')[0].value = notes;
+
             navigator.clipboard.writeText(notes).then(function () { alert("Copied!"); });
         }
         // COLLAPSIBLE TRUCK LOG
