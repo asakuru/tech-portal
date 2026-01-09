@@ -33,8 +33,10 @@ if (isset($_GET['q'])) {
                     ticket_number LIKE :t 
                     OR cust_fname LIKE :t 
                     OR cust_lname LIKE :t 
+                    OR CONCAT(COALESCE(cust_fname,''), ' ', COALESCE(cust_lname,'')) LIKE :t
                     OR cust_name LIKE :t 
                     OR cust_street LIKE :t
+                    OR cust_city LIKE :t
                     OR cust_address LIKE :t
                     OR addtl_work LIKE :t
                 )";
