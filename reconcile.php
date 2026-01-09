@@ -103,6 +103,7 @@ $total_fuel = 0;
 // ND still gets per diem, just like Sundays
 $work_dates = [];
 $nd_dates = [];
+$legacy_extra_pd_days = 0; // Extra PD from jobs table (extra_per_diem = 'Yes')
 
 foreach ($local_jobs as $ticket => $job) {
     $jtype = $job['type'];
@@ -114,6 +115,11 @@ foreach ($local_jobs as $ticket => $job) {
         $work_dates[$jdate] = true; // Actual billable work
     }
 }
+
+// Check for legacy extra PD from jobs table
+$stmt = $db->prepare("SELECT COUNT(*) FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND extra_per_diem = 'Yes'");
+$stmt->execute([$_SESSION['user_id'], $start_date, $end_date]);
+$legacy_extra_pd_days = (int) $stmt->fetchColumn();
 
 // Calculate Standard Per Diem:
 // 1. Per diem for each WORK day (billable jobs)
@@ -160,9 +166,10 @@ try {
 } catch (Exception $e) {
 }
 
-// Combine ALL Per Diem into one entry (Standard + Extra from Logs)
-$total_pd_days = $pd_days + $extra_pd_days;
-$total_pd_amount = ($pd_days * $pd_rate) + ($extra_pd_days * ($rates['extra_pd'] ?? 0));
+// Combine ALL Per Diem into one entry (Standard + Extra from Logs + Legacy from Jobs)
+$total_pd_days = $pd_days + $extra_pd_days + $legacy_extra_pd_days;
+$extra_pd_rate = $rates['extra_pd'] ?? 0;
+$total_pd_amount = ($pd_days * $pd_rate) + (($extra_pd_days + $legacy_extra_pd_days) * $extra_pd_rate);
 
 if ($total_pd_days > 0) {
     // We need to manually add this to avoid the rate calculation issue
