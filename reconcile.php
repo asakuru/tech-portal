@@ -189,6 +189,48 @@ $scrub_codes = []; // code => qty
 $comparison_mode = false;
 $code_variance = []; // For display
 
+// Handle CSV Upload
+if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
+    $comparison_mode = true;
+    $handle = fopen($_FILES['scrub_csv']['tmp_name'], "r");
+    $header = fgetcsv($handle);
+
+    // Find column indexes
+    $col_code = -1;
+    $col_qty = -1;
+    foreach ($header as $i => $col) {
+        $c = strtolower(trim($col));
+        if (strpos($c, 'unit code') !== false || strpos($c, 'code') !== false)
+            $col_code = $i;
+        if (strpos($c, 'qty') !== false || strpos($c, 'quantity') !== false)
+            $col_qty = $i;
+    }
+
+    // If no header detected, assume first column is code
+    if ($col_code == -1)
+        $col_code = 0;
+
+    while (($row = fgetcsv($handle)) !== false) {
+        if (!isset($row[$col_code]))
+            continue;
+        $code = strtoupper(trim($row[$col_code]));
+        if (empty($code) || strlen($code) > 20)
+            continue;
+
+        $qty = 1; // Default to 1 if no qty column
+        if ($col_qty > -1 && isset($row[$col_qty])) {
+            $qty = (int) filter_var($row[$col_qty], FILTER_SANITIZE_NUMBER_INT);
+        }
+
+        if ($qty > 0) {
+            $scrub_codes[$code] = ($scrub_codes[$code] ?? 0) + $qty;
+        }
+    }
+    fclose($handle);
+}
+
+// Handle Pasted Text
+
 if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
     $comparison_mode = true;
     $text = $_POST['scrub_text'];
@@ -582,29 +624,29 @@ usort($display_rows, function ($a, $b) {
                             </tr>
                         </thead>
                         <tbody>
-                                <?php foreach ($code_variance as $code => $v):
-                                    $row_bg = '';
-                                    $status_text = '';
-                                    $status_color = '';
+                            <?php foreach ($code_variance as $code => $v):
+                                $row_bg = '';
+                                $status_text = '';
+                                $status_color = '';
 
-                                    if ($v['status'] === 'missing') {
-                                        $row_bg = 'background:#fee2e2;';
-                                        $status_text = 'MISSING';
-                                        $status_color = 'color:#dc2626; font-weight:bold;';
-                                    } elseif ($v['status'] === 'extra') {
-                                        $row_bg = 'background:#dcfce7;';
-                                        $status_text = 'EXTRA';
-                                        $status_color = 'color:#16a34a; font-weight:bold;';
-                                    } elseif ($v['status'] === 'variance') {
-                                        $row_bg = 'background:#fef3c7;';
-                                        $status_text = 'VARIANCE';
-                                        $status_color = 'color:#d97706; font-weight:bold;';
-                                    } else {
-                                        $status_text = '✓ Match';
-                                        $status_color = 'color:#10b981;';
-                                    }
-                                    ?>
-                                        <tr style="<?= $row_bg ?>">
+                                if ($v['status'] === 'missing') {
+                                    $row_bg = 'background:#fee2e2;';
+                                    $status_text = 'MISSING';
+                                    $status_color = 'color:#dc2626; font-weight:bold;';
+                                } elseif ($v['status'] === 'extra') {
+                                    $row_bg = 'background:#dcfce7;';
+                                    $status_text = 'EXTRA';
+                                    $status_color = 'color:#16a34a; font-weight:bold;';
+                                } elseif ($v['status'] === 'variance') {
+                                    $row_bg = 'background:#fef3c7;';
+                                    $status_text = 'VARIANCE';
+                                    $status_color = 'color:#d97706; font-weight:bold;';
+                                } else {
+                                    $status_text = '✓ Match';
+                                    $status_color = 'color:#10b981;';
+                                }
+                                ?>
+                                <tr style="<?= $row_bg ?>">
                                     <td style="font-weight:bold;"><?= htmlspecialchars($code) ?></td>
                                     <td style="font-size:0.85rem;"><?= htmlspecialchars(substr($v['desc'], 0, 40)) ?></td>
                                     <td style="text-align:center; font-weight:bold;"><?= $v['local_qty'] ?></td>
@@ -668,7 +710,7 @@ usort($display_rows, function ($a, $b) {
                                         $scrub_pay = $row['scrub_pay'] ?? 0;
                                         $diff = $row['diff'] ?? 0;
                                         ?>
-                                                    <td class="num"><?= ($scrub_pay != 0) ? number_format($scrub_pay, 2) : '-' ?>
+                                        <td class="num"><?= ($scrub_pay != 0) ? number_format($scrub_pay, 2) : '-' ?>
                                         </td>
                                         <td class="num" style="color:<?= $diff >= 0 ? '#10b981' : '#ef4444' ?>;">
                                             <?= ($diff != 0) ? number_format($diff, 2) : '-' ?>
