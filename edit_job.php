@@ -333,7 +333,7 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 let drop = getVal('drop_length'); if(drop) techNotes += "Drop: " + drop + "'\n";
                 let jacks = getVal('jacks_installed'); if(jacks) techNotes += "Jacks: " + jacks + "\n";
                 
-                let path = document.getElementsByName('path_notes')[0].value.trim();
+                let path = getVal('path_notes');
                 if(path) techNotes += "Path: " + path + "\n";
 
                 if (techNotes !== "") {
