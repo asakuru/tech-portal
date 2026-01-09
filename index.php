@@ -492,10 +492,11 @@ else {
         function copyNotes() {
             let notes = "";
             let t = document.getElementById('install_type').value;
-            let isSimple = (t === 'F009' || t === 'F011' || t === 'F008');
+            let isMissed = (t === 'F009' || t === 'F011');
+            let isRepair = (t === 'F008');
 
-            if (isSimple) {
-                // OLD FORMAT for simple/missed/repair jobs
+            if (isMissed) {
+                // F009/F011 MISSED/SIMPLE FORMAT
                 let addField = (header, name) => {
                     let el = document.getElementsByName(name)[0];
                     if (el && el.value.trim() !== "") notes += header + "\n" + el.value.trim() + "\n\n";
@@ -503,11 +504,24 @@ else {
                 addField('//WHY MISSED//-----//', 'why_missed');
                 addField('//SUPERVISOR CONTACTED//-----//', 'supervisor');
                 addField('//WHAT WAS TO DECIDED OUTCOME//-----//', 'outcome');
-                addField('//WHAT IS THE COMPLAINT//-----//', 'complaint');
-                addField('//WHAT DID YOU DO TO RESOLVE THE ISSUE//-----//', 'resolution');
-                addField('//DID YOU REPLACE ANY EQUIPMENT//-----//', 'equip_replaced');
-                addField('//IS CUSTOMER SERVICE RESTORED//-----//', 'service_restored');
                 
+                let misc = document.getElementById('misc_notes').value;
+                if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
+            } else if (isRepair) {
+                // F008 REPAIR SPECIFIC FORMAT
+                let addField = (header, name) => {
+                    let el = document.getElementsByName(name)[0];
+                    if (el && el.value.trim() !== "") notes += header + "\n" + el.value.trim() + "\n\n";
+                };
+                
+                addField('//WHAT IS THE COMPLAINT//-----//', 'complaint');
+                // Resolution usually goes with complaint or restored, but if filled we show it
+                addField('//WHAT DID YOU DO TO RESOLVE THE ISSUE//-----//', 'resolution');
+                
+                // User requested specific headers without leading // for these two
+                addField('DID YOU REPLACE ANY EQUIPMENT//-----//', 'equip_replaced');
+                addField('IS CUSTOMER SERVICE RESTORED//-----//', 'service_restored');
+
                 let misc = document.getElementById('misc_notes').value;
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
             } else {
