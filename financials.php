@@ -180,13 +180,17 @@ foreach ($active_weeks_by_user as $uid => $weeks) {
 $total_std_pd = 0;
 $total_extra_pd = 0;
 
-// Track weeks with billable work and all work dates
+// Track weeks with billable work, work dates, and ND dates
 $work_dates = [];
+$nd_dates = [];
 $weeks_with_work = [];
 
 foreach ($all_jobs as $j) {
     $jdate = $j['install_date'];
-    if ($j['install_type'] !== 'DO' && $j['install_type'] !== 'ND') {
+    if ($j['install_type'] === 'ND') {
+        // ND (Not Designated) still gets per diem, just not "billable work"
+        $nd_dates[$jdate] = true;
+    } elseif ($j['install_type'] !== 'DO') {
         $work_dates[$jdate] = true;
         // Track the week (Sunday of that week)
         $day_of_week = date('w', strtotime($jdate));
@@ -209,6 +213,20 @@ foreach ($work_dates as $wdate => $val) {
     $breakdown_data[$key]['pd'] += $std_pd_rate;
 }
 
+// Add per diem for ND (Not Designated) days
+foreach ($nd_dates as $ndate => $val) {
+    $total_std_pd += $std_pd_rate;
+
+    // Add PD to breakdown using helper functions
+    $key = getBreakdownKey($ndate, $view);
+    $label = getBreakdownLabel($ndate, $view);
+
+    if (!isset($breakdown_data[$key])) {
+        $breakdown_data[$key] = ['label' => $label, 'work' => 0, 'pd' => 0, 'miles' => 0, 'fuel' => 0];
+    }
+    $breakdown_data[$key]['pd'] += $std_pd_rate;
+}
+
 // Add per diem for ALL Sundays in the date range
 $current_sunday = $start_date;
 // Find first Sunday in range
@@ -217,8 +235,8 @@ while (date('N', strtotime($current_sunday)) != 7) {
 }
 // Iterate through all Sundays
 while ($current_sunday <= $end_date) {
-    // Only add if not already a work day (avoid double-counting)
-    if (!isset($work_dates[$current_sunday])) {
+    // Only add if not already a work day or ND day (avoid double-counting)
+    if (!isset($work_dates[$current_sunday]) && !isset($nd_dates[$current_sunday])) {
         $total_std_pd += $std_pd_rate;
 
         // Add PD to breakdown using helper functions
