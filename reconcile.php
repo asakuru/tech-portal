@@ -555,13 +555,19 @@ usort($display_rows, function ($a, $b) {
             <?php endif; ?>
 
             <?php if ($comparison_mode && !empty($code_variance)): ?>
-                <h3 style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000; border-bottom:2px solid #000; padding-bottom:5px;">
+                <h3
+                    style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000; border-bottom:2px solid #000; padding-bottom:5px;">
                     📊 Code Comparison
                 </h3>
                 <div style="margin-bottom:15px; font-size:0.85rem;">
-                    <span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; margin-right:10px;">🔴 Missing (In DB, Not in Scrub)</span>
-                    <span style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; margin-right:10px;">🟢 Extra (In Scrub, Not in DB)</span>
-                    <span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px;">🟡 Qty Variance</span>
+                    <span
+                        style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; margin-right:10px;">🔴
+                        Missing (In DB, Not in Scrub)</span>
+                    <span
+                        style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; margin-right:10px;">🟢
+                        Extra (In Scrub, Not in DB)</span>
+                    <span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px;">🟡 Qty
+                        Variance</span>
                 </div>
                 <div class="table-wrap">
                     <table class="summary-table" style="margin-bottom:20px;">
@@ -576,36 +582,36 @@ usort($display_rows, function ($a, $b) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($code_variance as $code => $v): 
-                                $row_bg = '';
-                                $status_text = '';
-                                $status_color = '';
-                                
-                                if ($v['status'] === 'missing') {
-                                    $row_bg = 'background:#fee2e2;';
-                                    $status_text = 'MISSING';
-                                    $status_color = 'color:#dc2626; font-weight:bold;';
-                                } elseif ($v['status'] === 'extra') {
-                                    $row_bg = 'background:#dcfce7;';
-                                    $status_text = 'EXTRA';
-                                    $status_color = 'color:#16a34a; font-weight:bold;';
-                                } elseif ($v['status'] === 'variance') {
-                                    $row_bg = 'background:#fef3c7;';
-                                    $status_text = 'VARIANCE';
-                                    $status_color = 'color:#d97706; font-weight:bold;';
-                                } else {
-                                    $status_text = '✓ Match';
-                                    $status_color = 'color:#10b981;';
-                                }
-                            ?>
-                            <tr style="<?= $row_bg ?>">
-                                <td style="font-weight:bold;"><?= htmlspecialchars($code) ?></td>
-                                <td style="font-size:0.85rem;"><?= htmlspecialchars(substr($v['desc'], 0, 40)) ?></td>
-                                <td style="text-align:center; font-weight:bold;"><?= $v['local_qty'] ?></td>
-                                <td style="text-align:center; font-weight:bold;"><?= $v['scrub_qty'] ?></td>
-                                <td class="num">$<?= number_format($v['local_total'], 2) ?></td>
-                                <td style="<?= $status_color ?>"><?= $status_text ?></td>
-                            </tr>
+                                <?php foreach ($code_variance as $code => $v):
+                                    $row_bg = '';
+                                    $status_text = '';
+                                    $status_color = '';
+
+                                    if ($v['status'] === 'missing') {
+                                        $row_bg = 'background:#fee2e2;';
+                                        $status_text = 'MISSING';
+                                        $status_color = 'color:#dc2626; font-weight:bold;';
+                                    } elseif ($v['status'] === 'extra') {
+                                        $row_bg = 'background:#dcfce7;';
+                                        $status_text = 'EXTRA';
+                                        $status_color = 'color:#16a34a; font-weight:bold;';
+                                    } elseif ($v['status'] === 'variance') {
+                                        $row_bg = 'background:#fef3c7;';
+                                        $status_text = 'VARIANCE';
+                                        $status_color = 'color:#d97706; font-weight:bold;';
+                                    } else {
+                                        $status_text = '✓ Match';
+                                        $status_color = 'color:#10b981;';
+                                    }
+                                    ?>
+                                        <tr style="<?= $row_bg ?>">
+                                    <td style="font-weight:bold;"><?= htmlspecialchars($code) ?></td>
+                                    <td style="font-size:0.85rem;"><?= htmlspecialchars(substr($v['desc'], 0, 40)) ?></td>
+                                    <td style="text-align:center; font-weight:bold;"><?= $v['local_qty'] ?></td>
+                                    <td style="text-align:center; font-weight:bold;"><?= $v['scrub_qty'] ?></td>
+                                    <td class="num">$<?= number_format($v['local_total'], 2) ?></td>
+                                    <td style="<?= $status_color ?>"><?= $status_text ?></td>
+                                </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
@@ -640,13 +646,14 @@ usort($display_rows, function ($a, $b) {
                         <?php else: ?>
                             <?php foreach ($display_rows as $row):
                                 $st_class = '';
-                                if ($row['status'] == 'Match')
+                                $row_status = $row['status'] ?? '';
+                                if ($row_status == 'Match')
                                     $st_class = 'st-match';
-                                if ($row['status'] == 'Variance')
+                                if ($row_status == 'Variance')
                                     $st_class = 'st-var';
-                                if ($row['status'] == 'Missing')
+                                if ($row_status == 'Missing')
                                     $st_class = 'st-miss';
-                                if ($row['status'] == 'Extra')
+                                if ($row_status == 'Extra')
                                     $st_class = 'st-extra';
                                 ?>
                                 <tr>
@@ -657,13 +664,17 @@ usort($display_rows, function ($a, $b) {
                                     <td class="num"><?= ($row['pay'] > 0) ? number_format($row['pay'], 2) : '-' ?></td>
 
                                     <?php if ($comparison_mode): ?>
-                                        <td class="num"><?= ($row['scrub_pay'] != 0) ? number_format($row['scrub_pay'], 2) : '-' ?>
+                                        <?php
+                                        $scrub_pay = $row['scrub_pay'] ?? 0;
+                                        $diff = $row['diff'] ?? 0;
+                                        ?>
+                                                    <td class="num"><?= ($scrub_pay != 0) ? number_format($scrub_pay, 2) : '-' ?>
                                         </td>
-                                        <td class="num" style="color:<?= $row['diff'] >= 0 ? '#10b981' : '#ef4444' ?>;">
-                                            <?= ($row['diff'] != 0) ? number_format($row['diff'], 2) : '-' ?>
+                                        <td class="num" style="color:<?= $diff >= 0 ? '#10b981' : '#ef4444' ?>;">
+                                            <?= ($diff != 0) ? number_format($diff, 2) : '-' ?>
                                         </td>
                                         <td style="padding-left:10px;" class="<?= htmlspecialchars($st_class) ?>">
-                                            <?= htmlspecialchars($row['status']) ?>
+                                            <?= htmlspecialchars($row_status) ?>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
