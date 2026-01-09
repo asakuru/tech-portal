@@ -25,39 +25,52 @@ if (isset($_GET['q'])) {
     $term = trim($_GET['q']);
     if (strlen($term) > 0) {
 
-        // Search Logic: Looks at Ticket, First Name, Last Name, Old Name, Street, Old Address, and Notes
+        // Search Logic: Unique bindings to prevent PDO driver issues
         $search_str = "%$term%";
+        $params = [];
+        $clauses = [];
+        
+        // Helper to add clause
+        $bind_idx = 0;
+        $addClause = function($col) use (&$clauses, &$params, &$bind_idx, $search_str) {
+            $bind_idx++;
+            $key = ":t$bind_idx";
+            $clauses[] = "$col LIKE $key";
+            $params[$key] = $search_str;
+        };
 
-        $sql = "SELECT * FROM jobs 
-                WHERE (
-                    ticket_number LIKE :t 
-                    OR cust_fname LIKE :t 
-                    OR cust_lname LIKE :t 
-                    OR CONCAT(COALESCE(cust_fname,''), ' ', COALESCE(cust_lname,'')) LIKE :t
-                    OR cust_name LIKE :t 
-                    OR cust_street LIKE :t
-                    OR cust_city LIKE :t
-                    OR cust_address LIKE :t
-                    OR addtl_work LIKE :t
-                )";
+        $addClause("ticket_number");
+        $addClause("cust_fname");
+        $addClause("cust_lname");
+        // Full Name Check (MySQL optimized, ensure DB supports CONCAT)
+        $bind_idx++;
+        $key = ":t$bind_idx";
+        $clauses[] = "CONCAT(COALESCE(cust_fname,''), ' ', COALESCE(cust_lname,'')) LIKE $key";
+        $params[$key] = $search_str;
+        
+        $addClause("cust_name");
+        $addClause("cust_street");
+        $addClause("cust_city");
+        $addClause("cust_address");
+        $addClause("addtl_work");
+
+        $sql = "SELECT * FROM jobs WHERE (" . implode(" OR ", $clauses) . ")";
 
         // Restrict to User unless Admin
         if (!$is_admin) {
             $sql .= " AND user_id = :uid";
+            $params[':uid'] = $user_id;
         }
 
         $sql .= " ORDER BY install_date DESC LIMIT 50";
 
         try {
             $stmt = $db->prepare($sql);
-            $params = [':t' => $search_str];
-            if (!$is_admin) {
-                $params[':uid'] = $user_id;
-            }
-
             $stmt->execute($params);
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) { /* Ignore errors */
+        } catch (Exception $e) { 
+            // Reveal error for debugging
+            echo "<div class='alert' style='background:var(--danger-bg); color:var(--danger-text);'>Search Error: " . htmlspecialchars($e->getMessage()) . "</div>";
         }
     }
 }
