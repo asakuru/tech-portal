@@ -57,10 +57,14 @@ if (isset($_GET['q'])) {
         $clauses[] = "$concat_sql LIKE $key";
         $params[$key] = $search_str;
         
-        $addClause("cust_name");
+        // Legacy Fields (Only check if NOT SQLite, assuming Prod/MySQL has them, or remove entirely if unused)
+        if (!$is_sqlite) {
+            $addClause("cust_name");
+            $addClause("cust_address");
+        }
+
         $addClause("cust_street");
         $addClause("cust_city");
-        $addClause("cust_address");
         $addClause("addtl_work");
 
         $sql = "SELECT * FROM jobs WHERE (" . implode(" OR ", $clauses) . ")";
