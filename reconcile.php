@@ -245,38 +245,43 @@ if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
         if (stripos($line, 'Unit Code') !== false || stripos($line, 'Unit Description') !== false)
             continue;
 
-        // Pattern: CODE at start, followed by description, then optional QTY number
-        // Examples: "F002", "F014-1", "1-F014-5", "Per Diem"
-        // We look for: CODE (words/dash), then skip description, find a standalone number (qty)
-
-        // Try to match lines like: "F002  INSTALL FIOS...  2  SO  $110.00  $220.00"
-        // Or: "F001  INSTALL FIOS...  SO  $154.00  $0.00" (no qty = 0)
-        // Or: "Per Diem  8  FT  $125.00  $1,000.00"
-
-        $parts = preg_split('/\s{2,}/', $line); // Split by 2+ spaces
-        if (count($parts) < 2)
-            continue;
-
+        // Parse tab-separated or multi-space separated data
+        // Columns: Unit Code | Unit Description | QTY | UOM | SUB RATES | Sub Total
+        
+        // Try tab-separated first
+        if (strpos($line, "\t") !== false) {
+            $parts = explode("\t", $line);
+        } else {
+            // Fallback to 2+ spaces
+            $parts = preg_split('/\s{2,}/', $line);
+        }
+        
+        if (count($parts) < 2) continue;
+        
+        // First column is always the code
         $code = trim($parts[0]);
-
-        // Skip if code looks invalid (too long, no letters)
-        if (strlen($code) > 20 || !preg_match('/[A-Z]/i', $code))
+        
+        // Skip if code looks invalid (too long, no letters, is a number, or looks like money)
+        if (strlen($code) > 25 || !preg_match('/[A-Z]/i', $code) || preg_match('/^\$/', $code))
             continue;
-
-        // Try to find QTY - it's usually the first standalone number after the description
+        
+        // Find QTY: it's the first pure integer in the parts (after code and description)
         $qty = 0;
         foreach ($parts as $idx => $part) {
-            if ($idx == 0)
-                continue; // Skip code
+            if ($idx == 0) continue; // Skip code
             $part = trim($part);
-            // If it's a pure integer (qty), capture it
+            // Skip empty parts
+            if (empty($part)) continue;
+            // If it's a pure integer (not a price), that's QTY
             if (preg_match('/^(\d+)$/', $part, $m)) {
                 $qty = (int) $m[1];
                 break;
             }
+            // If we hit a price (starts with $), stop looking
+            if (preg_match('/^\$/', $part)) break;
         }
 
-        // Normalize code: handle prefixes like "1-F014-5" => "1-F014-5"
+        // Normalize code to uppercase
         $code = strtoupper($code);
 
         // Only add if qty > 0 (items with qty 0 don't matter)
