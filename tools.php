@@ -30,6 +30,10 @@ if (isset($_GET['q'])) {
         $params = [];
         $clauses = [];
         
+        // Detect Driver for Compatibility (SQLite uses ||, MySQL uses CONCAT)
+        $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $is_sqlite = ($driver === 'sqlite');
+        
         // Helper to add clause
         $bind_idx = 0;
         $addClause = function($col) use (&$clauses, &$params, &$bind_idx, $search_str) {
@@ -42,10 +46,15 @@ if (isset($_GET['q'])) {
         $addClause("ticket_number");
         $addClause("cust_fname");
         $addClause("cust_lname");
-        // Full Name Check (MySQL optimized, ensure DB supports CONCAT)
+        
+        // Full Name Check (Driver Aware)
         $bind_idx++;
         $key = ":t$bind_idx";
-        $clauses[] = "CONCAT(COALESCE(cust_fname,''), ' ', COALESCE(cust_lname,'')) LIKE $key";
+        $concat_sql = $is_sqlite 
+            ? "(COALESCE(cust_fname,'') || ' ' || COALESCE(cust_lname,''))" 
+            : "CONCAT(COALESCE(cust_fname,''), ' ', COALESCE(cust_lname,''))";
+            
+        $clauses[] = "$concat_sql LIKE $key";
         $params[$key] = $search_str;
         
         $addClause("cust_name");
