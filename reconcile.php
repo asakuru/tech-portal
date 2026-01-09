@@ -160,14 +160,17 @@ try {
 } catch (Exception $e) {
 }
 
-// Standard PD
-if ($pd_days > 0) {
-    addToTally($code_tally, 'Per Diem', $pd_days, $pd_rate, 'Standard Per Diem (Work Days + ND + Sun)');
-}
-// Extra PD (from Logs)
-if ($extra_pd_days > 0) {
-    $r = $rates['extra_pd'] ?? 0;
-    addToTally($code_tally, 'Extra PD', $extra_pd_days, $r, 'Extra Per Diem (Day Log)');
+// Combine ALL Per Diem into one entry (Standard + Extra from Logs)
+$total_pd_days = $pd_days + $extra_pd_days;
+$total_pd_amount = ($pd_days * $pd_rate) + ($extra_pd_days * ($rates['extra_pd'] ?? 0));
+
+if ($total_pd_days > 0) {
+    // We need to manually add this to avoid the rate calculation issue
+    if (!isset($code_tally['PER DIEM'])) {
+        $code_tally['PER DIEM'] = ['desc' => 'Per Diem (All Types Combined)', 'count' => 0, 'rate' => 0, 'total' => 0];
+    }
+    $code_tally['PER DIEM']['count'] = $total_pd_days;
+    $code_tally['PER DIEM']['total'] = $total_pd_amount;
 }
 
 // C. LEAD PAY
@@ -193,7 +196,7 @@ $code_variance = []; // For display
 if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
     $comparison_mode = true;
     $handle = fopen($_FILES['scrub_csv']['tmp_name'], "r");
-    
+
     // Skip empty rows to find the header
     $header = null;
     while (($row = fgetcsv($handle)) !== false) {
@@ -204,11 +207,11 @@ if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
             break;
         }
     }
-    
+
     // Find column indexes from header
     $col_code = 0;  // Default to first column
     $col_qty = 5;   // Default based on example (index 5)
-    
+
     if ($header) {
         foreach ($header as $i => $col) {
             $c = strtolower(trim($col));
@@ -218,7 +221,7 @@ if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
                 $col_qty = $i;
         }
     }
-    
+
     // Read data rows
     while (($row = fgetcsv($handle)) !== false) {
         // Get code - try column 0 first, then column 1 (for "Per Diem")
@@ -229,19 +232,41 @@ if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
             // Check column 1 for things like "Per Diem"
             $code = strtoupper(trim($row[1]));
         }
-        
+
+        // Check entire row for "Tech Pay" mention (it's usually at the bottom)
+        $row_str = implode(' ', $row);
+        if (stripos($row_str, 'Tech Pay') !== false || stripos($row_str, 'triage') !== false) {
+            // Extract the dollar amount from this row
+            if (preg_match('/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/', $row_str, $m)) {
+                $tech_pay_amount = (float) str_replace(',', '', $m[1]);
+                if ($tech_pay_amount > 0) {
+                    $scrub_codes['LEAD-PAY'] = 1; // Mark as 1 occurrence
+                }
+            }
+            continue; // Don't process this row further
+        }
+
         // Skip invalid codes (empty, too long, is a price, is just numbers)
-        if (empty($code) || strlen($code) > 25) continue;
-        if (preg_match('/^\$/', $code)) continue;
-        if (preg_match('/^[\d,\.]+$/', $code)) continue;
-        if (stripos($code, 'TOTAL') !== false) continue;
-        
+        if (empty($code) || strlen($code) > 25)
+            continue;
+        if (preg_match('/^\$/', $code))
+            continue;
+        if (preg_match('/^[\d,\.]+$/', $code))
+            continue;
+        if (stripos($code, 'TOTAL') !== false)
+            continue;
+
+        // Normalize "Per Diem" to "PER DIEM" to match local tally
+        if ($code === 'PER DIEM' || stripos($code, 'per diem') !== false) {
+            $code = 'PER DIEM';
+        }
+
         // Get QTY from the correct column
         $qty = 0;
         if (isset($row[$col_qty])) {
             $qty = (int) filter_var($row[$col_qty], FILTER_SANITIZE_NUMBER_INT);
         }
-        
+
         // Only add if qty > 0
         if ($qty > 0) {
             $scrub_codes[$code] = ($scrub_codes[$code] ?? 0) + $qty;
@@ -266,9 +291,21 @@ if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
         if (stripos($line, 'Unit Code') !== false || stripos($line, 'Unit Description') !== false)
             continue;
 
+        // Check for "Tech Pay" mention (it's usually at the bottom)
+        if (stripos($line, 'Tech Pay') !== false || stripos($line, 'triage') !== false) {
+            // Extract the dollar amount from this line
+            if (preg_match('/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/', $line, $m)) {
+                $tech_pay_amount = (float) str_replace(',', '', $m[1]);
+                if ($tech_pay_amount > 0) {
+                    $scrub_codes['LEAD-PAY'] = 1; // Mark as 1 occurrence
+                }
+            }
+            continue; // Don't process this line further
+        }
+
         // Parse tab-separated or multi-space separated data
         // Columns: Unit Code | Unit Description | QTY | UOM | SUB RATES | Sub Total
-        
+
         // Try tab-separated first
         if (strpos($line, "\t") !== false) {
             $parts = explode("\t", $line);
@@ -276,34 +313,43 @@ if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
             // Fallback to 2+ spaces
             $parts = preg_split('/\s{2,}/', $line);
         }
-        
-        if (count($parts) < 2) continue;
-        
+
+        if (count($parts) < 2)
+            continue;
+
         // First column is always the code
         $code = trim($parts[0]);
-        
+
         // Skip if code looks invalid (too long, no letters, is a number, or looks like money)
         if (strlen($code) > 25 || !preg_match('/[A-Z]/i', $code) || preg_match('/^\$/', $code))
             continue;
-        
+
         // Find QTY: it's the first pure integer in the parts (after code and description)
         $qty = 0;
         foreach ($parts as $idx => $part) {
-            if ($idx == 0) continue; // Skip code
+            if ($idx == 0)
+                continue; // Skip code
             $part = trim($part);
             // Skip empty parts
-            if (empty($part)) continue;
+            if (empty($part))
+                continue;
             // If it's a pure integer (not a price), that's QTY
             if (preg_match('/^(\d+)$/', $part, $m)) {
                 $qty = (int) $m[1];
                 break;
             }
             // If we hit a price (starts with $), stop looking
-            if (preg_match('/^\$/', $part)) break;
+            if (preg_match('/^\$/', $part))
+                break;
         }
 
         // Normalize code to uppercase
         $code = strtoupper($code);
+
+        // Normalize "Per Diem" to "PER DIEM" to match local tally
+        if ($code === 'PER DIEM' || stripos($code, 'per diem') !== false) {
+            $code = 'PER DIEM';
+        }
 
         // Only add if qty > 0 (items with qty 0 don't matter)
         if ($qty > 0) {
@@ -319,7 +365,7 @@ if ($comparison_mode) {
     foreach ($code_tally as $code => $data) {
         $normalized_code_tally[strtoupper($code)] = $data;
     }
-    
+
     // Compare local tally against scrub codes
     foreach ($normalized_code_tally as $code => $data) {
         $local_qty = $data['count'];
