@@ -503,7 +503,53 @@ else {
             addField('//DID YOU REPLACE ANY EQUIPMENT//-----//', 'equip_replaced');
             addField('//IS CUSTOMER SERVICE RESTORED//-----//', 'service_restored');
             let misc = document.getElementById('misc_notes').value;
-            if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim();
+            if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
+
+            // Add Tech Specs if present
+            let addSpec = (label, name) => {
+                let el = document.getElementsByName(name)[0];
+                if (el && el.value.trim() !== "") notes += label + ": " + el.value.trim() + "\n";
+            }
+            if (!document.getElementById('groupTechStandard').style.display || document.getElementById('groupTechStandard').style.display !== 'none') {
+                let initialLength = notes.length;
+                let techNotes = "";
+                
+                // Capture check boxes
+                let checks = ['nid_installed', 'copper_removed', 'exterior_sealed', 'unbreakable_wifi', 'whole_home_wifi', 'cust_education', 'phone_test'];
+                let checkLabels = ['NID Installed', 'Copper Removed', 'Exterior Sealed', 'Unbreakable WiFi', 'Whole Home WiFi', 'Cust Education', 'Phone Test'];
+                let checkStr = [];
+                checks.forEach((n, i) => {
+                   let el = document.getElementsByName(n)[0];
+                   if(el && el.checked) checkStr.push(checkLabels[i]); 
+                });
+                if(checkStr.length > 0) techNotes += "Completed: " + checkStr.join(', ') + "\n";
+
+                // helper for temp string
+                let getVal = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.value.trim()!=='') ? el.value.trim() : null; };
+                
+                let ont = getVal('ont_serial'); if(ont) techNotes += "ONT: " + ont + "\n";
+                let eeros = getVal('eeros_serial'); if(eeros) techNotes += "Router: " + eeros + "\n";
+                let wifi = getVal('wifi_name'); if(wifi) techNotes += "WiFi: " + wifi;
+                let pass = getVal('wifi_pass'); if(pass) techNotes += " / " + pass + "\n";
+                else if(wifi) techNotes += "\n";
+                
+                let hub = getVal('tici_hub');
+                let ont_sig = getVal('tici_ont');
+                if(hub || ont_sig) techNotes += "Light Levels: HUB " + (hub||'--') + " / ONT " + (ont_sig||'--') + "\n";
+                
+                let spans = getVal('spans'); if(spans) techNotes += "Spans: " + spans + "\n";
+                let drop = getVal('drop_length'); if(drop) techNotes += "Drop: " + drop + "'\n";
+                let jacks = getVal('jacks_installed'); if(jacks) techNotes += "Jacks: " + jacks + "\n";
+                
+                let path = document.getElementsByName('path_notes')[0].value.trim();
+                if(path) techNotes += "Path: " + path + "\n";
+
+                if (techNotes !== "") {
+                    notes += "//TECH SPECS//\n" + techNotes;
+                }
+            }
+            
+            notes = notes.trim();
             if (notes.trim() === "") notes = "No specific notes.";
             
             // Populate preview
