@@ -404,37 +404,7 @@ else {
     <title>Tech Portal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
-    <style>
-        .grow-wrap {
-            width: 100%;
-            box-sizing: border-box;
-        }
 
-        .grow-wrap textarea {
-            width: 100%;
-            overflow: hidden;
-            resize: none;
-            min-height: 40px;
-            padding: 10px;
-            border: 1px solid var(--border);
-            background: var(--bg-input);
-            color: var(--text-main);
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 1rem;
-            line-height: 1.4;
-            transition: height 0.1s ease;
-        }
-
-        .grow-wrap textarea:focus {
-            border-color: var(--primary);
-            outline: none;
-        }
-
-        .spacer {
-            margin-bottom: 15px;
-        }
-    </style>
     <script>
         function autoResize(el) {
             el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px';
