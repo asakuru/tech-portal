@@ -193,35 +193,56 @@ $code_variance = []; // For display
 if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
     $comparison_mode = true;
     $handle = fopen($_FILES['scrub_csv']['tmp_name'], "r");
-    $header = fgetcsv($handle);
-
-    // Find column indexes
-    $col_code = -1;
-    $col_qty = -1;
-    foreach ($header as $i => $col) {
-        $c = strtolower(trim($col));
-        if (strpos($c, 'unit code') !== false || strpos($c, 'code') !== false)
-            $col_code = $i;
-        if (strpos($c, 'qty') !== false || strpos($c, 'quantity') !== false)
-            $col_qty = $i;
-    }
-
-    // If no header detected, assume first column is code
-    if ($col_code == -1)
-        $col_code = 0;
-
+    
+    // Skip empty rows to find the header
+    $header = null;
     while (($row = fgetcsv($handle)) !== false) {
-        if (!isset($row[$col_code]))
-            continue;
-        $code = strtoupper(trim($row[$col_code]));
-        if (empty($code) || strlen($code) > 20)
-            continue;
-
-        $qty = 1; // Default to 1 if no qty column
-        if ($col_qty > -1 && isset($row[$col_qty])) {
+        // Look for a row containing "Unit Code" or "QTY"
+        $row_str = implode('', $row);
+        if (stripos($row_str, 'Unit Code') !== false || stripos($row_str, 'QTY') !== false) {
+            $header = $row;
+            break;
+        }
+    }
+    
+    // Find column indexes from header
+    $col_code = 0;  // Default to first column
+    $col_qty = 5;   // Default based on example (index 5)
+    
+    if ($header) {
+        foreach ($header as $i => $col) {
+            $c = strtolower(trim($col));
+            if ($c === 'unit code' || strpos($c, 'unit code') !== false)
+                $col_code = $i;
+            if ($c === 'qty' || $c === 'quantity')
+                $col_qty = $i;
+        }
+    }
+    
+    // Read data rows
+    while (($row = fgetcsv($handle)) !== false) {
+        // Get code - try column 0 first, then column 1 (for "Per Diem")
+        $code = '';
+        if (isset($row[$col_code]) && !empty(trim($row[$col_code]))) {
+            $code = strtoupper(trim($row[$col_code]));
+        } elseif (isset($row[1]) && !empty(trim($row[1]))) {
+            // Check column 1 for things like "Per Diem"
+            $code = strtoupper(trim($row[1]));
+        }
+        
+        // Skip invalid codes (empty, too long, is a price, is just numbers)
+        if (empty($code) || strlen($code) > 25) continue;
+        if (preg_match('/^\$/', $code)) continue;
+        if (preg_match('/^[\d,\.]+$/', $code)) continue;
+        if (stripos($code, 'TOTAL') !== false) continue;
+        
+        // Get QTY from the correct column
+        $qty = 0;
+        if (isset($row[$col_qty])) {
             $qty = (int) filter_var($row[$col_qty], FILTER_SANITIZE_NUMBER_INT);
         }
-
+        
+        // Only add if qty > 0
         if ($qty > 0) {
             $scrub_codes[$code] = ($scrub_codes[$code] ?? 0) + $qty;
         }
