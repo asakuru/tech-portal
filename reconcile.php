@@ -184,93 +184,113 @@ ksort($code_tally);
 
 $net_profit = $grand_total_tally - $total_fuel;
 
-// --- 3. HANDLE COMPARISON ---
-$scrub_data = [];
+// --- 3. HANDLE CODE-BASED COMPARISON ---
+$scrub_codes = []; // code => qty
 $comparison_mode = false;
-$stats = ['matches' => 0, 'variance_count' => 0, 'variance_amt' => 0.00];
-
-if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
-    $comparison_mode = true;
-    $handle = fopen($_FILES['scrub_csv']['tmp_name'], "r");
-    $header = fgetcsv($handle);
-    $col_ticket = 0;
-    $col_pay = -1;
-    foreach ($header as $i => $col) {
-        $c = strtolower($col);
-        if (strpos($c, 'ticket') !== false || strpos($c, 'order') !== false)
-            $col_ticket = $i;
-        if (strpos($c, 'amount') !== false || strpos($c, 'pay') !== false || strpos($c, 'total') !== false)
-            $col_pay = $i;
-    }
-    while (($row = fgetcsv($handle)) !== false) {
-        if (!isset($row[$col_ticket]))
-            continue;
-        $t = trim($row[$col_ticket]);
-        if (empty($t))
-            continue;
-        $p = 0.00;
-        if ($col_pay > -1 && isset($row[$col_pay])) {
-            $p = (float) filter_var($row[$col_pay], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        }
-        $scrub_data[$t] = $p;
-    }
-    fclose($handle);
-}
+$code_variance = []; // For display
 
 if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
     $comparison_mode = true;
     $text = $_POST['scrub_text'];
     $lines = explode("\n", $text);
+
     foreach ($lines as $line) {
         $line = trim($line);
         if (empty($line))
             continue;
-        if (preg_match('/(NY\d+|PA\d+|[A-Z]{2,3}\d{7,})/', $line, $m)) {
-            $ticket = $m[1];
-            if (preg_match_all('/\$?(\d{1,3}(?:,\d{3})*\.\d{2})/', $line, $prices)) {
-                $last_price = end($prices[1]);
-                $p = (float) str_replace(',', '', $last_price);
-                $scrub_data[$ticket] = $p;
+
+        // Skip header row
+        if (stripos($line, 'Unit Code') !== false || stripos($line, 'Unit Description') !== false)
+            continue;
+
+        // Pattern: CODE at start, followed by description, then optional QTY number
+        // Examples: "F002", "F014-1", "1-F014-5", "Per Diem"
+        // We look for: CODE (words/dash), then skip description, find a standalone number (qty)
+
+        // Try to match lines like: "F002  INSTALL FIOS...  2  SO  $110.00  $220.00"
+        // Or: "F001  INSTALL FIOS...  SO  $154.00  $0.00" (no qty = 0)
+        // Or: "Per Diem  8  FT  $125.00  $1,000.00"
+
+        $parts = preg_split('/\s{2,}/', $line); // Split by 2+ spaces
+        if (count($parts) < 2)
+            continue;
+
+        $code = trim($parts[0]);
+
+        // Skip if code looks invalid (too long, no letters)
+        if (strlen($code) > 20 || !preg_match('/[A-Z]/i', $code))
+            continue;
+
+        // Try to find QTY - it's usually the first standalone number after the description
+        $qty = 0;
+        foreach ($parts as $idx => $part) {
+            if ($idx == 0)
+                continue; // Skip code
+            $part = trim($part);
+            // If it's a pure integer (qty), capture it
+            if (preg_match('/^(\d+)$/', $part, $m)) {
+                $qty = (int) $m[1];
+                break;
             }
+        }
+
+        // Normalize code: handle prefixes like "1-F014-5" => "1-F014-5"
+        $code = strtoupper($code);
+
+        // Only add if qty > 0 (items with qty 0 don't matter)
+        if ($qty > 0) {
+            $scrub_codes[$code] = ($scrub_codes[$code] ?? 0) + $qty;
         }
     }
 }
 
-// --- 4. MERGE ---
-$display_rows = [];
-foreach ($local_jobs as $ticket => $job) {
-    $row = $job;
-    $row['scrub_pay'] = 0;
-    $row['status'] = '';
-    $row['diff'] = 0;
-    if ($comparison_mode) {
-        if (isset($scrub_data[$ticket])) {
-            $row['scrub_pay'] = $scrub_data[$ticket];
-            $row['diff'] = $row['scrub_pay'] - $row['pay'];
-            unset($scrub_data[$ticket]);
-            if (abs($row['diff']) < 0.01) {
-                $row['status'] = 'Match';
-                $stats['matches']++;
-            } else {
-                $row['status'] = 'Variance';
-                $stats['variance_count']++;
-                $stats['variance_amt'] += $row['diff'];
-            }
-        } else {
-            $row['status'] = 'Missing';
-            $row['diff'] = -$row['pay'];
-            $stats['variance_count']++;
-            $stats['variance_amt'] += $row['diff'];
+// --- 4. BUILD CODE COMPARISON TABLE ---
+if ($comparison_mode) {
+    // Compare local tally against scrub codes
+    foreach ($code_tally as $code => $data) {
+        $local_qty = $data['count'];
+        $local_total = $data['total'];
+        $scrub_qty = $scrub_codes[$code] ?? 0;
+
+        $status = 'match';
+        if ($scrub_qty == 0 && $local_qty > 0) {
+            $status = 'missing'; // In DB but NOT in pasted text
+        } elseif ($local_qty != $scrub_qty) {
+            $status = 'variance';
+        }
+
+        $code_variance[$code] = [
+            'desc' => $data['desc'],
+            'local_qty' => $local_qty,
+            'local_total' => $local_total,
+            'scrub_qty' => $scrub_qty,
+            'status' => $status
+        ];
+
+        unset($scrub_codes[$code]); // Mark as processed
+    }
+
+    // Remaining scrub codes = EXTRA (in pasted text but NOT in DB)
+    foreach ($scrub_codes as $code => $qty) {
+        if ($qty > 0) {
+            $code_variance[$code] = [
+                'desc' => 'From Scrub Report',
+                'local_qty' => 0,
+                'local_total' => 0,
+                'scrub_qty' => $qty,
+                'status' => 'extra'
+            ];
         }
     }
-    $display_rows[] = $row;
+
+    // Sort by code
+    ksort($code_variance);
 }
-if ($comparison_mode) {
-    foreach ($scrub_data as $ticket => $pay) {
-        $display_rows[] = ['date' => '-', 'full_date' => '9999-99-99', 'ticket' => $ticket, 'cust' => 'Unknown', 'type' => 'CSV', 'pay' => 0, 'scrub_pay' => $pay, 'diff' => $pay, 'status' => 'Extra'];
-        $stats['variance_count']++;
-        $stats['variance_amt'] += $pay;
-    }
+
+// Keep legacy job-level display (for reference, won't affect comparison)
+$display_rows = [];
+foreach ($local_jobs as $ticket => $job) {
+    $display_rows[] = $job;
 }
 usort($display_rows, function ($a, $b) {
     return $a['full_date'] <=> $b['full_date'];
@@ -532,6 +552,65 @@ usort($display_rows, function ($a, $b) {
                         </form>
                     </div>
                 </div>
+            <?php endif; ?>
+
+            <?php if ($comparison_mode && !empty($code_variance)): ?>
+                <h3 style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000; border-bottom:2px solid #000; padding-bottom:5px;">
+                    📊 Code Comparison
+                </h3>
+                <div style="margin-bottom:15px; font-size:0.85rem;">
+                    <span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; margin-right:10px;">🔴 Missing (In DB, Not in Scrub)</span>
+                    <span style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; margin-right:10px;">🟢 Extra (In Scrub, Not in DB)</span>
+                    <span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px;">🟡 Qty Variance</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="summary-table" style="margin-bottom:20px;">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Description</th>
+                                <th style="text-align:center;">My Qty</th>
+                                <th style="text-align:center;">Scrub Qty</th>
+                                <th class="num">My Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($code_variance as $code => $v): 
+                                $row_bg = '';
+                                $status_text = '';
+                                $status_color = '';
+                                
+                                if ($v['status'] === 'missing') {
+                                    $row_bg = 'background:#fee2e2;';
+                                    $status_text = 'MISSING';
+                                    $status_color = 'color:#dc2626; font-weight:bold;';
+                                } elseif ($v['status'] === 'extra') {
+                                    $row_bg = 'background:#dcfce7;';
+                                    $status_text = 'EXTRA';
+                                    $status_color = 'color:#16a34a; font-weight:bold;';
+                                } elseif ($v['status'] === 'variance') {
+                                    $row_bg = 'background:#fef3c7;';
+                                    $status_text = 'VARIANCE';
+                                    $status_color = 'color:#d97706; font-weight:bold;';
+                                } else {
+                                    $status_text = '✓ Match';
+                                    $status_color = 'color:#10b981;';
+                                }
+                            ?>
+                            <tr style="<?= $row_bg ?>">
+                                <td style="font-weight:bold;"><?= htmlspecialchars($code) ?></td>
+                                <td style="font-size:0.85rem;"><?= htmlspecialchars(substr($v['desc'], 0, 40)) ?></td>
+                                <td style="text-align:center; font-weight:bold;"><?= $v['local_qty'] ?></td>
+                                <td style="text-align:center; font-weight:bold;"><?= $v['scrub_qty'] ?></td>
+                                <td class="num">$<?= number_format($v['local_total'], 2) ?></td>
+                                <td style="<?= $status_color ?>"><?= $status_text ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <a href="?" class="btn" style="margin-bottom:20px; display:inline-block;">← Clear Comparison</a>
             <?php endif; ?>
 
             <h3
