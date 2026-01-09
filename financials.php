@@ -109,6 +109,7 @@ function getBreakdownLabel($date, $view)
 $job_revenue = 0;
 $active_weeks_by_user = [];
 $breakdown_data = [];
+$job_type_stats = [];
 
 // For weekly view, pre-populate all 7 days so they all show in the table
 if ($view === 'weekly') {
@@ -138,6 +139,14 @@ foreach ($all_jobs as $j) {
     $pay = calculate_job_pay($j, $rates);
     $job_revenue += $pay;
     $j_uid = $j['user_id'];
+    $jtype = $j['install_type'];
+
+    // Track stats by job type
+    if (!isset($job_type_stats[$jtype])) {
+        $job_type_stats[$jtype] = ['count' => 0, 'revenue' => 0];
+    }
+    $job_type_stats[$jtype]['count']++;
+    $job_type_stats[$jtype]['revenue'] += $pay;
 
     // Breakdown key based on view - use helper functions
     $key = getBreakdownKey($j['install_date'], $view);
@@ -557,6 +566,64 @@ ksort($breakdown_data);
                 </tbody>
             </table>
         </div>
+
+        <?php if (!empty($job_type_stats)): ?>
+            <h3
+                style="margin-top:2rem; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+                Profit by Job Type <span class="badge" style="background:var(--primary);">Analysis</span>
+            </h3>
+            <div class="box" style="padding:0; overflow:hidden;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Job Type</th>
+                            <th style="text-align:right;">Count</th>
+                            <th style="text-align:right;">Total Revenue</th>
+                            <th style="text-align:right;">Avg. Revenue</th>
+                            <th>Share</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        // Sort by revenue descending
+                        uasort($job_type_stats, function ($a, $b) {
+                            return $b['revenue'] <=> $a['revenue'];
+                        });
+
+                        $max_rev = 0;
+                        foreach ($job_type_stats as $stat)
+                            $max_rev = max($max_rev, $stat['revenue']);
+
+                        foreach ($job_type_stats as $type => $stats):
+                            $avg = $stats['revenue'] / $stats['count'];
+                            $percent = ($max_rev > 0) ? ($stats['revenue'] / $max_rev) * 100 : 0;
+                            ?>
+                            <tr>
+                                <td style="font-weight:bold;">
+                                    <?= htmlspecialchars($type) ?>
+                                </td>
+                                <td style="text-align:right;">
+                                    <?= number_format($stats['count']) ?>
+                                </td>
+                                <td style="text-align:right; color:var(--success-text); font-weight:bold;">
+                                    $
+                                    <?= number_format($stats['revenue'], 2) ?>
+                                </td>
+                                <td style="text-align:right;">$
+                                    <?= number_format($avg, 2) ?>
+                                </td>
+                                <td style="width:150px; padding-right:20px;">
+                                    <div
+                                        style="background:var(--bg-secondary); height:8px; border-radius:4px; overflow:hidden; width:100%;">
+                                        <div style="background:var(--primary); height:100%; width:<?= $percent ?>%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
 
     </div>
 
