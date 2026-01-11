@@ -123,6 +123,36 @@ unset($day);
 
 $grand_total = $total_work + $total_std_pd + $total_ext_pd;
 
+// Additional Dashboard Metrics
+$total_fuel = 0;
+$total_miles = 0;
+$days_worked = 0;
+$total_jobs = count($jobs);
+
+foreach ($month_data as $d) {
+    $total_fuel += (float) $d['fuel'];
+    $total_miles += (float) $d['miles'];
+    if ($d['work'] > 0 || count($d['jobs']) > 0) {
+        $days_worked++;
+    }
+}
+
+$net_profit = $grand_total - $total_fuel;
+$avg_daily = ($days_worked > 0) ? ($grand_total / $days_worked) : 0;
+$cost_per_mile = ($total_miles > 0) ? ($total_fuel / $total_miles) : 0;
+$avg_mpg = 0;
+
+// Get average MPG from daily_logs for this month
+try {
+    $stmt = $db->prepare("SELECT SUM(mileage) as miles, SUM(gallons) as gal FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
+    $stmt->execute([$user_id, $start_date, $end_date]);
+    $mpg_data = $stmt->fetch();
+    if ($mpg_data && floatval($mpg_data['gal']) > 0) {
+        $avg_mpg = floatval($mpg_data['miles']) / floatval($mpg_data['gal']);
+    }
+} catch (Exception $e) {
+}
+
 // Nav Links
 $prev_m = date('m', strtotime("$first_day -1 month"));
 $prev_y = date('Y', strtotime("$first_day -1 month"));
@@ -394,22 +424,51 @@ $next_y = date('Y', strtotime("$first_day +1 month"));
                 &raquo;</a>
         </div>
 
+        <!-- Earnings Summary -->
         <div class="summary-card">
             <div class="sum-item">
                 <div class="sum-label">Work</div>
                 <div class="sum-val">$<?= number_format($total_work, 2) ?></div>
             </div>
             <div class="sum-item">
-                <div class="sum-label">Std PD</div>
-                <div class="sum-val" style="color:var(--primary);">$<?= number_format($total_std_pd, 2) ?></div>
+                <div class="sum-label">Per Diem</div>
+                <div class="sum-val" style="color:var(--primary);">$<?= number_format($total_std_pd + $total_ext_pd, 2) ?></div>
             </div>
             <div class="sum-item">
-                <div class="sum-label">Ext PD</div>
-                <div class="sum-val" style="color:var(--success-text);">$<?= number_format($total_ext_pd, 2) ?></div>
+                <div class="sum-label">Fuel Cost</div>
+                <div class="sum-val" style="color:var(--danger-text);">-$<?= number_format($total_fuel, 2) ?></div>
             </div>
             <div class="sum-item" style="border-left:1px solid var(--border);">
-                <div class="sum-label">Total</div>
-                <div class="sum-total-val">$<?= number_format($grand_total, 2) ?></div>
+                <div class="sum-label">Net Profit</div>
+                <div class="sum-total-val" style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">$<?= number_format($net_profit, 2) ?></div>
+            </div>
+        </div>
+        
+        <!-- Performance Metrics -->
+        <div class="summary-card" style="grid-template-columns: repeat(6, 1fr);">
+            <div class="sum-item">
+                <div class="sum-label">Jobs</div>
+                <div class="sum-val"><?= $total_jobs ?></div>
+            </div>
+            <div class="sum-item">
+                <div class="sum-label">Days</div>
+                <div class="sum-val"><?= $days_worked ?></div>
+            </div>
+            <div class="sum-item">
+                <div class="sum-label">Avg/Day</div>
+                <div class="sum-val">$<?= number_format($avg_daily, 0) ?></div>
+            </div>
+            <div class="sum-item">
+                <div class="sum-label">Miles</div>
+                <div class="sum-val"><?= number_format($total_miles) ?></div>
+            </div>
+            <div class="sum-item">
+                <div class="sum-label">$/Mile</div>
+                <div class="sum-val"><?= $cost_per_mile > 0 ? '$' . number_format($cost_per_mile, 2) : '--' ?></div>
+            </div>
+            <div class="sum-item">
+                <div class="sum-label">Avg MPG</div>
+                <div class="sum-val" style="color:var(--primary);"><?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?></div>
             </div>
         </div>
 
