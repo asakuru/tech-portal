@@ -27,7 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($_POST['password'], $user['password'])) {
-            // Success
+            // Success - regenerate session ID to prevent fixation attacks
+            session_regenerate_id(true);
             $_SESSION['loggedin'] = true;
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
