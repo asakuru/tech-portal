@@ -810,11 +810,14 @@ try {
                         <div><label>Shop Name</label><input type="text" name="shop_name" placeholder="Optional"></div>
                     </div>
                     <div class="form-grid" style="margin-top:15px;">
-                        <div><label>Parts Cost</label><input type="number" name="cost_parts" step="0.01" value="0">
+                        <div><label>Parts Cost</label><input type="text" name="cost_parts" class="money-input"
+                                value="$0.00">
                         </div>
-                        <div><label>Labor Cost</label><input type="number" name="cost_labor" step="0.01" value="0">
+                        <div><label>Labor Cost</label><input type="text" name="cost_labor" class="money-input"
+                                value="$0.00">
                         </div>
-                        <div><label>Tax</label><input type="number" name="cost_tax" step="0.01" value="0"></div>
+                        <div><label>Tax</label><input type="text" name="cost_tax" class="money-input" value="$0.00">
+                        </div>
                         <div><label>Warranty (months)</label><input type="number" name="warranty_parts_months"
                                 placeholder="0"></div>
                         <div><label>Warranty (miles)</label><input type="number" name="warranty_parts_miles"
@@ -911,10 +914,11 @@ try {
                 </div>
             </div>
 
-            <div class="alert" style="background: var(--bg-input); border-left: 4px solid var(--primary); margin-bottom: 25px;">
+            <div class="alert"
+                style="background: var(--bg-input); border-left: 4px solid var(--primary); margin-bottom: 25px;">
                 <strong>💡 Fuel data synced from Daily Truck Logs</strong><br>
                 <span style="color: var(--text-muted);">
-                    Add fuel info via your daily job entry form on the main page. 
+                    Add fuel info via your daily job entry form on the main page.
                     Odometer, mileage, gallons, and fuel cost are automatically tracked here.
                 </span>
                 <div style="margin-top: 10px;">
@@ -925,7 +929,8 @@ try {
 
             <h3>📋 Fuel History</h3>
             <?php if (empty($fuel_logs)): ?>
-                <p style="color:var(--text-muted); text-align:center; padding:40px;">No fuel logs yet. Add fuel data in your daily truck log.</p>
+                <p style="color:var(--text-muted); text-align:center; padding:40px;">No fuel logs yet. Add fuel data in your
+                    daily truck log.</p>
             <?php else: ?>
                 <table style="width:100%; border-collapse:collapse;">
                     <tr style="text-align:left; color:var(--text-muted); border-bottom:2px solid var(--border);">
@@ -943,7 +948,8 @@ try {
                             <td><?= floatval($f['trip_miles']) > 0 ? number_format(floatval($f['trip_miles'])) : '--' ?></td>
                             <td><?= floatval($f['gallons']) > 0 ? number_format(floatval($f['gallons']), 2) : '--' ?></td>
                             <td style="font-weight:bold;">$<?= number_format(floatval($f['total_cost']), 2) ?></td>
-                            <td style="color:var(--primary); font-weight:bold;"><?= floatval($f['mpg']) > 0 ? number_format(floatval($f['mpg']), 1) : '--' ?></td>
+                            <td style="color:var(--primary); font-weight:bold;">
+                                <?= floatval($f['mpg']) > 0 ? number_format(floatval($f['mpg']), 1) : '--' ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </table>
@@ -983,5 +989,23 @@ try {
     </div>
 
 </body>
+
+<script>
+    // Auto-format money inputs on blur
+    document.querySelectorAll('.money-input').forEach(function (input) {
+        input.addEventListener('blur', function () {
+            // Strip non-numeric except decimal
+            let val = this.value.replace(/[^0-9.]/g, '');
+            let num = parseFloat(val) || 0;
+            this.value = '$' + num.toFixed(2);
+        });
+        input.addEventListener('focus', function () {
+            // Strip $ for easier editing
+            let val = this.value.replace(/[^0-9.]/g, '');
+            this.value = val;
+            this.select();
+        });
+    });
+</script>
 
 </html>

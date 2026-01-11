@@ -124,12 +124,12 @@ foreach ($vehicles as &$v) {
                               WHERE user_id = ?");
         $stmt->execute([$user_id]);
         $fuel = $stmt->fetch();
-        
+
         $v['total_fuel_cost'] = floatval($fuel['total_fuel'] ?? 0);
         $total_gallons = floatval($fuel['total_gallons'] ?? 0);
         $total_miles = floatval($fuel['total_miles'] ?? 0);
         $v['avg_mpg'] = ($total_gallons > 0) ? ($total_miles / $total_gallons) : 0;
-        
+
         // Update vehicle mileage from latest odometer if higher
         $latest_odo = floatval($fuel['latest_odo'] ?? 0);
         if ($latest_odo > floatval($v['current_mileage'])) {
@@ -334,12 +334,14 @@ unset($v);
 
         <?php if ($msg): ?>
             <div class="alert" style="border-left:4px solid var(--success-text); margin-bottom:20px;">
-                <?= htmlspecialchars($msg) ?></div>
+                <?= htmlspecialchars($msg) ?>
+            </div>
         <?php endif; ?>
 
         <?php if ($error): ?>
             <div class="alert" style="background:var(--danger-bg); color:var(--danger-text); margin-bottom:20px;">
-                <?= htmlspecialchars($error) ?></div>
+                <?= htmlspecialchars($error) ?>
+            </div>
         <?php endif; ?>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
@@ -455,7 +457,7 @@ unset($v);
                         </div>
                         <div>
                             <label>Purchase Price</label>
-                            <input type="number" name="purchase_price" step="0.01" placeholder="$0.00">
+                            <input type="text" name="purchase_price" class="money-input" placeholder="$0.00">
                         </div>
                         <div>
                             <label>Purchase Mileage</label>
@@ -528,7 +530,8 @@ unset($v);
                         <div class="vehicle-header">
                             <div>
                                 <h3 class="vehicle-title">
-                                    <?= htmlspecialchars($v['year'] . ' ' . $v['make'] . ' ' . $v['model']) ?></h3>
+                                    <?= htmlspecialchars($v['year'] . ' ' . $v['make'] . ' ' . $v['model']) ?>
+                                </h3>
                                 <div class="vehicle-subtitle">
                                     <?= htmlspecialchars($v['trim']) ?>
                                     <?php if ($v['engine_displacement']): ?>
@@ -558,7 +561,8 @@ unset($v);
                             </div>
                             <div class="stat-item">
                                 <div class="stat-value">
-                                    <?= floatval($v['avg_mpg']) > 0 ? number_format(floatval($v['avg_mpg']), 1) : '--' ?></div>
+                                    <?= floatval($v['avg_mpg']) > 0 ? number_format(floatval($v['avg_mpg']), 1) : '--' ?>
+                                </div>
                                 <div class="stat-label">Avg MPG</div>
                             </div>
                             <div class="stat-item">
@@ -600,6 +604,20 @@ unset($v);
             form.classList.toggle('active');
             btn.style.display = form.classList.contains('active') ? 'none' : 'inline-block';
         }
+        
+        // Auto-format money inputs on blur
+        document.querySelectorAll('.money-input').forEach(function(input) {
+            input.addEventListener('blur', function() {
+                let val = this.value.replace(/[^0-9.]/g, '');
+                let num = parseFloat(val) || 0;
+                this.value = '$' + num.toFixed(2);
+            });
+            input.addEventListener('focus', function() {
+                let val = this.value.replace(/[^0-9.]/g, '');
+                this.value = val;
+                this.select();
+            });
+        });
     </script>
 
 </body>
