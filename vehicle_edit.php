@@ -262,16 +262,68 @@ $stmt = $db->prepare("SELECT * FROM vehicle_service_logs WHERE vehicle_id = ? OR
 $stmt->execute([$vehicle_id]);
 $services = $stmt->fetchAll();
 
-// Fetch fuel logs
-$stmt = $db->prepare("SELECT * FROM vehicle_fuel_logs WHERE vehicle_id = ? ORDER BY fill_date DESC LIMIT 50");
-$stmt->execute([$vehicle_id]);
-$fuel_logs = $stmt->fetchAll();
+// Fetch fuel logs from daily_logs table (linked by user_id)
+$fuel_logs = [];
+$fuel_stats = ['total_fuel' => 0, 'total_gallons' => 0, 'avg_mpg' => 0, 'total_miles' => 0];
 
-// Calculate fuel stats
-$stmt = $db->prepare("SELECT SUM(total_cost) as total_fuel, SUM(gallons) as total_gallons, AVG(mpg) as avg_mpg FROM vehicle_fuel_logs WHERE vehicle_id = ? AND mpg > 0");
-$stmt->execute([$vehicle_id]);
-$fuel_stats = $stmt->fetch();
+try {
+    // Get fuel data from daily_logs (existing truck log data)
+    $stmt = $db->prepare("SELECT log_date, odometer, mileage, gallons, fuel_cost 
+                          FROM daily_logs 
+                          WHERE user_id = ? AND (gallons > 0 OR fuel_cost > 0)
+                          ORDER BY log_date DESC LIMIT 50");
+    $stmt->execute([$user_id]);
+    $daily_fuel = $stmt->fetchAll();
+
+    // Calculate stats from daily_logs
+    $stmt = $db->prepare("SELECT 
+                            SUM(fuel_cost) as total_fuel, 
+                            SUM(gallons) as total_gallons,
+                            SUM(mileage) as total_miles,
+                            MAX(odometer) as latest_odo
+                          FROM daily_logs 
+                          WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $stats = $stmt->fetch();
+
+    $fuel_stats['total_fuel'] = floatval($stats['total_fuel'] ?? 0);
+    $fuel_stats['total_gallons'] = floatval($stats['total_gallons'] ?? 0);
+    $fuel_stats['total_miles'] = floatval($stats['total_miles'] ?? 0);
+
+    // Calculate average MPG
+    if ($fuel_stats['total_gallons'] > 0 && $fuel_stats['total_miles'] > 0) {
+        $fuel_stats['avg_mpg'] = $fuel_stats['total_miles'] / $fuel_stats['total_gallons'];
+    }
+
+    // Update vehicle's current mileage from latest odometer reading
+    $latest_odo = floatval($stats['latest_odo'] ?? 0);
+    if ($latest_odo > floatval($vehicle['current_mileage'])) {
+        $db->prepare("UPDATE vehicles SET current_mileage = ? WHERE id = ?")->execute([$latest_odo, $vehicle_id]);
+        $vehicle['current_mileage'] = $latest_odo;
+    }
+
+    // Format daily logs for display
+    foreach ($daily_fuel as $df) {
+        // Calculate MPG for this fill-up
+        $mpg = ($df['gallons'] > 0 && $df['mileage'] > 0) ? ($df['mileage'] / $df['gallons']) : null;
+        $cost_per_gal = ($df['gallons'] > 0) ? ($df['fuel_cost'] / $df['gallons']) : null;
+
+        $fuel_logs[] = [
+            'fill_date' => $df['log_date'],
+            'odometer' => $df['odometer'],
+            'gallons' => $df['gallons'],
+            'price_per_gallon' => $cost_per_gal,
+            'total_cost' => $df['fuel_cost'],
+            'mpg' => $mpg,
+            'trip_miles' => $df['mileage'],
+            'source' => 'daily_log'
+        ];
+    }
+} catch (Exception $e) {
+    // daily_logs table might not have expected columns
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -841,111 +893,57 @@ $fuel_stats = $stmt->fetch();
             <div class="stat-grid">
                 <div class="stat-box">
                     <div class="value">
-                        <?= $fuel_stats['avg_mpg'] ? number_format($fuel_stats['avg_mpg'], 1) : '--' ?>
+                        <?= floatval($fuel_stats['avg_mpg']) > 0 ? number_format(floatval($fuel_stats['avg_mpg']), 1) : '--' ?>
                     </div>
                     <div class="label">Avg MPG</div>
                 </div>
                 <div class="stat-box">
-                    <div class="value">$
-                        <?= number_format($fuel_stats['total_fuel'] ?? 0) ?>
-                    </div>
-                    <div class="label">Total Fuel</div>
+                    <div class="value">$<?= number_format(floatval($fuel_stats['total_fuel'])) ?></div>
+                    <div class="label">Total Fuel Cost</div>
                 </div>
                 <div class="stat-box">
-                    <div class="value">
-                        <?= number_format($fuel_stats['total_gallons'] ?? 0, 1) ?>
-                    </div>
+                    <div class="value"><?= number_format(floatval($fuel_stats['total_gallons']), 1) ?></div>
                     <div class="label">Gallons</div>
                 </div>
                 <div class="stat-box">
-                    <div class="value">
-                        <?= count($fuel_logs) ?>
-                    </div>
-                    <div class="label">Fill-ups</div>
+                    <div class="value"><?= number_format(floatval($fuel_stats['total_miles'])) ?></div>
+                    <div class="label">Total Miles</div>
                 </div>
             </div>
 
-            <div class="box" style="margin-bottom:25px;">
-                <h3 style="margin-top:0;">⛽ Log Fuel</h3>
-                <form method="post">
-                    <?= csrf_field() ?>
-                    <div class="form-grid">
-                        <div><label>Date *</label><input type="date" name="fill_date" value="<?= date('Y-m-d') ?>"
-                                required></div>
-                        <div><label>Odometer *</label><input type="number" name="odometer"
-                                value="<?= $vehicle['current_mileage'] ?>" required></div>
-                        <div><label>Gallons *</label><input type="number" name="gallons" step="0.001" required></div>
-                        <div><label>Price/Gallon *</label><input type="number" name="price_per_gallon" step="0.001"
-                                required></div>
-                        <div><label>Octane</label>
-                            <select name="octane">
-                                <option value="87">Regular (87)</option>
-                                <option value="89">Mid-Grade (89)</option>
-                                <option value="91">Premium (91)</option>
-                                <option value="93">Premium+ (93)</option>
-                                <option value="Diesel">Diesel</option>
-                            </select>
-                        </div>
-                        <div><label>Station</label><input type="text" name="station_name" placeholder="e.g., Shell">
-                        </div>
-                        <div><label>Trip Type</label>
-                            <select name="trip_type">
-                                <option value="Personal">Personal</option>
-                                <option value="Business">Business</option>
-                                <option value="Mixed">Mixed</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div style="margin-top:15px;">
-                        <label style="display:flex; align-items:center; gap:10px;">
-                            <input type="checkbox" name="is_full_tank" checked>
-                            Full tank (required for MPG calculation)
-                        </label>
-                    </div>
-                    <div style="margin-top:10px;"><label>Notes</label><textarea name="fuel_notes" rows="1"></textarea>
-                    </div>
-                    <div style="margin-top:15px;">
-                        <button type="submit" name="add_fuel" class="btn">💾 Log Fill-up</button>
-                    </div>
-                </form>
+            <div class="alert" style="background: var(--bg-input); border-left: 4px solid var(--primary); margin-bottom: 25px;">
+                <strong>💡 Fuel data synced from Daily Truck Logs</strong><br>
+                <span style="color: var(--text-muted);">
+                    Add fuel info via your daily job entry form on the main page. 
+                    Odometer, mileage, gallons, and fuel cost are automatically tracked here.
+                </span>
+                <div style="margin-top: 10px;">
+                    <a href="index.php" class="btn btn-small">→ Go to Daily Entry</a>
+                </div>
             </div>
+
 
             <h3>📋 Fuel History</h3>
             <?php if (empty($fuel_logs)): ?>
-                <p style="color:var(--text-muted); text-align:center; padding:40px;">No fuel logs yet.</p>
+                <p style="color:var(--text-muted); text-align:center; padding:40px;">No fuel logs yet. Add fuel data in your daily truck log.</p>
             <?php else: ?>
                 <table style="width:100%; border-collapse:collapse;">
                     <tr style="text-align:left; color:var(--text-muted); border-bottom:2px solid var(--border);">
                         <th style="padding:10px;">Date</th>
                         <th>Odometer</th>
+                        <th>Miles</th>
                         <th>Gallons</th>
-                        <th>$/Gal</th>
-                        <th>Total</th>
+                        <th>Cost</th>
                         <th>MPG</th>
-                        <th></th>
                     </tr>
                     <?php foreach ($fuel_logs as $f): ?>
                         <tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:10px;">
-                                <?= date('M j', strtotime($f['fill_date'])) ?>
-                            </td>
-                            <td>
-                                <?= number_format($f['odometer']) ?>
-                            </td>
-                            <td>
-                                <?= number_format($f['gallons'], 2) ?>
-                            </td>
-                            <td>$
-                                <?= number_format($f['price_per_gallon'], 3) ?>
-                            </td>
-                            <td style="font-weight:bold;">$
-                                <?= number_format($f['total_cost'], 2) ?>
-                            </td>
-                            <td style="color:var(--primary); font-weight:bold;">
-                                <?= $f['mpg'] ? number_format($f['mpg'], 1) : '--' ?>
-                            </td>
-                            <td><a href="?id=<?= $vehicle_id ?>&tab=fuel&delete_fuel=<?= $f['id'] ?>"
-                                    onclick="return confirm('Delete?')" style="color:var(--danger-text);">×</a></td>
+                            <td style="padding:10px;"><?= date('M j', strtotime($f['fill_date'])) ?></td>
+                            <td><?= number_format(floatval($f['odometer'])) ?></td>
+                            <td><?= floatval($f['trip_miles']) > 0 ? number_format(floatval($f['trip_miles'])) : '--' ?></td>
+                            <td><?= floatval($f['gallons']) > 0 ? number_format(floatval($f['gallons']), 2) : '--' ?></td>
+                            <td style="font-weight:bold;">$<?= number_format(floatval($f['total_cost']), 2) ?></td>
+                            <td style="color:var(--primary); font-weight:bold;"><?= floatval($f['mpg']) > 0 ? number_format(floatval($f['mpg']), 1) : '--' ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </table>

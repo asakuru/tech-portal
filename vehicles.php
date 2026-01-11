@@ -111,14 +111,35 @@ foreach ($vehicles as &$v) {
     // Get total service cost
     $stmt = $db->prepare("SELECT COALESCE(SUM(cost_total), 0) as total FROM vehicle_service_logs WHERE vehicle_id = ?");
     $stmt->execute([$v['id']]);
-    $v['total_service_cost'] = $stmt->fetchColumn();
+    $v['total_service_cost'] = floatval($stmt->fetchColumn());
 
-    // Get total fuel cost
-    $stmt = $db->prepare("SELECT COALESCE(SUM(total_cost), 0) as total, COALESCE(AVG(mpg), 0) as avg_mpg FROM vehicle_fuel_logs WHERE vehicle_id = ? AND mpg > 0");
-    $stmt->execute([$v['id']]);
-    $fuel = $stmt->fetch();
-    $v['total_fuel_cost'] = $fuel['total'];
-    $v['avg_mpg'] = $fuel['avg_mpg'];
+    // Get fuel stats from daily_logs (linked by user_id)
+    try {
+        $stmt = $db->prepare("SELECT 
+                                COALESCE(SUM(fuel_cost), 0) as total_fuel,
+                                COALESCE(SUM(mileage), 0) as total_miles,
+                                COALESCE(SUM(gallons), 0) as total_gallons,
+                                MAX(odometer) as latest_odo
+                              FROM daily_logs 
+                              WHERE user_id = ?");
+        $stmt->execute([$user_id]);
+        $fuel = $stmt->fetch();
+        
+        $v['total_fuel_cost'] = floatval($fuel['total_fuel'] ?? 0);
+        $total_gallons = floatval($fuel['total_gallons'] ?? 0);
+        $total_miles = floatval($fuel['total_miles'] ?? 0);
+        $v['avg_mpg'] = ($total_gallons > 0) ? ($total_miles / $total_gallons) : 0;
+        
+        // Update vehicle mileage from latest odometer if higher
+        $latest_odo = floatval($fuel['latest_odo'] ?? 0);
+        if ($latest_odo > floatval($v['current_mileage'])) {
+            $db->prepare("UPDATE vehicles SET current_mileage = ? WHERE id = ?")->execute([$latest_odo, $v['id']]);
+            $v['current_mileage'] = $latest_odo;
+        }
+    } catch (Exception $e) {
+        $v['total_fuel_cost'] = 0;
+        $v['avg_mpg'] = 0;
+    }
 
     // Count services
     $stmt = $db->prepare("SELECT COUNT(*) FROM vehicle_service_logs WHERE vehicle_id = ?");
