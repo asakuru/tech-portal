@@ -871,10 +871,12 @@ else {
                                     <option value="I-6600">I-6600 - Install</option>
                                     <option value="R-6600">R-6600 - Repair</option>
                                     <option value="TC">TC - Trouble Call</option>
-                                    <option value="F008">F008 - Wire Run</option>
-                                    <option value="F009">F009 - Jack Install</option>
-                                    <option value="F011">F011 - Misc</option>
-                                    <option value="DO">DO - Day Off</option><?php endif; ?>
+                                    <option value="F008">F008 - Trouble Call</option>
+                                    <option value="F009">F009 - Refer to Maint</option>
+                                    <option value="F011">F011 - Trip Charge</option><?php endif; ?>
+                                <!-- Always include DO and ND -->
+                                <option value="ND">ND - Non Dispatch</option>
+                                <option value="DO">DO - Day Off</option>
                             </select>
                         </div>
 
