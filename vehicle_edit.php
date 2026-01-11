@@ -264,6 +264,9 @@ $services = $stmt->fetchAll();
 
 // Fetch fuel logs from daily_logs table (linked by user_id)
 $fuel_logs = [];
+$fuel_weekly = [];
+$fuel_monthly = [];
+$fuel_yearly = [];
 $fuel_stats = ['total_fuel' => 0, 'total_gallons' => 0, 'avg_mpg' => 0, 'total_miles' => 0];
 
 try {
@@ -304,7 +307,6 @@ try {
 
     // Format daily logs for display
     foreach ($daily_fuel as $df) {
-        // Calculate MPG for this fill-up
         $mpg = ($df['gallons'] > 0 && $df['mileage'] > 0) ? ($df['mileage'] / $df['gallons']) : null;
         $cost_per_gal = ($df['gallons'] > 0) ? ($df['fuel_cost'] / $df['gallons']) : null;
 
@@ -319,10 +321,85 @@ try {
             'source' => 'daily_log'
         ];
     }
+    
+    // Weekly aggregations (using strftime for SQLite)
+    $stmt = $db->prepare("SELECT 
+                            strftime('%Y-%W', log_date) as week_key,
+                            MIN(log_date) as week_start,
+                            SUM(mileage) as miles,
+                            SUM(gallons) as gallons,
+                            SUM(fuel_cost) as cost
+                          FROM daily_logs 
+                          WHERE user_id = ? AND (gallons > 0 OR mileage > 0)
+                          GROUP BY strftime('%Y-%W', log_date)
+                          ORDER BY week_key DESC
+                          LIMIT 12");
+    $stmt->execute([$user_id]);
+    $weekly_data = $stmt->fetchAll();
+    foreach ($weekly_data as $w) {
+        $mpg = ($w['gallons'] > 0) ? ($w['miles'] / $w['gallons']) : 0;
+        $fuel_weekly[] = [
+            'period' => 'Week of ' . date('M j', strtotime($w['week_start'])),
+            'miles' => floatval($w['miles']),
+            'gallons' => floatval($w['gallons']),
+            'cost' => floatval($w['cost']),
+            'mpg' => $mpg
+        ];
+    }
+    
+    // Monthly aggregations
+    $stmt = $db->prepare("SELECT 
+                            strftime('%Y-%m', log_date) as month_key,
+                            SUM(mileage) as miles,
+                            SUM(gallons) as gallons,
+                            SUM(fuel_cost) as cost
+                          FROM daily_logs 
+                          WHERE user_id = ? AND (gallons > 0 OR mileage > 0)
+                          GROUP BY strftime('%Y-%m', log_date)
+                          ORDER BY month_key DESC
+                          LIMIT 12");
+    $stmt->execute([$user_id]);
+    $monthly_data = $stmt->fetchAll();
+    foreach ($monthly_data as $m) {
+        $mpg = ($m['gallons'] > 0) ? ($m['miles'] / $m['gallons']) : 0;
+        $fuel_monthly[] = [
+            'period' => date('F Y', strtotime($m['month_key'] . '-01')),
+            'miles' => floatval($m['miles']),
+            'gallons' => floatval($m['gallons']),
+            'cost' => floatval($m['cost']),
+            'mpg' => $mpg
+        ];
+    }
+    
+    // Yearly aggregations
+    $stmt = $db->prepare("SELECT 
+                            strftime('%Y', log_date) as year_key,
+                            SUM(mileage) as miles,
+                            SUM(gallons) as gallons,
+                            SUM(fuel_cost) as cost
+                          FROM daily_logs 
+                          WHERE user_id = ? AND (gallons > 0 OR mileage > 0)
+                          GROUP BY strftime('%Y', log_date)
+                          ORDER BY year_key DESC
+                          LIMIT 5");
+    $stmt->execute([$user_id]);
+    $yearly_data = $stmt->fetchAll();
+    foreach ($yearly_data as $y) {
+        $mpg = ($y['gallons'] > 0) ? ($y['miles'] / $y['gallons']) : 0;
+        $fuel_yearly[] = [
+            'period' => $y['year_key'],
+            'miles' => floatval($y['miles']),
+            'gallons' => floatval($y['gallons']),
+            'cost' => floatval($y['cost']),
+            'mpg' => $mpg
+        ];
+    }
+    
 } catch (Exception $e) {
     // daily_logs table might not have expected columns
 }
 ?>
+
 
 
 <!DOCTYPE html>
@@ -928,9 +1005,85 @@ try {
 
 
             <h3>📋 Fuel History</h3>
+            
+            <!-- Period Toggle -->
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <button class="btn btn-small fuel-period-btn active" onclick="showFuelPeriod('weekly')">Weekly</button>
+                <button class="btn btn-small btn-secondary fuel-period-btn" onclick="showFuelPeriod('monthly')">Monthly</button>
+                <button class="btn btn-small btn-secondary fuel-period-btn" onclick="showFuelPeriod('yearly')">Yearly</button>
+                <button class="btn btn-small btn-secondary fuel-period-btn" onclick="showFuelPeriod('daily')">Daily</button>
+            </div>
+            
+            <!-- Weekly View (Default) -->
+            <div id="fuel-weekly" class="fuel-period-view">
+                <?php if (empty($fuel_weekly)): ?>
+                    <p style="color:var(--text-muted); text-align:center; padding:40px;">No weekly data yet.</p>
+                <?php else: ?>
+                    <table style="width:100%; border-collapse:collapse;">
+                        <tr style="text-align:left; color:var(--text-muted); border-bottom:2px solid var(--border);">
+                            <th style="padding:10px;">Week</th><th>Miles</th><th>Gallons</th><th>Cost</th><th>MPG</th>
+                        </tr>
+                        <?php foreach ($fuel_weekly as $w): ?>
+                            <tr style="border-bottom:1px solid var(--border);">
+                                <td style="padding:10px;"><?= htmlspecialchars($w['period']) ?></td>
+                                <td><?= number_format($w['miles']) ?></td>
+                                <td><?= number_format($w['gallons'], 1) ?></td>
+                                <td style="font-weight:bold;">$<?= number_format($w['cost'], 2) ?></td>
+                                <td style="color:var(--primary); font-weight:bold;"><?= $w['mpg'] > 0 ? number_format($w['mpg'], 1) : '--' ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                <?php endif; ?>
+            </div>
+            
+            <!-- Monthly View -->
+            <div id="fuel-monthly" class="fuel-period-view" style="display:none;">
+                <?php if (empty($fuel_monthly)): ?>
+                    <p style="color:var(--text-muted); text-align:center; padding:40px;">No monthly data yet.</p>
+                <?php else: ?>
+                    <table style="width:100%; border-collapse:collapse;">
+                        <tr style="text-align:left; color:var(--text-muted); border-bottom:2px solid var(--border);">
+                            <th style="padding:10px;">Month</th><th>Miles</th><th>Gallons</th><th>Cost</th><th>MPG</th>
+                        </tr>
+                        <?php foreach ($fuel_monthly as $m): ?>
+                            <tr style="border-bottom:1px solid var(--border);">
+                                <td style="padding:10px;"><?= htmlspecialchars($m['period']) ?></td>
+                                <td><?= number_format($m['miles']) ?></td>
+                                <td><?= number_format($m['gallons'], 1) ?></td>
+                                <td style="font-weight:bold;">$<?= number_format($m['cost'], 2) ?></td>
+                                <td style="color:var(--primary); font-weight:bold;"><?= $m['mpg'] > 0 ? number_format($m['mpg'], 1) : '--' ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                <?php endif; ?>
+            </div>
+            
+            <!-- Yearly View -->
+            <div id="fuel-yearly" class="fuel-period-view" style="display:none;">
+                <?php if (empty($fuel_yearly)): ?>
+                    <p style="color:var(--text-muted); text-align:center; padding:40px;">No yearly data yet.</p>
+                <?php else: ?>
+                    <table style="width:100%; border-collapse:collapse;">
+                        <tr style="text-align:left; color:var(--text-muted); border-bottom:2px solid var(--border);">
+                            <th style="padding:10px;">Year</th><th>Miles</th><th>Gallons</th><th>Cost</th><th>MPG</th>
+                        </tr>
+                        <?php foreach ($fuel_yearly as $y): ?>
+                            <tr style="border-bottom:1px solid var(--border);">
+                                <td style="padding:10px; font-weight:bold;"><?= htmlspecialchars($y['period']) ?></td>
+                                <td><?= number_format($y['miles']) ?></td>
+                                <td><?= number_format($y['gallons'], 1) ?></td>
+                                <td style="font-weight:bold;">$<?= number_format($y['cost'], 2) ?></td>
+                                <td style="color:var(--primary); font-weight:bold;"><?= $y['mpg'] > 0 ? number_format($y['mpg'], 1) : '--' ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                <?php endif; ?>
+            </div>
+            
+            <!-- Daily View -->
+            <div id="fuel-daily" class="fuel-period-view" style="display:none;">
             <?php if (empty($fuel_logs)): ?>
-                <p style="color:var(--text-muted); text-align:center; padding:40px;">No fuel logs yet. Add fuel data in your
-                    daily truck log.</p>
+                <p style="color:var(--text-muted); text-align:center; padding:40px;">No fuel logs yet. Add fuel data in your daily truck log.</p>
             <?php else: ?>
                 <table style="width:100%; border-collapse:collapse;">
                     <tr style="text-align:left; color:var(--text-muted); border-bottom:2px solid var(--border);">
@@ -954,7 +1107,8 @@ try {
                     <?php endforeach; ?>
                 </table>
             <?php endif; ?>
-        </div>
+            </div><!-- end fuel-daily -->
+        </div><!-- end fuel tab -->
 
         <!-- DOCS TAB -->
         <div class="tab-content <?= $active_tab == 'docs' ? 'active' : '' ?>">
@@ -1006,6 +1160,21 @@ try {
             this.select();
         });
     });
+    
+    // Toggle fuel period views
+    function showFuelPeriod(period) {
+        // Hide all views
+        document.querySelectorAll('.fuel-period-view').forEach(v => v.style.display = 'none');
+        // Show selected view
+        document.getElementById('fuel-' + period).style.display = 'block';
+        // Update button states
+        document.querySelectorAll('.fuel-period-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.classList.add('btn-secondary');
+        });
+        event.target.classList.add('active');
+        event.target.classList.remove('btn-secondary');
+    }
 </script>
 
 </html>
