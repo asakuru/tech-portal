@@ -426,6 +426,7 @@ else {
 
             document.getElementById('secDetails').style.display = hideAll ? 'none' : 'block';
             document.getElementById('secCustomer').style.display = hideAll ? 'none' : 'block';
+            document.getElementById('secTicket').style.display = hideAll ? 'none' : 'block';
             document.getElementById('groupMissed').style.display = isMissedGroup ? 'block' : 'none';
             document.getElementById('groupRepair').style.display = isRepairGroup ? 'block' : 'none';
             document.getElementById('groupTechStandard').style.display = (isSimpleEntry || hideAll) ? 'none' : 'block';
@@ -856,7 +857,7 @@ else {
                         <div class="grid-container">
                             <div><label>Date</label><input type="date" name="install_date" value="<?= $selected_date ?>" required>
                             </div>
-                            <div><label>Ticket #</label><input type="text" name="ticket_number" required></div>
+                            <div id="secTicket"><label>Ticket #</label><input type="text" name="ticket_number"></div>
                         </div>
                         <div class="full-width" style="margin-top:10px;">
                             <label>Job Code</label>
