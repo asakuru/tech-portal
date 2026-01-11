@@ -441,7 +441,7 @@ $fuel_stats = $stmt->fetch();
                     <?= htmlspecialchars($vehicle['nickname']) ?>"
                 <?php endif; ?>
                 •
-                <?= number_format($vehicle['current_mileage']) ?> miles
+                <?= number_format(floatval($vehicle['current_mileage'])) ?> miles
             </p>
         </div>
 
