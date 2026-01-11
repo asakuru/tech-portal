@@ -205,6 +205,31 @@ if ($view === 'weekly' && !empty($display_jobs)) {
 }
 $stats['grand_total'] = $stats['job_total'] + $stats['extra_pd_total'] + $stats['base_pd_total'] + $stats['lead_pay'];
 
+// --- Additional Performance Metrics (matching dashboard) ---
+$total_fuel = 0;
+$total_miles = 0;
+$total_gallons = 0;
+$days_worked = count($unique_worked_dates);
+$job_count = count($display_jobs);
+
+// Get fuel/mileage data from daily_logs for the date range
+try {
+    $stmt = $db->prepare("SELECT SUM(fuel_cost) as fuel, SUM(mileage) as miles, SUM(gallons) as gal FROM daily_logs WHERE log_date BETWEEN ? AND ?");
+    $stmt->execute([date('Y-m-d', $start_ts), date('Y-m-d', $end_ts)]);
+    $fuel_data = $stmt->fetch();
+    if ($fuel_data) {
+        $total_fuel = floatval($fuel_data['fuel'] ?? 0);
+        $total_miles = floatval($fuel_data['miles'] ?? 0);
+        $total_gallons = floatval($fuel_data['gal'] ?? 0);
+    }
+} catch (Exception $e) {
+}
+
+$net_profit = $stats['grand_total'] - $total_fuel;
+$avg_daily = ($days_worked > 0) ? ($stats['grand_total'] / $days_worked) : 0;
+$cost_per_mile = ($total_miles > 0) ? ($total_fuel / $total_miles) : 0;
+$avg_mpg = ($total_gallons > 0) ? ($total_miles / $total_gallons) : 0;
+
 // Render Helper
 function renderRow($job, $install_names, $rates, $index)
 {
@@ -356,25 +381,51 @@ function renderRow($job, $install_names, $rates, $index)
                 style="width: 100%; padding: 12px; font-size: 1rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); color: var(--text-main); box-sizing: border-box;">
         </div>
 
+        <!-- Earnings Summary -->
         <div class="stats-grid">
             <div class="stat-box">
-                <div class="stat-label">Jobs</div>
+                <div class="stat-label">Work</div>
                 <div class="stat-val">$<?= number_format($stats['job_total'], 2) ?></div>
             </div>
             <div class="stat-box">
-                <div class="stat-label">Base PD</div>
-                <div class="stat-val">$<?= number_format($stats['base_pd_total'], 2) ?></div>
+                <div class="stat-label">Per Diem</div>
+                <div class="stat-val" style="color:var(--primary);">$<?= number_format($stats['base_pd_total'] + $stats['extra_pd_total'], 2) ?></div>
             </div>
-            <?php if ($view !== 'daily'): ?>
-                <div class="stat-box" style="border-color:var(--accent);">
-                    <div class="stat-label" style="color:var(--accent);">Lead Pay</div>
-                    <div class="stat-val" style="color:var(--accent);">$<?= number_format($stats['lead_pay'], 2) ?></div>
-                </div>
-            <?php endif; ?>
-            <div class="stat-box" style="background:var(--success-bg); border-color:var(--success-text);">
-                <div class="stat-label" style="color:var(--success-text);">Total</div>
-                <div class="stat-val" style="color:var(--success-text);">$<?= number_format($stats['grand_total'], 2) ?>
-                </div>
+            <div class="stat-box">
+                <div class="stat-label">Fuel Cost</div>
+                <div class="stat-val" style="color:var(--danger-text);">-$<?= number_format($total_fuel, 2) ?></div>
+            </div>
+            <div class="stat-box" style="background:<?= $net_profit >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)' ?>; border-color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
+                <div class="stat-label" style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">Net Profit</div>
+                <div class="stat-val" style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">$<?= number_format($net_profit, 2) ?></div>
+            </div>
+        </div>
+        
+        <!-- Performance Metrics -->
+        <div class="stats-grid" style="margin-top:10px;">
+            <div class="stat-box">
+                <div class="stat-label">Jobs</div>
+                <div class="stat-val"><?= $job_count ?></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Days</div>
+                <div class="stat-val"><?= $days_worked ?></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Avg/Day</div>
+                <div class="stat-val">$<?= number_format($avg_daily, 0) ?></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Miles</div>
+                <div class="stat-val"><?= number_format($total_miles) ?></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">$/Mile</div>
+                <div class="stat-val"><?= $cost_per_mile > 0 ? '$' . number_format($cost_per_mile, 2) : '--' ?></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Avg MPG</div>
+                <div class="stat-val" style="color:var(--primary);"><?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?></div>
             </div>
         </div>
 
@@ -411,7 +462,8 @@ function renderRow($job, $install_names, $rates, $index)
 
         <?php if ($view === 'daily' && isset($is_closed) && $is_closed): ?>
             <div style="margin-bottom:20px; text-align:center;">
-                <form method="post"><?= csrf_field() ?><input type="hidden" name="reopen_date" value="<?= $selected_date ?>">
+                <form method="post"><?= csrf_field() ?><input type="hidden" name="reopen_date"
+                        value="<?= $selected_date ?>">
                     <button
                         style="background:#f59e0b; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Reopen
                         This Day</button>
