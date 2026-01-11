@@ -55,6 +55,8 @@ for ($d = 1; $d <= $days_in_month; $d++) {
         'fuel' => 0.0,
         'net' => 0.0,
         'is_closed' => false,
+        'has_do' => false,
+        'has_nd' => false,
         'jobs' => []
     ];
 }
@@ -72,6 +74,14 @@ foreach ($jobs as $j) {
             'pay' => $pay_amount
         ];
         $month_data[$d]['work'] += $pay_amount;
+
+        // Track DO and ND job types
+        if ($j['install_type'] == 'DO') {
+            $month_data[$d]['has_do'] = true;
+        }
+        if ($j['install_type'] == 'ND') {
+            $month_data[$d]['has_nd'] = true;
+        }
 
         // CHECK 1: Did we mark this JOB as Extra PD? (Legacy)
         if ($j['extra_per_diem'] == 'Yes') {
@@ -392,6 +402,29 @@ $next_y = date('Y', strtotime("$first_day +1 month"));
             margin-top: 20px;
         }
 
+        .day-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            margin-right: 3px;
+        }
+
+        .badge-do {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+
+        .badge-nd {
+            background: var(--primary);
+            color: white;
+        }
+
+        .day-badges {
+            margin-bottom: 4px;
+        }
+
         @media (max-width: 600px) {
             .cal-header {
                 font-size: 0.7rem;
@@ -432,7 +465,8 @@ $next_y = date('Y', strtotime("$first_day +1 month"));
             </div>
             <div class="sum-item">
                 <div class="sum-label">Per Diem</div>
-                <div class="sum-val" style="color:var(--primary);">$<?= number_format($total_std_pd + $total_ext_pd, 2) ?></div>
+                <div class="sum-val" style="color:var(--primary);">
+                    $<?= number_format($total_std_pd + $total_ext_pd, 2) ?></div>
             </div>
             <div class="sum-item">
                 <div class="sum-label">Fuel Cost</div>
@@ -440,10 +474,12 @@ $next_y = date('Y', strtotime("$first_day +1 month"));
             </div>
             <div class="sum-item" style="border-left:1px solid var(--border);">
                 <div class="sum-label">Net Profit</div>
-                <div class="sum-total-val" style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">$<?= number_format($net_profit, 2) ?></div>
+                <div class="sum-total-val"
+                    style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
+                    $<?= number_format($net_profit, 2) ?></div>
             </div>
         </div>
-        
+
         <!-- Performance Metrics -->
         <div class="summary-card" style="grid-template-columns: repeat(6, 1fr);">
             <div class="sum-item">
@@ -468,7 +504,9 @@ $next_y = date('Y', strtotime("$first_day +1 month"));
             </div>
             <div class="sum-item">
                 <div class="sum-label">Avg MPG</div>
-                <div class="sum-val" style="color:var(--primary);"><?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?></div>
+                <div class="sum-val" style="color:var(--primary);">
+                    <?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?>
+                </div>
             </div>
         </div>
 
@@ -494,6 +532,16 @@ $next_y = date('Y', strtotime("$first_day +1 month"));
                 echo "<div class='cal-day' onclick=\"$onclick\">";
                 echo "<div class='day-num'><span>{$d['day_num']}</span>$lock</div>";
 
+                // Show DO/ND badges
+                if ($d['has_do'] || $d['has_nd']) {
+                    echo "<div class='day-badges'>";
+                    if ($d['has_do'])
+                        echo "<span class='day-badge badge-do'>DO</span>";
+                    if ($d['has_nd'])
+                        echo "<span class='day-badge badge-nd'>ND</span>";
+                    echo "</div>";
+                }
+
                 if ($d['work'] > 0)
                     echo "<div class='stat-row'><span class='label'>Work</span><span class='val-work'>$" . number_format($d['work'], 0) . "</span></div>";
                 if ($d['std_pd'] > 0)
@@ -503,6 +551,10 @@ $next_y = date('Y', strtotime("$first_day +1 month"));
 
                 if ($d['total'] > 0) {
                     echo "<div class='day-total'>$" . number_format($d['total'], 0) . "</div>";
+                } else if ($d['has_do']) {
+                    echo "<div class='day-total' style='color:var(--warning-text);'>Day Off</div>";
+                } else if ($d['has_nd']) {
+                    echo "<div class='day-total' style='color:var(--primary);'>No Dispatch</div>";
                 } else if (!$d['is_closed']) {
                     echo "<div class='add-btn'>+</div>";
                 }
