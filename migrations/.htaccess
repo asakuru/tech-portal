@@ -1,0 +1,2 @@
+# Block all web access to migration scripts
+Require all denied
