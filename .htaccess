@@ -1,0 +1,47 @@
+# ===========================================
+# SECURITY RULES FOR TECH PORTAL
+# ===========================================
+
+# Block direct access to SQLite database files
+<Files "*.db">
+    Require all denied
+</Files>
+<Files "*.sqlite">
+    Require all denied
+</Files>
+
+# Block access to sensitive data files
+<Files "data_7x9s2k_secure.csv">
+    Require all denied
+</Files>
+
+# Block access to the list of closed days
+<Files "closed_days.txt">
+    Require all denied
+</Files>
+
+# Block access to PHP config/function files directly
+<Files "config.php">
+    Require all denied
+</Files>
+<Files "functions.php">
+    Require all denied
+</Files>
+
+# Prevent directory listing
+Options -Indexes
+
+# Prevent access to hidden files (like .git)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Security headers
+<IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    # Prevent MIME-type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    # XSS Protection
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
