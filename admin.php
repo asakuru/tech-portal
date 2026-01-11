@@ -18,6 +18,9 @@ if (!is_admin()) {
     exit;
 }
 
+// --- CSRF PROTECTION ---
+csrf_check();
+
 $db = getDB();
 
 // --- 1. HANDLE USER ACTIONS ---
@@ -233,6 +236,7 @@ function renderRow($job, $install_names, $rates, $index)
             <div style='margin-top:5px; display:flex; gap:5px; justify-content:flex-end;'>
                 <a href='edit_job.php?id=$id' class='btn btn-small btn-secondary' style='text-decoration:none;'>Edit</a>
                 <form method='post' onsubmit=\"return confirm('Delete this job?');\" style='display:inline;'>
+                    " . csrf_field() . "
                     <input type='hidden' name='delete_id' value='$id'>
                     <button class='btn btn-small btn-danger'>X</button>
                 </form>
@@ -407,7 +411,7 @@ function renderRow($job, $install_names, $rates, $index)
 
         <?php if ($view === 'daily' && isset($is_closed) && $is_closed): ?>
             <div style="margin-bottom:20px; text-align:center;">
-                <form method="post"><input type="hidden" name="reopen_date" value="<?= $selected_date ?>">
+                <form method="post"><?= csrf_field() ?><input type="hidden" name="reopen_date" value="<?= $selected_date ?>">
                     <button
                         style="background:#f59e0b; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Reopen
                         This Day</button>
@@ -444,6 +448,7 @@ function renderRow($job, $install_names, $rates, $index)
 
             <form method="post"
                 style="background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
+                <?= csrf_field() ?>
                 <div style="font-weight:bold; margin-bottom:10px; color:var(--primary);">Change My Password</div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <input type="password" name="current_pass" placeholder="Current Password" required
@@ -456,6 +461,7 @@ function renderRow($job, $install_names, $rates, $index)
 
             <form method="post"
                 style="background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
+                <?= csrf_field() ?>
                 <div style="font-weight:bold; margin-bottom:10px;">Add New Tech</div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <input type="text" name="new_username" placeholder="Username" required
@@ -481,6 +487,7 @@ function renderRow($job, $install_names, $rates, $index)
 
                 <?php foreach ($users as $u): ?>
                     <form method="post" class="user-list-row">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="target_id" value="<?= $u['id'] ?>">
 
                         <div>
