@@ -288,13 +288,53 @@ function renderRow($job, $install_names, $rates, $index)
             gap: 10px;
         }
 
-        .selector {
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: var(--bg-input);
-            color: var(--text-main);
+        .page-header {
+            background: linear-gradient(135deg, var(--primary), #1e40af);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .page-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .page-header .subtitle {
             font-size: 0.9rem;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+        .selector {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .selector:hover,
+        .selector:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .selector option {
+            background: var(--bg-card);
+            color: var(--text-main);
         }
 
         .admin-cal-grid {
@@ -360,18 +400,22 @@ function renderRow($job, $install_names, $rates, $index)
 
     <div class="container">
 
-        <div class="controls-row">
-            <h2 style="margin:0;"><?= $date_title ?></h2>
+        <div class="page-header">
+            <div>
+                <h2>📊 <?= $date_title ?></h2>
+                <div class="subtitle">Admin Overview • <?= $job_count ?> jobs logged</div>
+            </div>
             <form method="get" style="display:flex; gap:10px;">
                 <select name="date" class="selector" onchange="this.form.submit()">
                     <?php foreach ($available_dates as $d): ?>
-                        <option value="<?= $d ?>" <?= $d === $selected_date ? 'selected' : '' ?>><?= $d ?></option>
+                        <option value="<?= $d ?>" <?= $d === $selected_date ? 'selected' : '' ?>>
+                            <?= date('M j', strtotime($d)) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <select name="view" class="selector" onchange="this.form.submit()">
-                    <option value="daily" <?= $view === 'daily' ? 'selected' : '' ?>>Daily</option>
-                    <option value="weekly" <?= $view === 'weekly' ? 'selected' : '' ?>>Weekly</option>
-                    <option value="monthly" <?= $view === 'monthly' ? 'selected' : '' ?>>Monthly</option>
+                    <option value="daily" <?= $view === 'daily' ? 'selected' : '' ?>>📅 Daily</option>
+                    <option value="weekly" <?= $view === 'weekly' ? 'selected' : '' ?>>📆 Weekly</option>
+                    <option value="monthly" <?= $view === 'monthly' ? 'selected' : '' ?>>🗓️ Monthly</option>
                 </select>
             </form>
         </div>
@@ -389,18 +433,24 @@ function renderRow($job, $install_names, $rates, $index)
             </div>
             <div class="stat-box">
                 <div class="stat-label">Per Diem</div>
-                <div class="stat-val" style="color:var(--primary);">$<?= number_format($stats['base_pd_total'] + $stats['extra_pd_total'], 2) ?></div>
+                <div class="stat-val" style="color:var(--primary);">
+                    $<?= number_format($stats['base_pd_total'] + $stats['extra_pd_total'], 2) ?></div>
             </div>
             <div class="stat-box">
                 <div class="stat-label">Fuel Cost</div>
                 <div class="stat-val" style="color:var(--danger-text);">-$<?= number_format($total_fuel, 2) ?></div>
             </div>
-            <div class="stat-box" style="background:<?= $net_profit >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)' ?>; border-color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
-                <div class="stat-label" style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">Net Profit</div>
-                <div class="stat-val" style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">$<?= number_format($net_profit, 2) ?></div>
+            <div class="stat-box"
+                style="background:<?= $net_profit >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)' ?>; border-color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
+                <div class="stat-label"
+                    style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">Net Profit
+                </div>
+                <div class="stat-val"
+                    style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
+                    $<?= number_format($net_profit, 2) ?></div>
             </div>
         </div>
-        
+
         <!-- Performance Metrics -->
         <div class="stats-grid" style="margin-top:10px;">
             <div class="stat-box">
@@ -425,7 +475,8 @@ function renderRow($job, $install_names, $rates, $index)
             </div>
             <div class="stat-box">
                 <div class="stat-label">Avg MPG</div>
-                <div class="stat-val" style="color:var(--primary);"><?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?></div>
+                <div class="stat-val" style="color:var(--primary);">
+                    <?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?></div>
             </div>
         </div>
 
