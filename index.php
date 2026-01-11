@@ -425,10 +425,10 @@ else {
             let isSimpleEntry = (isMissedGroup || isRepairGroup);
 
             document.getElementById('secDetails').style.display = hideAll ? 'none' : 'block';
-            document.getElementById('secCustomer').style.display = 'block';
+            document.getElementById('secCustomer').style.display = hideAll ? 'none' : 'block';
             document.getElementById('groupMissed').style.display = isMissedGroup ? 'block' : 'none';
             document.getElementById('groupRepair').style.display = isRepairGroup ? 'block' : 'none';
-            document.getElementById('groupTechStandard').style.display = (isSimpleEntry) ? 'none' : 'block';
+            document.getElementById('groupTechStandard').style.display = (isSimpleEntry || hideAll) ? 'none' : 'block';
 
             let hardTech = document.getElementById('subTechSpecs');
             if (hardTech) hardTech.style.display = isPhoneOnly ? 'none' : 'block';
