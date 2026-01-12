@@ -337,6 +337,46 @@ function renderRow($job, $install_names, $rates, $index)
             color: var(--text-main);
         }
 
+        /* KPI Cards (matching Financials page) */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .kpi-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-top: 10px;
+        }
+
+        .kpi-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+        
+        .positive { color: var(--success-text); }
+        .negative { color: var(--danger-text); }
+
         .admin-cal-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -409,7 +449,8 @@ function renderRow($job, $install_names, $rates, $index)
                 <select name="date" class="selector" onchange="this.form.submit()">
                     <?php foreach ($available_dates as $d): ?>
                         <option value="<?= $d ?>" <?= $d === $selected_date ? 'selected' : '' ?>>
-                            <?= date('M j', strtotime($d)) ?></option>
+                            <?= date('M j', strtotime($d)) ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
                 <select name="view" class="selector" onchange="this.form.submit()">
@@ -425,58 +466,57 @@ function renderRow($job, $install_names, $rates, $index)
                 style="width: 100%; padding: 12px; font-size: 1rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); color: var(--text-main); box-sizing: border-box;">
         </div>
 
-        <!-- Earnings Summary -->
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Work</div>
-                <div class="stat-val">$<?= number_format($stats['job_total'], 2) ?></div>
+        <!-- KPI Cards (matching Financials style) -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Gross Revenue</div>
+                <div class="kpi-value positive">$<?= number_format($stats['grand_total'], 2) ?></div>
+                <div class="kpi-sub">Work + Per Diem</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Per Diem</div>
-                <div class="stat-val" style="color:var(--primary);">
-                    $<?= number_format($stats['base_pd_total'] + $stats['extra_pd_total'], 2) ?></div>
+            <div class="kpi-card">
+                <div class="kpi-label">Mileage</div>
+                <div class="kpi-value"><?= number_format($total_miles) ?></div>
+                <div class="kpi-sub">Total Miles</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Fuel Cost</div>
-                <div class="stat-val" style="color:var(--danger-text);">-$<?= number_format($total_fuel, 2) ?></div>
+            <div class="kpi-card">
+                <div class="kpi-label">Actual Fuel</div>
+                <div class="kpi-value negative">$<?= number_format($total_fuel, 2) ?></div>
+                <div class="kpi-sub">Real Expense</div>
             </div>
-            <div class="stat-box"
-                style="background:<?= $net_profit >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)' ?>; border-color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
-                <div class="stat-label"
+            <div class="kpi-card"
+                style="border-color: <?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
+                <div class="kpi-label"
                     style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">Net Profit
                 </div>
-                <div class="stat-val"
-                    style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
+                <div class="kpi-value <?= $net_profit >= 0 ? 'positive' : 'negative' ?>">
                     $<?= number_format($net_profit, 2) ?></div>
+                <div class="kpi-sub">Gross - Fuel</div>
             </div>
         </div>
 
         <!-- Performance Metrics -->
-        <div class="stats-grid" style="margin-top:10px;">
-            <div class="stat-box">
-                <div class="stat-label">Jobs</div>
-                <div class="stat-val"><?= $job_count ?></div>
+        <div class="kpi-grid" style="margin-top:15px;">
+            <div class="kpi-card">
+                <div class="kpi-label">Jobs</div>
+                <div class="kpi-value"><?= $job_count ?></div>
+                <div class="kpi-sub">This Period</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Days</div>
-                <div class="stat-val"><?= $days_worked ?></div>
+            <div class="kpi-card">
+                <div class="kpi-label">Days Worked</div>
+                <div class="kpi-value"><?= $days_worked ?></div>
+                <div class="kpi-sub">With Activity</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Avg/Day</div>
-                <div class="stat-val">$<?= number_format($avg_daily, 0) ?></div>
+            <div class="kpi-card">
+                <div class="kpi-label">Avg/Day</div>
+                <div class="kpi-value">$<?= number_format($avg_daily, 0) ?></div>
+                <div class="kpi-sub">Per Work Day</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Miles</div>
-                <div class="stat-val"><?= number_format($total_miles) ?></div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">$/Mile</div>
-                <div class="stat-val"><?= $cost_per_mile > 0 ? '$' . number_format($cost_per_mile, 2) : '--' ?></div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Avg MPG</div>
-                <div class="stat-val" style="color:var(--primary);">
+            <div class="kpi-card">
+                <div class="kpi-label">Avg MPG</div>
+                <div class="kpi-value" style="color:var(--primary);">
                     <?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?></div>
+                <div class="kpi-sub">
+                    <?= $cost_per_mile > 0 ? '$' . number_format($cost_per_mile, 2) . '/mi' : 'No Data' ?></div>
             </div>
         </div>
 
