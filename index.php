@@ -645,18 +645,27 @@ else {
                 <div class="kpi-card">
                     <div class="kpi-label">Gross Revenue</div>
                     <div class="kpi-value positive">$<?= number_format($gross_revenue, 2) ?></div>
+                    <div class="kpi-sub">PD: $<?= number_format($total_per_diem ?? 0) ?> | Work: $<?= number_format($gross_revenue - ($total_per_diem ?? 0)) ?></div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Mileage Deduction</div>
                     <div class="kpi-value">$<?= number_format($mileage_deduction, 2) ?></div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Est. Net Income</div>
-                    <div class="kpi-value" style="color:var(--primary);">$<?= number_format($net_income, 2) ?></div>
+                    <div class="kpi-sub"><?= number_format($total_miles) ?> Miles</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Actual Fuel</div>
                     <div class="kpi-value negative">$<?= number_format($total_fuel_cost, 2) ?></div>
+                    <div class="kpi-sub">Real Expense</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Net Taxable</div>
+                    <div class="kpi-value">$<?= number_format($net_income, 2) ?></div>
+                    <div class="kpi-sub">Rev - Mileage</div>
+                </div>
+                <div class="kpi-card" style="border-color: var(--primary);">
+                    <div class="kpi-label" style="color:var(--primary);">Est. Tax Due</div>
+                    <div class="kpi-value">$<?= number_format($net_income > 0 ? $net_income * 0.25 : 0, 2) ?></div>
+                    <div class="kpi-sub">25% Rate</div>
                 </div>
             </div>
             <div class="box">
