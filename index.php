@@ -1032,6 +1032,9 @@ else {
     // Build breakdown data for daily jobs
     $day_breakdown = [];
     $day_per_diem = 0;
+    $day_std_pd = 0;
+    $day_ext_pd = 0;
+    
     if (!empty($daily_jobs)) {
         foreach ($daily_jobs as $job) {
             $items = calculate_job_details($job, $rates);
@@ -1043,43 +1046,98 @@ else {
             ];
         }
     }
-    // Add per diem info
+    
+    // Calculate day per diem breakdown
     if (isset($day_pd) && $day_pd > 0) {
         $day_per_diem = $day_pd;
+        // Check if it includes standard and/or extra
+        if (isset($rate_std) && ($has_work_today || (date('w', strtotime($selected_date)) == 0))) {
+            $day_std_pd = $rate_std;
+        }
+        if (isset($day_log_data) && $day_log_data && $day_log_data['extra_per_diem'] == 1 && isset($rate_ext)) {
+            $day_ext_pd = $rate_ext;
+        }
     }
 
-    // Build breakdown for weekly jobs  
-    $week_breakdown = [];
-    $week_per_diem = 0;
+    // Build breakdown for weekly jobs - grouped by day
+    $week_by_day = [];
+    $week_per_diem_total = 0;
+    
     if (!empty($week_jobs_all)) {
         foreach ($week_jobs_all as $wj) {
+            $wj_date = $wj['install_date'];
+            if (!isset($week_by_day[$wj_date])) {
+                $week_by_day[$wj_date] = [
+                    'date' => $wj_date,
+                    'date_display' => date('D m/d', strtotime($wj_date)),
+                    'jobs' => [],
+                    'jobs_total' => 0,
+                    'std_pd' => 0,
+                    'ext_pd' => 0,
+                    'day_total' => 0
+                ];
+            }
+            
             // Fetch full job data for breakdown
-            $stmt = $db->prepare("SELECT * FROM jobs WHERE install_date = ? AND user_id = ? AND pay_amount = ?");
+            $stmt = $db->prepare("SELECT * FROM jobs WHERE install_date = ? AND user_id = ? AND pay_amount = ? LIMIT 1");
             $stmt->execute([$wj['install_date'], $user_id, $wj['pay_amount']]);
             $full_job = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($full_job) {
                 $items = calculate_job_details($full_job, $rates);
-                $week_breakdown[] = [
-                    'date' => date('D m/d', strtotime($full_job['install_date'])),
+                $week_by_day[$wj_date]['jobs'][] = [
                     'ticket' => $full_job['ticket_number'] ?: 'N/A',
                     'type' => $full_job['install_type'],
                     'total' => (float) $full_job['pay_amount'],
                     'items' => $items
                 ];
+                $week_by_day[$wj_date]['jobs_total'] += (float) $full_job['pay_amount'];
             }
         }
     }
-    // Calculate weekly per diem
-    $week_per_diem = $weekly_grand_total - array_sum(array_column($week_breakdown, 'total'));
-    if (isset($lead_pay_amt) && $lead_pay_amt > 0 && isset($has_billable) && $has_billable) {
-        $week_per_diem -= $lead_pay_amt;
+    
+    // Add per diem for each day
+    foreach ($week_by_day as $wdate => &$day_data) {
+        $is_sun = (date('w', strtotime($wdate)) == 0);
+        $has_work = false;
+        foreach ($day_data['jobs'] as $j) {
+            if ($j['type'] !== 'DO' && $j['type'] !== 'ND') {
+                $has_work = true;
+                break;
+            }
+        }
+        // Has ND job? That also qualifies for per diem
+        $has_nd = false;
+        foreach ($day_data['jobs'] as $j) {
+            if ($j['type'] === 'ND') {
+                $has_nd = true;
+                break;
+            }
+        }
+        
+        if ($is_sun || $has_work || $has_nd) {
+            $day_data['std_pd'] = $rate_std ?? 0;
+            $week_per_diem_total += $day_data['std_pd'];
+        }
+        
+        // Check for extra per diem from daily log
+        if (isset($week_logs_all[$wdate]) && $week_logs_all[$wdate] == 1) {
+            $day_data['ext_pd'] = $rate_ext ?? 0;
+            $week_per_diem_total += $day_data['ext_pd'];
+        }
+        
+        $day_data['day_total'] = $day_data['jobs_total'] + $day_data['std_pd'] + $day_data['ext_pd'];
     }
+    unset($day_data);
+    
+    // Sort by date
+    ksort($week_by_day);
+    $week_by_day = array_values($week_by_day);
     ?>
     var dayBreakdown = <?= json_encode($day_breakdown) ?>;
-    var dayPerDiem = <?= json_encode($day_per_diem) ?>;
+    var dayStdPd = <?= json_encode($day_std_pd) ?>;
+    var dayExtPd = <?= json_encode($day_ext_pd) ?>;
     var dayTotal = <?= json_encode($daily_total) ?>;
-    var weekBreakdown = <?= json_encode($week_breakdown) ?>;
-    var weekPerDiem = <?= json_encode(max(0, $week_per_diem)) ?>;
+    var weekByDay = <?= json_encode($week_by_day) ?>;
     var weekTotal = <?= json_encode($weekly_grand_total) ?>;
     var leadPay = <?= json_encode(isset($lead_pay_amt) && isset($has_billable) && $has_billable ? $lead_pay_amt : 0) ?>;
     
@@ -1088,67 +1146,122 @@ else {
         var title = document.getElementById('tallyModalTitle');
         var content = document.getElementById('tallyModalContent');
         
-        var data = type === 'day' ? dayBreakdown : weekBreakdown;
-        var perDiem = type === 'day' ? dayPerDiem : weekPerDiem;
-        var total = type === 'day' ? dayTotal : weekTotal;
-        var showLead = type === 'week' ? leadPay : 0;
-        
         title.innerHTML = type === 'day' ? '📅 Day Breakdown' : '📆 Week Breakdown';
         
         var html = '';
-        var jobsTotal = 0;
+        var grandJobsTotal = 0;
+        var grandPdTotal = 0;
         
-        if (data.length === 0) {
-            html += '<div style="text-align:center; color:var(--text-muted); padding:20px;">No jobs found</div>';
+        if (type === 'day') {
+            // Daily breakdown - simple list of jobs
+            if (dayBreakdown.length === 0) {
+                html += '<div style="text-align:center; color:var(--text-muted); padding:20px;">No jobs found</div>';
+            } else {
+                dayBreakdown.forEach(function(job) {
+                    grandJobsTotal += job.total;
+                    html += renderJobCard(job);
+                });
+            }
+            
+            // Per diem section for day
+            var totalPd = dayStdPd + dayExtPd;
+            if (totalPd > 0) {
+                html += '<div style="background:var(--bg-input); border-radius:8px; padding:12px; margin-bottom:10px; border:1px solid var(--primary); border-left:3px solid var(--primary);">';
+                html += '<div style="font-size:0.85rem; color:var(--primary); font-weight:bold;">Per Diem</div>';
+                html += '<div style="font-size:0.8rem; margin-top:5px;">';
+                if (dayStdPd > 0) html += '<div style="display:flex; justify-content:space-between;"><span>Standard</span><span>$' + dayStdPd.toFixed(2) + '</span></div>';
+                if (dayExtPd > 0) html += '<div style="display:flex; justify-content:space-between;"><span>Extra PD</span><span>$' + dayExtPd.toFixed(2) + '</span></div>';
+                html += '</div></div>';
+                grandPdTotal = totalPd;
+            }
+            
+            // Summary
+            html += '<div style="border-top:2px solid var(--border); margin-top:15px; padding-top:15px;">';
+            html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem;"><span>Jobs</span><span>$' + grandJobsTotal.toFixed(2) + '</span></div>';
+            if (grandPdTotal > 0) html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--primary);"><span>Per Diem</span><span>$' + grandPdTotal.toFixed(2) + '</span></div>';
+            html += '<div style="display:flex; justify-content:space-between; padding:8px 0; font-size:1.1rem; font-weight:bold; border-top:1px solid var(--border); margin-top:8px;">';
+            html += '<span>Total</span><span style="color:var(--primary);">$' + dayTotal.toFixed(2) + '</span></div></div>';
+            
         } else {
-            data.forEach(function(job, idx) {
-                jobsTotal += job.total;
-                html += '<div style="background:var(--bg-input); border-radius:8px; padding:12px; margin-bottom:10px; border:1px solid var(--border);">';
-                html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">';
-                html += '<div><span style="font-weight:bold; color:var(--primary);">' + job.ticket + '</span>';
-                if (job.date) html += ' <span style="font-size:0.8rem; color:var(--text-muted);">(' + job.date + ')</span>';
-                html += '<div style="font-size:0.8rem; color:var(--text-muted);">' + job.type + '</div></div>';
-                html += '<div style="font-weight:bold; color:var(--success-text);">$' + job.total.toFixed(2) + '</div>';
-                html += '</div>';
-                
-                // Code breakdown
-                if (job.items && job.items.length > 0) {
-                    html += '<div style="font-size:0.8rem; border-top:1px dashed var(--border); padding-top:8px;">';
-                    job.items.forEach(function(item) {
-                        html += '<div style="display:flex; justify-content:space-between; padding:2px 0;">';
-                        html += '<span style="color:var(--text-muted);">' + item.code + ' × ' + item.qty + '</span>';
-                        html += '<span>$' + item.total.toFixed(2) + '</span>';
-                        html += '</div>';
-                    });
+            // Weekly breakdown - grouped by day
+            if (weekByDay.length === 0) {
+                html += '<div style="text-align:center; color:var(--text-muted); padding:20px;">No jobs found</div>';
+            } else {
+                weekByDay.forEach(function(day) {
+                    html += '<div style="margin-bottom:15px;">';
+                    html += '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:linear-gradient(135deg, var(--primary), #1e40af); color:white; border-radius:8px 8px 0 0; font-weight:bold;">';
+                    html += '<span>' + day.date_display + '</span>';
+                    html += '<span>$' + day.day_total.toFixed(2) + '</span>';
                     html += '</div>';
-                }
-                html += '</div>';
-            });
+                    html += '<div style="background:var(--bg-input); border:1px solid var(--border); border-top:none; border-radius:0 0 8px 8px; padding:10px;">';
+                    
+                    // Jobs for this day
+                    day.jobs.forEach(function(job) {
+                        grandJobsTotal += job.total;
+                        html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem;">';
+                        html += '<span><span style="color:var(--primary); font-weight:600;">' + job.ticket + '</span> <span style="color:var(--text-muted); font-size:0.8rem;">(' + job.type + ')</span></span>';
+                        html += '<span style="font-weight:bold;">$' + job.total.toFixed(2) + '</span>';
+                        html += '</div>';
+                        
+                        // Code breakdown under each job
+                        if (job.items && job.items.length > 0) {
+                            html += '<div style="padding-left:10px; margin-bottom:5px;">';
+                            job.items.forEach(function(item) {
+                                html += '<div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">';
+                                html += '<span>' + item.code + ' × ' + item.qty + '</span>';
+                                html += '<span>$' + item.total.toFixed(2) + '</span></div>';
+                            });
+                            html += '</div>';
+                        }
+                    });
+                    
+                    // Per diem for this day
+                    var dayPd = day.std_pd + day.ext_pd;
+                    if (dayPd > 0) {
+                        grandPdTotal += dayPd;
+                        html += '<div style="border-top:1px dashed var(--border); margin-top:5px; padding-top:5px;">';
+                        if (day.std_pd > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--primary);"><span>Per Diem</span><span>$' + day.std_pd.toFixed(2) + '</span></div>';
+                        if (day.ext_pd > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--primary);"><span>Extra PD</span><span>$' + day.ext_pd.toFixed(2) + '</span></div>';
+                        html += '</div>';
+                    }
+                    
+                    html += '</div></div>';
+                });
+            }
+            
+            // Weekly summary
+            html += '<div style="border-top:2px solid var(--border); margin-top:15px; padding-top:15px;">';
+            html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem;"><span>Jobs Subtotal</span><span>$' + grandJobsTotal.toFixed(2) + '</span></div>';
+            if (grandPdTotal > 0) html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--primary);"><span>Per Diem Total</span><span>$' + grandPdTotal.toFixed(2) + '</span></div>';
+            if (leadPay > 0) html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--text-muted);"><span>Lead Pay</span><span>$' + leadPay.toFixed(2) + '</span></div>';
+            html += '<div style="display:flex; justify-content:space-between; padding:8px 0; font-size:1.1rem; font-weight:bold; border-top:1px solid var(--border); margin-top:8px;">';
+            html += '<span>Week Total</span><span style="color:var(--success-text);">$' + weekTotal.toFixed(2) + '</span></div></div>';
         }
-        
-        // Summary section
-        html += '<div style="border-top:2px solid var(--border); margin-top:15px; padding-top:15px;">';
-        html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem;">';
-        html += '<span>Jobs Subtotal</span><span>$' + jobsTotal.toFixed(2) + '</span></div>';
-        
-        if (perDiem > 0) {
-            html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--primary);">';
-            html += '<span>Per Diem</span><span>$' + perDiem.toFixed(2) + '</span></div>';
-        }
-        
-        if (showLead > 0) {
-            html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--text-muted);">';
-            html += '<span>Lead Pay</span><span>$' + showLead.toFixed(2) + '</span></div>';
-        }
-        
-        html += '<div style="display:flex; justify-content:space-between; padding:8px 0; font-size:1.1rem; font-weight:bold; border-top:1px solid var(--border); margin-top:8px;">';
-        var accentColor = type === 'day' ? 'var(--primary)' : 'var(--success-text)';
-        html += '<span>Total</span><span style="color:' + accentColor + ';">$' + total.toFixed(2) + '</span></div>';
-        html += '</div>';
         
         content.innerHTML = html;
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
+    }
+    
+    function renderJobCard(job) {
+        var html = '<div style="background:var(--bg-input); border-radius:8px; padding:12px; margin-bottom:10px; border:1px solid var(--border);">';
+        html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">';
+        html += '<div><span style="font-weight:bold; color:var(--primary);">' + job.ticket + '</span>';
+        html += '<div style="font-size:0.8rem; color:var(--text-muted);">' + job.type + '</div></div>';
+        html += '<div style="font-weight:bold; color:var(--success-text);">$' + job.total.toFixed(2) + '</div>';
+        html += '</div>';
+        
+        if (job.items && job.items.length > 0) {
+            html += '<div style="font-size:0.8rem; border-top:1px dashed var(--border); padding-top:8px;">';
+            job.items.forEach(function(item) {
+                html += '<div style="display:flex; justify-content:space-between; padding:2px 0;">';
+                html += '<span style="color:var(--text-muted);">' + item.code + ' × ' + item.qty + '</span>';
+                html += '<span>$' + item.total.toFixed(2) + '</span></div>';
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+        return html;
     }
     
     function closeTallyModal() {
