@@ -476,7 +476,7 @@ else {
                 addField('//WHY MISSED//', 'why_missed');
                 addField('//SUPERVISOR CONTACTED//', 'supervisor');
                 addField('//WHAT WAS TO DECIDED OUTCOME//', 'outcome');
-                
+
                 let miscEl = document.getElementsByName('misc_notes')[0];
                 let misc = miscEl ? miscEl.value : "";
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
@@ -486,11 +486,11 @@ else {
                     let el = document.getElementsByName(name)[0];
                     if (el && el.value.trim() !== "") notes += header + "\n" + el.value.trim() + "\n\n";
                 };
-                
+
                 addField('//WHAT IS THE COMPLAINT//-----//', 'complaint');
                 // Resolution usually goes with complaint or restored, but if filled we show it
                 addField('//WHAT DID YOU DO TO RESOLVE THE ISSUE//-----//', 'resolution');
-                
+
                 // User requested specific headers without leading // for these two
                 addField('DID YOU REPLACE ANY EQUIPMENT//-----//', 'equip_replaced');
                 addField('IS CUSTOMER SERVICE RESTORED//-----//', 'service_restored');
@@ -500,13 +500,13 @@ else {
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
             } else {
                 // NEW STRICT FORMAT for installs
-                let getVal = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.value.trim()!=='') ? el.value.trim() : ""; };
+                let getVal = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.value.trim() !== '') ? el.value.trim() : ""; };
                 let getCheck = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.checked) ? "Yes" : "No"; };
-                
+
                 // TYPE
                 let sel = document.getElementById('install_type');
                 let typeText = sel.options[sel.selectedIndex].text;
-                if(typeText.includes(' - ')) typeText = typeText.split(' - ')[1];
+                if (typeText.includes(' - ')) typeText = typeText.split(' - ')[1];
                 notes += "//WHAT TYPE OF INSTALL//\n" + typeText + "\n\n";
 
                 // DROP
@@ -579,7 +579,7 @@ else {
                 let misc = miscEl ? miscEl.value : "";
                 notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + (misc.trim() !== "" ? misc.trim() : "No additional work.") + "\n\n";
             }
-            
+
             return notes.trim();
         }
 
@@ -587,7 +587,7 @@ else {
             let notes = generateNotesString();
             if (notes === "") notes = "No specific notes.";
             let el = document.getElementsByName('addtl_work')[0];
-            if(el) {
+            if (el) {
                 el.value = notes;
                 autoResize(el);
             }
@@ -599,7 +599,7 @@ else {
             updatePreview();
             navigator.clipboard.writeText(notes).then(function () { alert("Copied!"); });
         }
-        
+
         function initLivePreview() {
             let inputs = document.querySelectorAll('input, textarea, select');
             inputs.forEach(el => {
@@ -607,9 +607,9 @@ else {
                 el.addEventListener('change', updatePreview);
             });
         }
-        
+
         window.addEventListener('DOMContentLoaded', () => {
-             initLivePreview();
+            initLivePreview();
         });
         // COLLAPSIBLE TRUCK LOG
         function toggleTruckLog() {
@@ -645,7 +645,8 @@ else {
                 <div class="kpi-card">
                     <div class="kpi-label">Gross Revenue</div>
                     <div class="kpi-value positive">$<?= number_format($gross_revenue, 2) ?></div>
-                    <div class="kpi-sub">PD: $<?= number_format($total_per_diem ?? 0) ?> | Work: $<?= number_format($gross_revenue - ($total_per_diem ?? 0)) ?></div>
+                    <div class="kpi-sub">PD: $<?= number_format($total_per_diem ?? 0) ?> | Work:
+                        $<?= number_format($gross_revenue - ($total_per_diem ?? 0)) ?></div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Mileage Deduction</div>
@@ -687,7 +688,8 @@ else {
                             </td>
                             <td onclick="window.location='edit_job.php?id=<?= $j['id'] ?>'"
                                 style="padding:10px 8px; cursor:pointer; font-weight:bold; color:var(--primary);">
-                                <?= $j['ticket_number'] ?></td>
+                                <?= $j['ticket_number'] ?>
+                            </td>
                             <td style="padding:10px 8px; text-align:right; font-weight:bold;">
                                 $<?= number_format($j['pay_amount'], 2) ?></td>
                             <td style="padding:10px 8px; text-align:right;">
@@ -718,13 +720,19 @@ else {
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                <div class="box" style="text-align:center; padding:10px;">
-                    <div style="font-size:0.8rem; color:var(--text-muted);">Day Total</div>
+                <div class="box" style="text-align:center; padding:10px; cursor:pointer; transition:all 0.2s;"
+                    onclick="openTallyModal('day')" onmouseover="this.style.borderColor='var(--primary)'"
+                    onmouseout="this.style.borderColor=''">
+                    <div style="font-size:0.8rem; color:var(--text-muted);">Day Total <span
+                            style="font-size:0.7rem;">🔍</span></div>
                     <div style="font-size:1.5rem; font-weight:bold; color:var(--primary);">
                         $<?= number_format($daily_total, 2) ?></div>
                 </div>
-                <div class="box" style="text-align:center; padding:10px;">
-                    <div style="font-size:0.8rem; color:var(--text-muted);">Week Total</div>
+                <div class="box" style="text-align:center; padding:10px; cursor:pointer; transition:all 0.2s;"
+                    onclick="openTallyModal('week')" onmouseover="this.style.borderColor='var(--success-text)'"
+                    onmouseout="this.style.borderColor=''">
+                    <div style="font-size:0.8rem; color:var(--text-muted);">Week Total <span
+                            style="font-size:0.7rem;">🔍</span></div>
                     <div style="font-size:1.5rem; font-weight:bold; color:var(--success-text);">
                         $<?= number_format($weekly_grand_total, 2) ?></div>
                 </div>
@@ -740,7 +748,8 @@ else {
                         <div onclick="window.location='edit_job.php?id=<?= $job['id'] ?>'" style="cursor:pointer; flex:1;">
                             <div style="font-weight:bold;"><?= $job['ticket_number'] ?></div>
                             <div style="font-size:0.85rem; color:var(--text-muted);"><?= $job['install_type'] ?> •
-                                <?= $job['cust_city'] ?></div>
+                                <?= $job['cust_city'] ?>
+                            </div>
                         </div>
                         <div style="text-align:right;">
                             <div style="font-weight:bold; color:var(--success-text); margin-bottom:5px;">
@@ -812,7 +821,8 @@ else {
                                 <div style="flex:1;">
                                     <label style="font-size:0.75rem;">Odometer</label>
                                     <input type="number" name="odometer" value="<?= htmlspecialchars($day_log['odometer']) ?>"
-                                        data-prev-odo="<?= $last_odo ?>" oninput="updateMiles()" style="padding:6px; width:100%;">
+                                        data-prev-odo="<?= $last_odo ?>" oninput="updateMiles()"
+                                        style="padding:6px; width:100%;">
                                 </div>
                                 <div style="flex:1;">
                                     <label style="font-size:0.75rem;">Miles</label>
@@ -847,8 +857,7 @@ else {
                                 </div>
                                 <div style="flex:1; display:flex; justify-content:space-between; align-items:center;">
                                     <label style="color:var(--success-text); font-weight:bold; font-size:0.8rem;">
-                                        <input type="checkbox" name="extra_pd" value="1"
-                                            <?= ($day_log['extra_per_diem'] == 1) ? 'checked' : '' ?>> Extra PD
+                                        <input type="checkbox" name="extra_pd" value="1" <?= ($day_log['extra_per_diem'] == 1) ? 'checked' : '' ?>> Extra PD
                                     </label>
                                     <button type="submit" name="save_truck_log" class="btn btn-small">💾 Save</button>
                                 </div>
@@ -864,7 +873,8 @@ else {
                     <form method="post">
                         <?= csrf_field() ?>
                         <div class="grid-container">
-                            <div><label>Date</label><input type="date" name="install_date" value="<?= $selected_date ?>" required>
+                            <div><label>Date</label><input type="date" name="install_date" value="<?= $selected_date ?>"
+                                    required>
                             </div>
                             <div id="secTicket"><label>Ticket #</label><input type="text" name="ticket_number"></div>
                         </div>
@@ -1005,7 +1015,149 @@ else {
         <?php endif; ?>
 
     </div>
-    <script>if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }</script>
+    <!-- Tally Breakdown Modal -->
+    <div id="tallyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; overflow-y:auto; padding:20px;" onclick="if(event.target===this) closeTallyModal()">
+        <div style="background:var(--bg-card); max-width:500px; margin:40px auto; border-radius:12px; box-shadow:0 25px 50px rgba(0,0,0,0.25); overflow:hidden;">
+            <div style="background:linear-gradient(135deg, var(--primary), #1e40af); color:white; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; font-size:1.1rem;" id="tallyModalTitle">Breakdown</h3>
+                <button onclick="closeTallyModal()" style="background:rgba(255,255,255,0.2); border:none; color:white; font-size:1.2rem; width:32px; height:32px; border-radius:50%; cursor:pointer;">×</button>
+            </div>
+            <div id="tallyModalContent" style="padding:20px; max-height:70vh; overflow-y:auto;"></div>
+        </div>
+    </div>
+    
+    <script>
+    // Breakdown data passed from PHP
+    <?php
+    // Build breakdown data for daily jobs
+    $day_breakdown = [];
+    $day_per_diem = 0;
+    if (!empty($daily_jobs)) {
+        foreach ($daily_jobs as $job) {
+            $items = calculate_job_details($job, $rates);
+            $day_breakdown[] = [
+                'ticket' => $job['ticket_number'] ?: 'N/A',
+                'type' => $job['install_type'],
+                'total' => (float) $job['pay_amount'],
+                'items' => $items
+            ];
+        }
+    }
+    // Add per diem info
+    if (isset($day_pd) && $day_pd > 0) {
+        $day_per_diem = $day_pd;
+    }
+
+    // Build breakdown for weekly jobs  
+    $week_breakdown = [];
+    $week_per_diem = 0;
+    if (!empty($week_jobs_all)) {
+        foreach ($week_jobs_all as $wj) {
+            // Fetch full job data for breakdown
+            $stmt = $db->prepare("SELECT * FROM jobs WHERE install_date = ? AND user_id = ? AND pay_amount = ?");
+            $stmt->execute([$wj['install_date'], $user_id, $wj['pay_amount']]);
+            $full_job = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($full_job) {
+                $items = calculate_job_details($full_job, $rates);
+                $week_breakdown[] = [
+                    'date' => date('D m/d', strtotime($full_job['install_date'])),
+                    'ticket' => $full_job['ticket_number'] ?: 'N/A',
+                    'type' => $full_job['install_type'],
+                    'total' => (float) $full_job['pay_amount'],
+                    'items' => $items
+                ];
+            }
+        }
+    }
+    // Calculate weekly per diem
+    $week_per_diem = $weekly_grand_total - array_sum(array_column($week_breakdown, 'total'));
+    if (isset($lead_pay_amt) && $lead_pay_amt > 0 && isset($has_billable) && $has_billable) {
+        $week_per_diem -= $lead_pay_amt;
+    }
+    ?>
+    var dayBreakdown = <?= json_encode($day_breakdown) ?>;
+    var dayPerDiem = <?= json_encode($day_per_diem) ?>;
+    var dayTotal = <?= json_encode($daily_total) ?>;
+    var weekBreakdown = <?= json_encode($week_breakdown) ?>;
+    var weekPerDiem = <?= json_encode(max(0, $week_per_diem)) ?>;
+    var weekTotal = <?= json_encode($weekly_grand_total) ?>;
+    var leadPay = <?= json_encode(isset($lead_pay_amt) && isset($has_billable) && $has_billable ? $lead_pay_amt : 0) ?>;
+    
+    function openTallyModal(type) {
+        var modal = document.getElementById('tallyModal');
+        var title = document.getElementById('tallyModalTitle');
+        var content = document.getElementById('tallyModalContent');
+        
+        var data = type === 'day' ? dayBreakdown : weekBreakdown;
+        var perDiem = type === 'day' ? dayPerDiem : weekPerDiem;
+        var total = type === 'day' ? dayTotal : weekTotal;
+        var showLead = type === 'week' ? leadPay : 0;
+        
+        title.innerHTML = type === 'day' ? '📅 Day Breakdown' : '📆 Week Breakdown';
+        
+        var html = '';
+        var jobsTotal = 0;
+        
+        if (data.length === 0) {
+            html += '<div style="text-align:center; color:var(--text-muted); padding:20px;">No jobs found</div>';
+        } else {
+            data.forEach(function(job, idx) {
+                jobsTotal += job.total;
+                html += '<div style="background:var(--bg-input); border-radius:8px; padding:12px; margin-bottom:10px; border:1px solid var(--border);">';
+                html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">';
+                html += '<div><span style="font-weight:bold; color:var(--primary);">' + job.ticket + '</span>';
+                if (job.date) html += ' <span style="font-size:0.8rem; color:var(--text-muted);">(' + job.date + ')</span>';
+                html += '<div style="font-size:0.8rem; color:var(--text-muted);">' + job.type + '</div></div>';
+                html += '<div style="font-weight:bold; color:var(--success-text);">$' + job.total.toFixed(2) + '</div>';
+                html += '</div>';
+                
+                // Code breakdown
+                if (job.items && job.items.length > 0) {
+                    html += '<div style="font-size:0.8rem; border-top:1px dashed var(--border); padding-top:8px;">';
+                    job.items.forEach(function(item) {
+                        html += '<div style="display:flex; justify-content:space-between; padding:2px 0;">';
+                        html += '<span style="color:var(--text-muted);">' + item.code + ' × ' + item.qty + '</span>';
+                        html += '<span>$' + item.total.toFixed(2) + '</span>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+        }
+        
+        // Summary section
+        html += '<div style="border-top:2px solid var(--border); margin-top:15px; padding-top:15px;">';
+        html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem;">';
+        html += '<span>Jobs Subtotal</span><span>$' + jobsTotal.toFixed(2) + '</span></div>';
+        
+        if (perDiem > 0) {
+            html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--primary);">';
+            html += '<span>Per Diem</span><span>$' + perDiem.toFixed(2) + '</span></div>';
+        }
+        
+        if (showLead > 0) {
+            html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--text-muted);">';
+            html += '<span>Lead Pay</span><span>$' + showLead.toFixed(2) + '</span></div>';
+        }
+        
+        html += '<div style="display:flex; justify-content:space-between; padding:8px 0; font-size:1.1rem; font-weight:bold; border-top:1px solid var(--border); margin-top:8px;">';
+        var accentColor = type === 'day' ? 'var(--primary)' : 'var(--success-text)';
+        html += '<span>Total</span><span style="color:' + accentColor + ';">$' + total.toFixed(2) + '</span></div>';
+        html += '</div>';
+        
+        content.innerHTML = html;
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeTallyModal() {
+        document.getElementById('tallyModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+    
+    if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
+    </script>
 </body>
 
 </html>
