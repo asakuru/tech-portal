@@ -17,7 +17,7 @@ $entry_label = $is_admin ? 'Month to Date' : 'Entry';
 <div class="overlay" onclick="toggleMenu()"></div>
 
 <nav class="navbar">
-    <div style="display:flex; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;">
         <button class="menu-toggle" onclick="toggleMenu()">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">

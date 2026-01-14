@@ -123,14 +123,26 @@ body.dark-mode {
 }
 
 .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 800;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     letter-spacing: -0.02em;
+    text-decoration: none;
+    color: var(--nav-text);
+}
+
+.nav-brand span {
     background: linear-gradient(135deg, #60a5fa 0%, #a855f7 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-shadow: 0 2px 10px rgba(168, 85, 247, 0.2);
+}
+
+.nav-brand .brand-icon {
+    stroke: url(#brand-gradient);
+    stroke: #a855f7;
 }
 
 .nav-links {
