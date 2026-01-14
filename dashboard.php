@@ -1,5 +1,6 @@
 <?php
 require 'config.php';
+require 'functions.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -10,434 +11,346 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 }
 
 $db = getDB();
-
-// FIX 1: Force rates to be floats
-$std_pd_rate = (float) ($rates['per_diem'] ?? 0.00);
-$ext_pd_rate = (float) ($rates['extra_pd'] ?? 0.00);
-
-$month = $_GET['m'] ?? date('m');
-$year = $_GET['y'] ?? date('Y');
-$first_day = "$year-$month-01";
-$days_in_month = date('t', strtotime($first_day));
-$month_name = date('F Y', strtotime($first_day));
-
 $user_id = $_SESSION['user_id'];
-$start_date = "$year-$month-01";
-$end_date = "$year-$month-$days_in_month";
 
-// 1. Fetch Jobs
-$sql = "SELECT * FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? ORDER BY install_date ASC";
-$stmt = $db->prepare($sql);
-$stmt->execute([$user_id, $start_date, $end_date]);
-$jobs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Get rates
+$std_pd_rate = (float) ($rates['per_diem'] ?? 0.00);
+$lead_pay_rate = (float) ($rates['lead_pay'] ?? 0.00);
 
-// 2. Fetch Logs
-$stmt = $db->prepare("SELECT * FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
-$stmt->execute([$user_id, $start_date, $end_date]);
-$logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Date ranges
+$today = date('Y-m-d');
+$current_month_start = date('Y-m-01');
+$current_month_end = date('Y-m-t');
+$last_month_start = date('Y-m-01', strtotime('-1 month'));
+$last_month_end = date('Y-m-t', strtotime('-1 month'));
+$two_months_ago_start = date('Y-m-01', strtotime('-2 months'));
+$two_months_ago_end = date('Y-m-t', strtotime('-2 months'));
+$twelve_weeks_ago = date('Y-m-d', strtotime('-12 weeks'));
 
-// 3. Process Data
-$month_data = [];
-$total_work = 0;
-$total_std_pd = 0;
-$total_ext_pd = 0;
+// ============================================
+// 1. WEEKLY EARNINGS TREND (Last 12 weeks)
+// ============================================
+$weekly_earnings = [];
+for ($i = 11; $i >= 0; $i--) {
+    $week_start = date('Y-m-d', strtotime("-$i weeks monday"));
+    $week_end = date('Y-m-d', strtotime("-$i weeks sunday"));
+    $week_label = date('M j', strtotime($week_start));
 
-for ($d = 1; $d <= $days_in_month; $d++) {
-    $date = sprintf("%s-%02d-%02d", $year, $month, $d);
-    $month_data[$date] = [
-        'date' => $date,
-        'day_num' => $d,
-        'work' => 0.0,
-        'std_pd' => 0.0,
-        'ext_pd' => 0.0,
-        'total' => 0.0,
-        'miles' => 0,
-        'fuel' => 0.0,
-        'net' => 0.0,
-        'is_closed' => false,
-        'has_do' => false,
-        'has_nd' => false,
-        'jobs' => []
+    // Get jobs for this week
+    $stmt = $db->prepare("SELECT SUM(pay_amount) as work FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO', 'ND')");
+    $stmt->execute([$user_id, $week_start, $week_end]);
+    $work = (float) ($stmt->fetch()['work'] ?? 0);
+
+    // Count work days for per diem
+    $stmt = $db->prepare("SELECT COUNT(DISTINCT install_date) as days FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO')");
+    $stmt->execute([$user_id, $week_start, $week_end]);
+    $work_days = (int) ($stmt->fetch()['days'] ?? 0);
+
+    // Add Sundays
+    $current = strtotime($week_start);
+    $end = strtotime($week_end);
+    while ($current <= $end) {
+        if (date('N', $current) == 7)
+            $work_days++;
+        $current = strtotime('+1 day', $current);
+    }
+
+    $pd = $work_days * $std_pd_rate;
+    $total = $work + $pd + ($work > 0 ? $lead_pay_rate : 0);
+
+    $weekly_earnings[] = [
+        'label' => $week_label,
+        'work' => $work,
+        'pd' => $pd,
+        'total' => $total
     ];
 }
 
-// Map Jobs (Legacy Extra PD Support)
-foreach ($jobs as $j) {
-    $d = $j['install_date'];
-    if (isset($month_data[$d])) {
-        // FIX 2: Force pay to float
-        $pay_amount = (float) $j['pay_amount'];
+// ============================================
+// 2. JOB TYPE BREAKDOWN (All time for this user)
+// ============================================
+$stmt = $db->prepare("SELECT install_type, COUNT(*) as count, SUM(pay_amount) as revenue FROM jobs WHERE user_id = ? AND install_type NOT IN ('DO', 'ND') GROUP BY install_type ORDER BY revenue DESC");
+$stmt->execute([$user_id]);
+$job_types = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $month_data[$d]['jobs'][] = [
-            'ticket' => $j['ticket_number'],
-            'type' => $j['install_type'],
-            'pay' => $pay_amount
-        ];
-        $month_data[$d]['work'] += $pay_amount;
-
-        // Track DO and ND job types
-        if ($j['install_type'] == 'DO') {
-            $month_data[$d]['has_do'] = true;
-        }
-        if ($j['install_type'] == 'ND') {
-            $month_data[$d]['has_nd'] = true;
-        }
-
-        // CHECK 1: Did we mark this JOB as Extra PD? (Legacy)
-        if ($j['extra_per_diem'] == 'Yes') {
-            $month_data[$d]['ext_pd'] = $ext_pd_rate;
-        }
-    }
+$type_labels = [];
+$type_counts = [];
+$type_revenues = [];
+$type_colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6'];
+foreach ($job_types as $idx => $jt) {
+    $label = $dropdown_labels[$jt['install_type']] ?? $jt['install_type'];
+    $type_labels[] = $label;
+    $type_counts[] = (int) $jt['count'];
+    $type_revenues[] = (float) $jt['revenue'];
 }
 
-// Map Logs (New Extra PD Support)
-foreach ($logs as $l) {
-    $d = $l['log_date'];
-    if (isset($month_data[$d])) {
-        $month_data[$d]['is_closed'] = ($l['is_closed'] == 1);
-        $month_data[$d]['miles'] = (float) $l['mileage'];
-        // FIX 3: Force fuel to float to prevent "float - string" error
-        $month_data[$d]['fuel'] = (float) $l['fuel_cost'];
+// ============================================
+// 3. MONTH COMPARISON
+// ============================================
+function getMonthStats($db, $user_id, $start, $end, $std_pd_rate, $lead_pay_rate)
+{
+    // Jobs
+    $stmt = $db->prepare("SELECT SUM(pay_amount) as work, COUNT(*) as jobs FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO', 'ND')");
+    $stmt->execute([$user_id, $start, $end]);
+    $job_data = $stmt->fetch();
+    $work = (float) ($job_data['work'] ?? 0);
+    $jobs = (int) ($job_data['jobs'] ?? 0);
 
-        // CHECK 2: Did we check the box on the DAY? (New Way)
-        if (isset($l['extra_per_diem']) && $l['extra_per_diem'] == 1) {
-            $month_data[$d]['ext_pd'] = $ext_pd_rate;
-        }
+    // Days worked
+    $stmt = $db->prepare("SELECT COUNT(DISTINCT install_date) as days FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO')");
+    $stmt->execute([$user_id, $start, $end]);
+    $days = (int) ($stmt->fetch()['days'] ?? 0);
+
+    // Fuel
+    $stmt = $db->prepare("SELECT SUM(fuel_cost) as fuel, SUM(mileage) as miles FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
+    $stmt->execute([$user_id, $start, $end]);
+    $log_data = $stmt->fetch();
+    $fuel = (float) ($log_data['fuel'] ?? 0);
+    $miles = (float) ($log_data['miles'] ?? 0);
+
+    // Estimate PD (work days + Sundays in range)
+    $pd_days = $days;
+    $current = strtotime($start);
+    $end_ts = strtotime($end);
+    while ($current <= $end_ts) {
+        if (date('N', $current) == 7)
+            $pd_days++;
+        $current = strtotime('+1 day', $current);
     }
+    $pd = $pd_days * $std_pd_rate;
+
+    // Lead pay (estimate 1 per week with work)
+    $weeks_with_work = ceil($days / 5);
+    $lead = $work > 0 ? $weeks_with_work * $lead_pay_rate : 0;
+
+    $gross = $work + $pd + $lead;
+    $net = $gross - $fuel;
+    $avg_day = $days > 0 ? $gross / $days : 0;
+
+    return [
+        'gross' => $gross,
+        'work' => $work,
+        'pd' => $pd,
+        'jobs' => $jobs,
+        'days' => $days,
+        'miles' => $miles,
+        'fuel' => $fuel,
+        'net' => $net,
+        'avg_day' => $avg_day
+    ];
 }
 
-// Final Calculations
-foreach ($month_data as $date => &$day) {
-    // Standard PD Rules
-    $is_sunday = (date('N', strtotime($date)) == 7);
-    $has_eligible_work = false;
-    foreach ($day['jobs'] as $job) {
-        if ($job['type'] != 'DO')
-            $has_eligible_work = true;
-    }
+$this_month = getMonthStats($db, $user_id, $current_month_start, $current_month_end, $std_pd_rate, $lead_pay_rate);
+$last_month = getMonthStats($db, $user_id, $last_month_start, $last_month_end, $std_pd_rate, $lead_pay_rate);
+$two_months = getMonthStats($db, $user_id, $two_months_ago_start, $two_months_ago_end, $std_pd_rate, $lead_pay_rate);
 
-    if ($is_sunday || $has_eligible_work) {
-        $day['std_pd'] = $std_pd_rate;
-    }
-
-    $day['total'] = $day['work'] + $day['std_pd'] + $day['ext_pd'];
-
-    // FIX 4: Ensure subtraction happens between floats
-    $day['net'] = (float) $day['total'] - (float) $day['fuel'];
-
-    $total_work += $day['work'];
-    $total_std_pd += $day['std_pd'];
-    $total_ext_pd += $day['ext_pd'];
-}
-unset($day);
-
-$grand_total = $total_work + $total_std_pd + $total_ext_pd;
-
-// Additional Dashboard Metrics
-$total_fuel = 0;
-$total_miles = 0;
-$days_worked = 0;
-$total_jobs = count($jobs);
-
-foreach ($month_data as $d) {
-    $total_fuel += (float) $d['fuel'];
-    $total_miles += (float) $d['miles'];
-    if ($d['work'] > 0 || count($d['jobs']) > 0) {
-        $days_worked++;
-    }
+// Calculate % changes
+function pctChange($current, $previous)
+{
+    if ($previous == 0)
+        return $current > 0 ? 100 : 0;
+    return round((($current - $previous) / $previous) * 100);
 }
 
-$net_profit = $grand_total - $total_fuel;
-$avg_daily = ($days_worked > 0) ? ($grand_total / $days_worked) : 0;
-$cost_per_mile = ($total_miles > 0) ? ($total_fuel / $total_miles) : 0;
-$avg_mpg = 0;
+$avg_day_change = pctChange($this_month['avg_day'], $last_month['avg_day']);
+$jobs_change = pctChange($this_month['jobs'], $last_month['jobs']);
+$miles_change = pctChange($this_month['miles'], $last_month['miles']);
 
-// Get average MPG from daily_logs for this month
-try {
-    $stmt = $db->prepare("SELECT SUM(mileage) as miles, SUM(gallons) as gal FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
-    $stmt->execute([$user_id, $start_date, $end_date]);
-    $mpg_data = $stmt->fetch();
-    if ($mpg_data && floatval($mpg_data['gal']) > 0) {
-        $avg_mpg = floatval($mpg_data['miles']) / floatval($mpg_data['gal']);
-    }
-} catch (Exception $e) {
-}
+// Cost per mile
+$cost_per_mile = $this_month['miles'] > 0 ? $this_month['fuel'] / $this_month['miles'] : 0;
+$last_cpm = $last_month['miles'] > 0 ? $last_month['fuel'] / $last_month['miles'] : 0;
+$cpm_change = pctChange($cost_per_mile, $last_cpm);
 
-// Nav Links
-$prev_m = date('m', strtotime("$first_day -1 month"));
-$prev_y = date('Y', strtotime("$first_day -1 month"));
-$next_m = date('m', strtotime("$first_day +1 month"));
-$next_y = date('Y', strtotime("$first_day +1 month"));
+// Jobs per day
+$jobs_per_day = $this_month['days'] > 0 ? $this_month['jobs'] / $this_month['days'] : 0;
+$last_jpd = $last_month['days'] > 0 ? $last_month['jobs'] / $last_month['days'] : 0;
+$jpd_change = pctChange($jobs_per_day, $last_jpd);
+
+// ============================================
+// 4. BEST DAYS & WEEKS
+// ============================================
+// Best days
+$stmt = $db->prepare("SELECT install_date, SUM(pay_amount) as total FROM jobs WHERE user_id = ? AND install_type NOT IN ('DO', 'ND') GROUP BY install_date ORDER BY total DESC LIMIT 5");
+$stmt->execute([$user_id]);
+$best_days = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Best weeks (by week ending Saturday)
+$stmt = $db->prepare("
+    SELECT 
+        strftime('%Y-%W', install_date) as week_num,
+        MIN(install_date) as week_start,
+        SUM(pay_amount) as total 
+    FROM jobs 
+    WHERE user_id = ? AND install_type NOT IN ('DO', 'ND')
+    GROUP BY week_num 
+    ORDER BY total DESC 
+    LIMIT 5
+");
+$stmt->execute([$user_id]);
+$best_weeks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Month labels for chart
+$month_labels = [
+    date('M Y', strtotime('-2 months')),
+    date('M Y', strtotime('-1 month')),
+    date('M Y')
+];
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <title>Dashboard</title>
+    <title>Analytics</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .cal-wrapper {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            background: var(--border);
-            border: 1px solid var(--border);
-        }
-
-        .cal-header {
-            background: var(--bg-input);
-            text-align: center;
-            padding: 10px 0;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        .cal-day {
-            background: var(--bg-card);
-            min-height: 120px;
-            padding: 6px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            cursor: pointer;
-        }
-
-        .cal-day:hover {
-            background: var(--bg-input);
-        }
-
-        .day-num {
-            font-weight: bold;
-            margin-bottom: 4px;
-            font-size: 1rem;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .lock-icon {
-            font-size: 0.8rem;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            margin-bottom: 2px;
-        }
-
-        .label {
-            color: var(--text-muted);
-        }
-
-        .val-work {
-            color: var(--text-main);
-        }
-
-        .val-std {
-            color: var(--primary);
-        }
-
-        .val-ext {
-            color: var(--success-text);
-        }
-
-        .day-total {
-            border-top: 1px solid var(--border);
-            margin-top: 4px;
-            padding-top: 4px;
-            text-align: right;
-            font-weight: 800;
-            font-size: 0.95rem;
-            color: var(--text-main);
-        }
-
-        .add-btn {
-            display: block;
-            text-align: center;
-            font-size: 2rem;
-            line-height: 1;
-            text-decoration: none;
-            color: var(--border);
-            margin-top: auto;
-        }
-
-        .cal-day:hover .add-btn {
-            color: var(--primary);
-        }
-
-        .summary-card {
-            background: var(--bg-card);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .sum-item {
-            text-align: center;
-        }
-
-        .sum-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .sum-val {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        .sum-total-val {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-        }
-
-        .dashboard-nav {
+        .analytics-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--bg-card);
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
         }
 
-        .nav-btn {
-            text-decoration: none;
-            background: var(--bg-input);
-            color: var(--text-main);
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-
-        .nav-btn:hover {
-            background: var(--border);
-        }
-
-        .nav-title {
+        .analytics-header h2 {
             margin: 0;
-            font-size: 1.2rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* MODAL STYLES */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 10px;
         }
 
-        .modal-content {
-            background-color: var(--bg-card);
-            padding: 20px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .kpi-card {
             position: relative;
         }
 
-        .close-modal {
-            position: absolute;
-            right: 15px;
-            top: 10px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-muted);
+        .kpi-change {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 6px;
+            display: inline-block;
         }
 
-        .modal-header {
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 1.2rem;
+        .kpi-change.positive {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success-text);
         }
 
-        .modal-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px dashed var(--border);
+        .kpi-change.negative {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger-text);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-title {
             font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
         }
 
-        .modal-total {
+        .chart-container {
+            position: relative;
+            height: 280px;
+        }
+
+        .chart-container-small {
+            position: relative;
+            height: 220px;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .insight-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+
+        .insight-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .insight-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .insight-list li {
             display: flex;
             justify-content: space-between;
             padding: 10px 0;
-            border-top: 2px solid var(--border);
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-top: 10px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .modal-nav {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
+        .insight-list li:last-child {
+            border-bottom: none;
         }
 
-        .day-badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.65rem;
-            font-weight: bold;
-            margin-right: 3px;
-        }
-
-        .badge-do {
-            background: var(--warning-bg);
-            color: var(--warning-text);
-        }
-
-        .badge-nd {
-            background: var(--primary);
+        .insight-rank {
+            width: 24px;
+            height: 24px;
+            background: var(--gradient-primary);
             color: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 10px;
         }
 
-        .day-badges {
-            margin-bottom: 4px;
+        .insight-amount {
+            font-weight: 700;
+            color: var(--success-text);
         }
 
-        @media (max-width: 600px) {
-            .cal-header {
-                font-size: 0.7rem;
-                padding: 5px 0;
+        @media (max-width: 768px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
             }
 
-            .cal-day {
-                min-height: 80px;
-                padding: 2px;
-            }
-
-            .stat-row {
-                font-size: 0.65rem;
+            .chart-container {
+                height: 220px;
             }
         }
     </style>
@@ -449,187 +362,220 @@ $next_y = date('Y', strtotime("$first_day +1 month"));
 
     <div class="container">
 
-        <div class="dashboard-nav">
-            <a href="?m=<?= htmlspecialchars($prev_m) ?>&y=<?= htmlspecialchars($prev_y) ?>" class="nav-btn">&laquo;
-                Prev</a>
-            <div class="nav-title"><?= htmlspecialchars($month_name) ?></div>
-            <a href="?m=<?= htmlspecialchars($next_m) ?>&y=<?= htmlspecialchars($next_y) ?>" class="nav-btn">Next
-                &raquo;</a>
+        <div class="analytics-header">
+            <h2>📊 Analytics</h2>
         </div>
 
-        <!-- Earnings Summary -->
-        <div class="summary-card">
-            <div class="sum-item">
-                <div class="sum-label">Work</div>
-                <div class="sum-val">$<?= number_format($total_work, 2) ?></div>
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Avg / Day</div>
+                <div class="kpi-value">$<?= number_format($this_month['avg_day'], 0) ?></div>
+                <div class="kpi-change <?= $avg_day_change >= 0 ? 'positive' : 'negative' ?>">
+                    <?= $avg_day_change >= 0 ? '↑' : '↓' ?> <?= abs($avg_day_change) ?>% vs last month
+                </div>
             </div>
-            <div class="sum-item">
-                <div class="sum-label">Per Diem</div>
-                <div class="sum-val" style="color:var(--primary);">
-                    $<?= number_format($total_std_pd + $total_ext_pd, 2) ?></div>
+            <div class="kpi-card">
+                <div class="kpi-label">Jobs / Day</div>
+                <div class="kpi-value"><?= number_format($jobs_per_day, 1) ?></div>
+                <div class="kpi-change <?= $jpd_change >= 0 ? 'positive' : 'negative' ?>">
+                    <?= $jpd_change >= 0 ? '↑' : '↓' ?> <?= abs($jpd_change) ?>%
+                </div>
             </div>
-            <div class="sum-item">
-                <div class="sum-label">Fuel Cost</div>
-                <div class="sum-val" style="color:var(--danger-text);">-$<?= number_format($total_fuel, 2) ?></div>
+            <div class="kpi-card">
+                <div class="kpi-label">Cost / Mile</div>
+                <div class="kpi-value">$<?= number_format($cost_per_mile, 2) ?></div>
+                <div class="kpi-change <?= $cpm_change <= 0 ? 'positive' : 'negative' ?>">
+                    <?= $cpm_change <= 0 ? '↓' : '↑' ?> <?= abs($cpm_change) ?>%
+                </div>
             </div>
-            <div class="sum-item" style="border-left:1px solid var(--border);">
-                <div class="sum-label">Net Profit</div>
-                <div class="sum-total-val"
-                    style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
-                    $<?= number_format($net_profit, 2) ?></div>
+            <div class="kpi-card">
+                <div class="kpi-label">This Month</div>
+                <div class="kpi-value positive">$<?= number_format($this_month['gross'], 0) ?></div>
+                <div class="kpi-sub"><?= $this_month['jobs'] ?> jobs, <?= $this_month['days'] ?> days</div>
             </div>
         </div>
 
-        <!-- Performance Metrics -->
-        <div class="summary-card" style="grid-template-columns: repeat(6, 1fr);">
-            <div class="sum-item">
-                <div class="sum-label">Jobs</div>
-                <div class="sum-val"><?= $total_jobs ?></div>
+        <!-- Charts Row -->
+        <div class="chart-grid">
+            <!-- Earnings Trend -->
+            <div class="chart-card">
+                <div class="chart-title">📈 Earnings Trend (12 Weeks)</div>
+                <div class="chart-container">
+                    <canvas id="earningsChart"></canvas>
+                </div>
             </div>
-            <div class="sum-item">
-                <div class="sum-label">Days</div>
-                <div class="sum-val"><?= $days_worked ?></div>
-            </div>
-            <div class="sum-item">
-                <div class="sum-label">Avg/Day</div>
-                <div class="sum-val">$<?= number_format($avg_daily, 0) ?></div>
-            </div>
-            <div class="sum-item">
-                <div class="sum-label">Miles</div>
-                <div class="sum-val"><?= number_format($total_miles) ?></div>
-            </div>
-            <div class="sum-item">
-                <div class="sum-label">$/Mile</div>
-                <div class="sum-val"><?= $cost_per_mile > 0 ? '$' . number_format($cost_per_mile, 2) : '--' ?></div>
-            </div>
-            <div class="sum-item">
-                <div class="sum-label">Avg MPG</div>
-                <div class="sum-val" style="color:var(--primary);">
-                    <?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?>
+
+            <!-- Job Type Breakdown -->
+            <div class="chart-card">
+                <div class="chart-title">🎯 Job Type Breakdown</div>
+                <div class="chart-container-small">
+                    <canvas id="jobTypeChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="cal-wrapper">
-            <div class="cal-header">Sun</div>
-            <div class="cal-header">Mon</div>
-            <div class="cal-header">Tue</div>
-            <div class="cal-header">Wed</div>
-            <div class="cal-header">Thu</div>
-            <div class="cal-header">Fri</div>
-            <div class="cal-header">Sat</div>
-
-            <?php
-            $day_of_week = date('w', strtotime($first_day));
-            for ($i = 0; $i < $day_of_week; $i++) {
-                echo "<div class='cal-day' style='opacity:0.5; cursor:default;'></div>";
-            }
-
-            foreach ($month_data as $date => $d) {
-                $lock = $d['is_closed'] ? '<span class="lock-icon">🔒</span>' : '';
-                $onclick = $d['is_closed'] ? "openSummary('" . htmlspecialchars($date) . "')" : "window.location='index.php?date=" . htmlspecialchars($date) . "'";
-
-                echo "<div class='cal-day' onclick=\"$onclick\">";
-                echo "<div class='day-num'><span>{$d['day_num']}</span>$lock</div>";
-
-                // Show DO/ND badges
-                if ($d['has_do'] || $d['has_nd']) {
-                    echo "<div class='day-badges'>";
-                    if ($d['has_do'])
-                        echo "<span class='day-badge badge-do'>DO</span>";
-                    if ($d['has_nd'])
-                        echo "<span class='day-badge badge-nd'>ND</span>";
-                    echo "</div>";
-                }
-
-                if ($d['work'] > 0)
-                    echo "<div class='stat-row'><span class='label'>Work</span><span class='val-work'>$" . number_format($d['work'], 0) . "</span></div>";
-                if ($d['std_pd'] > 0)
-                    echo "<div class='stat-row'><span class='label'>Std</span><span class='val-std'>$" . number_format($d['std_pd'], 0) . "</span></div>";
-                if ($d['ext_pd'] > 0)
-                    echo "<div class='stat-row'><span class='label'>Ext</span><span class='val-ext'>$" . number_format($d['ext_pd'], 0) . "</span></div>";
-
-                if ($d['total'] > 0) {
-                    echo "<div class='day-total'>$" . number_format($d['total'], 0) . "</div>";
-                } else if ($d['has_do']) {
-                    echo "<div class='day-total' style='color:var(--warning-text);'>Day Off</div>";
-                } else if ($d['has_nd']) {
-                    echo "<div class='day-total' style='color:var(--primary);'>No Dispatch</div>";
-                } else if (!$d['is_closed']) {
-                    echo "<div class='add-btn'>+</div>";
-                }
-
-                echo "</div>";
-            }
-            ?>
-        </div>
-    </div>
-
-    <div id="dayModal" class="modal" onclick="closeModal(event)">
-        <div class="modal-content">
-            <span class="close-modal" onclick="document.getElementById('dayModal').style.display='none'">&times;</span>
-            <div id="modalDate" class="modal-header"></div>
-            <div id="modalBody"></div>
-
-            <div class="modal-nav">
-                <button id="btnPrev" class="btn btn-secondary">&laquo; Prev</button>
-                <button id="btnEdit" class="btn">✏️ Edit / Reopen</button>
-                <button id="btnNext" class="btn btn-secondary">Next &raquo;</button>
+        <!-- Month Comparison -->
+        <div class="chart-card" style="margin-bottom: 24px;">
+            <div class="chart-title">📊 Month Comparison</div>
+            <div class="chart-container-small">
+                <canvas id="monthChart"></canvas>
             </div>
         </div>
+
+        <!-- Best Days & Weeks -->
+        <div class="insights-grid">
+            <div class="insight-card">
+                <div class="insight-title">🏆 Best Days</div>
+                <ul class="insight-list">
+                    <?php foreach ($best_days as $idx => $day): ?>
+                        <li>
+                            <span>
+                                <span class="insight-rank"><?= $idx + 1 ?></span>
+                                <?= date('M j, Y', strtotime($day['install_date'])) ?>
+                            </span>
+                            <span class="insight-amount">$<?= number_format($day['total'], 2) ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                    <?php if (empty($best_days)): ?>
+                        <li style="color: var(--text-muted); justify-content: center;">No data yet</li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+
+            <div class="insight-card">
+                <div class="insight-title">🚀 Best Weeks</div>
+                <ul class="insight-list">
+                    <?php foreach ($best_weeks as $idx => $week): ?>
+                        <li>
+                            <span>
+                                <span class="insight-rank"><?= $idx + 1 ?></span>
+                                Week of <?= date('M j', strtotime($week['week_start'])) ?>
+                            </span>
+                            <span class="insight-amount">$<?= number_format($week['total'], 2) ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                    <?php if (empty($best_weeks)): ?>
+                        <li style="color: var(--text-muted); justify-content: center;">No data yet</li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
+        // Chart.js configuration
+        Chart.defaults.color = getComputedStyle(document.body).getPropertyValue('--text-muted').trim() || '#64748b';
+        Chart.defaults.borderColor = getComputedStyle(document.body).getPropertyValue('--border').trim() || '#334155';
 
-        const monthData = <?= json_encode($month_data) ?>;
-        const dates = Object.keys(monthData);
-
-        function openSummary(date) {
-            const data = monthData[date];
-            if (!data) return;
-
-            document.getElementById('modalDate').innerText = new Date(date + 'T00:00:00').toDateString();
-
-            let html = '';
-            if (data.jobs.length > 0) {
-                data.jobs.forEach(j => {
-                    html += `<div class="modal-row"><span>${j.ticket} (${j.type})</span><span>$${j.pay.toFixed(2)}</span></div>`;
-                });
-            } else {
-                html += `<div class="modal-row" style="justify-content:center; color:gray;">No Jobs</div>`;
+        // Earnings Trend Chart
+        const earningsCtx = document.getElementById('earningsChart').getContext('2d');
+        new Chart(earningsCtx, {
+            type: 'line',
+            data: {
+                labels: <?= json_encode(array_column($weekly_earnings, 'label')) ?>,
+                datasets: [{
+                    label: 'Total',
+                    data: <?= json_encode(array_column($weekly_earnings, 'total')) ?>,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3
+                }, {
+                    label: 'Work',
+                    data: <?= json_encode(array_column($weekly_earnings, 'work')) ?>,
+                    borderColor: '#22c55e',
+                    backgroundColor: 'transparent',
+                    tension: 0.4,
+                    borderWidth: 2,
+                    borderDash: [5, 5]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
             }
+        });
 
-            html += `<div class="modal-row" style="margin-top:10px; color:var(--primary);"><span>Per Diem</span><span>$${(data.std_pd + data.ext_pd).toFixed(2)}</span></div>`;
-            html += `<div class="modal-row" style="color:var(--danger-text);"><span>Fuel Cost</span><span>-$${parseFloat(data.fuel).toFixed(2)}</span></div>`;
-            html += `<div class="modal-total"><span>Net Profit</span><span style="color:var(--success-text);">$${data.net.toFixed(2)}</span></div>`;
-            html += `<div style="text-align:center; margin-top:5px; font-size:0.8rem; color:gray;">Miles Driven: ${data.miles}</div>`;
-
-            document.getElementById('modalBody').innerHTML = html;
-            document.getElementById('dayModal').style.display = 'flex';
-
-            document.getElementById('btnEdit').onclick = () => window.location = `index.php?date=${date}`;
-
-            let idx = dates.indexOf(date);
-            let prevDate = (idx > 0) ? dates[idx - 1] : null;
-            let nextDate = (idx < dates.length - 1) ? dates[idx + 1] : null;
-
-            let btnPrev = document.getElementById('btnPrev');
-            let btnNext = document.getElementById('btnNext');
-
-            btnPrev.onclick = () => prevDate ? openSummary(prevDate) : null;
-            btnNext.onclick = () => nextDate ? openSummary(nextDate) : null;
-
-            btnPrev.style.visibility = prevDate ? 'visible' : 'hidden';
-            btnNext.style.visibility = nextDate ? 'visible' : 'hidden';
-        }
-
-        function closeModal(e) {
-            if (e.target.id === 'dayModal') {
-                document.getElementById('dayModal').style.display = 'none';
+        // Job Type Donut Chart
+        const jobTypeCtx = document.getElementById('jobTypeChart').getContext('2d');
+        new Chart(jobTypeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: <?= json_encode($type_labels) ?>,
+                datasets: [{
+                    data: <?= json_encode($type_revenues) ?>,
+                    backgroundColor: <?= json_encode(array_slice($type_colors, 0, count($type_labels))) ?>,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 10
+                        }
+                    }
+                }
             }
-        }
+        });
+
+        // Month Comparison Bar Chart
+        const monthCtx = document.getElementById('monthChart').getContext('2d');
+        new Chart(monthCtx, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode($month_labels) ?>,
+                datasets: [{
+                    label: 'Gross Revenue',
+                    data: [<?= $two_months['gross'] ?>, <?= $last_month['gross'] ?>, <?= $this_month['gross'] ?>],
+                    backgroundColor: ['#64748b', '#8b5cf6', '#6366f1'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
     </script>
+
 </body>
 
 </html>
