@@ -101,9 +101,11 @@ body.dark-mode {
     left: 0;
     right: 0;
     height: 60px;
-    background: var(--nav-bg) url('header-bg.png') center/cover no-repeat;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background-color: #0a0f1a;
+    background-image: url('header-bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     color: var(--nav-text);
     display: flex;
     align-items: center;
@@ -111,7 +113,7 @@ body.dark-mode {
     padding: 0 16px;
     z-index: 1000;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
     box-sizing: border-box;
 }
 
