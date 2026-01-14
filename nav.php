@@ -262,3 +262,6 @@ $entry_label = $is_admin ? 'Month to Date' : 'Entry';
     if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
     updateThemeIcon();
 </script>
+
+<!-- Progressive Enhancements -->
+<script src="enhancements.js"></script>
