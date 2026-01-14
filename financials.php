@@ -239,14 +239,15 @@ foreach ($nd_dates as $ndate => $val) {
     $breakdown_data[$key]['pd'] += $std_pd_rate;
 }
 
-// Add per diem for ALL Sundays in the date range
+// Add per diem for Sundays in the date range (only up to today - no future dates)
+$today = date('Y-m-d');
 $current_sunday = $start_date;
 // Find first Sunday in range
 while (date('N', strtotime($current_sunday)) != 7) {
     $current_sunday = date('Y-m-d', strtotime("$current_sunday +1 day"));
 }
-// Iterate through all Sundays
-while ($current_sunday <= $end_date) {
+// Iterate through all Sundays up to today (not future Sundays)
+while ($current_sunday <= $end_date && $current_sunday <= $today) {
     // Only add if not already a work day or ND day (avoid double-counting)
     if (!isset($work_dates[$current_sunday]) && !isset($nd_dates[$current_sunday])) {
         $total_std_pd += $std_pd_rate;
@@ -577,7 +578,8 @@ ksort($breakdown_data);
                         <tr>
                             <td style="font-weight:bold;"><?= htmlspecialchars($b_data['label']) ?></td>
                             <td style="text-align:right;">$<?= number_format($b_data['work'], 2) ?></td>
-                            <td style="text-align:right; color:var(--primary);">$<?= number_format($b_data['pd'] + $b_lead, 2) ?></td>
+                            <td style="text-align:right; color:var(--primary);">
+                                $<?= number_format($b_data['pd'] + $b_lead, 2) ?></td>
                             <td style="text-align:right; color:var(--success-text); font-weight:bold;">
                                 $<?= number_format($b_gross, 2) ?></td>
                             <td style="text-align:right;"><?= number_format($b_data['miles']) ?></td>
