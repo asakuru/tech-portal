@@ -2,6 +2,10 @@
 // --- DATABASE SETTINGS (SQLite) ---
 define('DB_FILE', __DIR__ . '/tech_portal.db');
 
+// --- TIMEZONE SETTING ---
+// Fixes issue where "current date" flips to tomorrow early (due to UTC server time)
+date_default_timezone_set('America/New_York');
+
 // --- DB CONNECTION FACTORY ---
 function getDB()
 {
