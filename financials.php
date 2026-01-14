@@ -167,12 +167,24 @@ foreach ($all_jobs as $j) {
     }
 }
 
-// Add Lead Pay
+// Add Lead Pay - track it in breakdown too
 $total_lead_pay = 0;
 foreach ($active_weeks_by_user as $uid => $weeks) {
     foreach ($weeks as $wk_end => $bool) {
         $total_lead_pay += $lead_pay_rate;
         $job_revenue += $lead_pay_rate;
+
+        // Add lead pay to breakdown data (attribute to week ending date)
+        $key = getBreakdownKey($wk_end, $view);
+        $label = getBreakdownLabel($wk_end, $view);
+
+        if (!isset($breakdown_data[$key])) {
+            $breakdown_data[$key] = ['label' => $label, 'work' => 0, 'pd' => 0, 'miles' => 0, 'fuel' => 0, 'lead' => 0];
+        }
+        if (!isset($breakdown_data[$key]['lead'])) {
+            $breakdown_data[$key]['lead'] = 0;
+        }
+        $breakdown_data[$key]['lead'] += $lead_pay_rate;
     }
 }
 
@@ -552,7 +564,8 @@ ksort($breakdown_data);
                     <?php
                     $has_data = false;
                     foreach ($breakdown_data as $b_data):
-                        $b_gross = $b_data['work'] + $b_data['pd'];
+                        $b_lead = $b_data['lead'] ?? 0;
+                        $b_gross = $b_data['work'] + $b_data['pd'] + $b_lead;
                         $b_ded = $b_data['miles'] * $mileage_rate;
                         $b_net = $b_gross - $b_ded;
 
@@ -564,7 +577,7 @@ ksort($breakdown_data);
                         <tr>
                             <td style="font-weight:bold;"><?= htmlspecialchars($b_data['label']) ?></td>
                             <td style="text-align:right;">$<?= number_format($b_data['work'], 2) ?></td>
-                            <td style="text-align:right; color:var(--primary);">$<?= number_format($b_data['pd'], 2) ?></td>
+                            <td style="text-align:right; color:var(--primary);">$<?= number_format($b_data['pd'] + $b_lead, 2) ?></td>
                             <td style="text-align:right; color:var(--success-text); font-weight:bold;">
                                 $<?= number_format($b_gross, 2) ?></td>
                             <td style="text-align:right;"><?= number_format($b_data['miles']) ?></td>
