@@ -4,6 +4,11 @@
  * Centralized logic for the Tech Portal.
  */
 
+// Prevent multiple includes
+if (defined('FUNCTIONS_INCLUDED'))
+    return;
+define('FUNCTIONS_INCLUDED', true);
+
 // --- 0. ADMIN CHECK ---
 /**
  * Check if the current user is an admin.
