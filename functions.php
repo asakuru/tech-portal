@@ -15,11 +15,13 @@ define('FUNCTIONS_INCLUDED', true);
  * Centralizes the admin logic to avoid duplication across files.
  * @return bool True if the user is an admin, false otherwise.
  */
-function is_admin()
-{
-    $user_id = $_SESSION['user_id'] ?? 0;
-    $role = strtolower($_SESSION['role'] ?? '');
-    return ($role === 'admin' || $role === 'administrator' || $user_id == 1);
+if (!function_exists('is_admin')) {
+    function is_admin()
+    {
+        $user_id = $_SESSION['user_id'] ?? 0;
+        $role = strtolower($_SESSION['role'] ?? '');
+        return ($role === 'admin' || $role === 'administrator' || $user_id == 1);
+    }
 }
 
 // --- 0.5 CSRF PROTECTION ---
