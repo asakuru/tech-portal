@@ -59,32 +59,75 @@ if ($log && $log['extra_per_diem'] == 1) {
 
 $today_total = $today_job_pay + $today_pd;
 
-// This week's data
+// This week's data - using accurate day-by-day calculation
 $ts = strtotime($today);
 $start_of_week = (date('N', $ts) == 1) ? $today : date('Y-m-d', strtotime('last monday', $ts));
 $end_of_week = date('Y-m-d', strtotime($start_of_week . ' +6 days'));
 
-$stmt = $db->prepare("SELECT SUM(pay_amount) as total, COUNT(*) as count FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO', 'ND')");
+// Get job count for display (excluding DO/ND)
+$stmt = $db->prepare("SELECT COUNT(*) as count FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO', 'ND')");
 $stmt->execute([$user_id, $start_of_week, $end_of_week]);
-$week_data = $stmt->fetch();
-$week_jobs = (int) ($week_data['count'] ?? 0);
-$week_pay = (float) ($week_data['total'] ?? 0);
+$week_jobs = (int) ($stmt->fetch()['count'] ?? 0);
 
-// Estimate week PD (days with work + Sundays)
-$stmt = $db->prepare("SELECT COUNT(DISTINCT install_date) as days FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO')");
-$stmt->execute([$user_id, $start_of_week, $end_of_week]);
-$week_days = (int) ($stmt->fetch()['days'] ?? 0);
+// Fetch all jobs for the week
+$w_stmt = $db->prepare("SELECT install_date, install_type, pay_amount FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ?");
+$w_stmt->execute([$user_id, $start_of_week, $end_of_week]);
+$week_jobs_all = $w_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$week_pd = $week_days * $std_pd_rate;
-// Add Sunday if in range
-$sunday = date('Y-m-d', strtotime('sunday this week', $ts));
-if ($sunday >= $start_of_week && $sunday <= $end_of_week && $sunday <= $today) {
-    $week_pd += $std_pd_rate;
+// Fetch extra per diem logs for the week
+$wl_stmt = $db->prepare("SELECT log_date, extra_per_diem FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
+$wl_stmt->execute([$user_id, $start_of_week, $end_of_week]);
+$week_logs_all = $wl_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+// Get extra PD rate
+$ext_pd_rate = (float) ($rates['extra_pd'] ?? 0);
+
+// Calculate week total day-by-day (accurate method)
+$week_total = 0;
+for ($i = 0; $i < 7; $i++) {
+    $loop_date = date('Y-m-d', strtotime($start_of_week . " +$i days"));
+    
+    // Skip future dates
+    if ($loop_date > $today) break;
+    
+    $is_sun = (date('w', strtotime($loop_date)) == 0);
+    $d_pay = 0;
+    $d_work = false;
+    $d_has_nd = false;
+    
+    foreach ($week_jobs_all as $wj) {
+        if ($wj['install_date'] === $loop_date) {
+            $d_pay += $wj['pay_amount'];
+            if ($wj['install_type'] !== 'DO' && $wj['install_type'] !== 'ND') {
+                $d_work = true;
+            }
+            if ($wj['install_type'] === 'ND') {
+                $d_has_nd = true;
+            }
+        }
+    }
+    
+    // Calculate per diem for this day
+    $d_pd_calc = 0;
+    if ($is_sun || $d_work || $d_has_nd) {
+        $d_pd_calc += $std_pd_rate;
+    }
+    
+    // Add extra per diem if logged
+    if (isset($week_logs_all[$loop_date]) && $week_logs_all[$loop_date] == 1) {
+        $d_pd_calc += $ext_pd_rate;
+    }
+    
+    $week_total += ($d_pay + $d_pd_calc);
 }
 
-$week_total = $week_pay + $week_pd;
-if ($week_pay > 0)
+// Add lead pay if there's billable work this week
+if (function_exists('has_billable_work') && has_billable_work($db, $user_id, $start_of_week, $end_of_week)) {
     $week_total += $lead_pay_rate;
+} elseif ($week_jobs > 0) {
+    // Fallback if function doesn't exist
+    $week_total += $lead_pay_rate;
+}
 
 // Recent jobs (last 5)
 $stmt = $db->prepare("SELECT j.*, u.username FROM jobs j JOIN users u ON j.user_id = u.id WHERE j.user_id = ? ORDER BY j.install_date DESC, j.id DESC LIMIT 5");
