@@ -1,0 +1,8 @@
+# Block direct access to CSV files in this directory
+# Files should only be served through PHP for authenticated users
+<Files "*.csv">
+    Require all denied
+</Files>
+
+# Block directory listing
+Options -Indexes

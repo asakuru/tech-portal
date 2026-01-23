@@ -36,6 +36,64 @@ $next_week_ts = strtotime("$start_date +7 days");
 $prev_link = "?w=" . date('W', $prev_week_ts) . "&y=" . date('o', $prev_week_ts);
 $next_link = "?w=" . date('W', $next_week_ts) . "&y=" . date('o', $next_week_ts);
 
+// --- 1.5 CHECK RECONCILIATION STATUS ---
+$reconciliation = null;
+$is_reconciled = false;
+try {
+    $stmt = $db->prepare("SELECT * FROM week_reconciliations WHERE user_id = ? AND week = ? AND year = ?");
+    $stmt->execute([$_SESSION['user_id'], $week, $year]);
+    $reconciliation = $stmt->fetch();
+    $is_reconciled = ($reconciliation !== false);
+} catch (Exception $e) {
+    // Table may not exist yet - that's OK
+}
+
+// --- 1.6 HANDLE CSV DOWNLOAD ---
+if (isset($_GET['download']) && $is_reconciled && !empty($reconciliation['csv_filename'])) {
+    $csv_path = __DIR__ . '/scrubs/' . $reconciliation['csv_filename'];
+    if (file_exists($csv_path)) {
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="scrub_week' . $week . '_' . $year . '.csv"');
+        header('Content-Length: ' . filesize($csv_path));
+        readfile($csv_path);
+        exit;
+    }
+}
+
+// --- 1.7 HANDLE MARK AS RECONCILED (without CSV) ---
+if (isset($_POST['mark_reconciled'])) {
+    try {
+        $stmt = $db->prepare("
+            INSERT OR REPLACE INTO week_reconciliations (user_id, week, year, csv_filename, reconciled_at)
+            VALUES (?, ?, ?, NULL, datetime('now'))
+        ");
+        $stmt->execute([$_SESSION['user_id'], $week, $year]);
+        header("Location: ?w=$week&y=$year");
+        exit;
+    } catch (Exception $e) {
+        // Table may not exist
+    }
+}
+
+// --- 1.8 HANDLE UNMARK RECONCILED ---
+if (isset($_POST['unmark_reconciled'])) {
+    try {
+        // Delete the CSV file if it exists
+        if ($reconciliation && !empty($reconciliation['csv_filename'])) {
+            $csv_path = __DIR__ . '/scrubs/' . $reconciliation['csv_filename'];
+            if (file_exists($csv_path)) {
+                unlink($csv_path);
+            }
+        }
+        $stmt = $db->prepare("DELETE FROM week_reconciliations WHERE user_id = ? AND week = ? AND year = ?");
+        $stmt->execute([$_SESSION['user_id'], $week, $year]);
+        header("Location: ?w=$week&y=$year");
+        exit;
+    } catch (Exception $e) {
+        // Table may not exist
+    }
+}
+
 // --- 2. FETCH & TALLY LOCAL DATA ---
 $local_jobs = [];
 $total_local = 0;
@@ -280,6 +338,30 @@ if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
         }
     }
     fclose($handle);
+
+    // --- SAVE CSV TO SERVER ---
+    $scrubs_dir = __DIR__ . '/scrubs';
+    if (!is_dir($scrubs_dir)) {
+        mkdir($scrubs_dir, 0755, true);
+    }
+    $csv_filename = $_SESSION['user_id'] . '_' . $year . '_W' . str_pad($week, 2, '0', STR_PAD_LEFT) . '.csv';
+    $csv_path = $scrubs_dir . '/' . $csv_filename;
+
+    // Copy uploaded file to scrubs directory
+    if (move_uploaded_file($_FILES['scrub_csv']['tmp_name'], $csv_path) || copy($_FILES['scrub_csv']['tmp_name'], $csv_path)) {
+        // Mark week as reconciled in database
+        try {
+            $stmt = $db->prepare("
+                INSERT OR REPLACE INTO week_reconciliations (user_id, week, year, csv_filename, reconciled_at)
+                VALUES (?, ?, ?, ?, datetime('now'))
+            ");
+            $stmt->execute([$_SESSION['user_id'], $week, $year, $csv_filename]);
+            $is_reconciled = true;
+            $reconciliation = ['csv_filename' => $csv_filename, 'reconciled_at' => date('Y-m-d H:i:s')];
+        } catch (Exception $e) {
+            // Table may not exist yet
+        }
+    }
 }
 
 // Handle Pasted Text
@@ -583,6 +665,48 @@ usort($display_rows, function ($a, $b) {
                         - <?= htmlspecialchars($week_label_end) ?></div>
                 </div>
                 <a href="<?= htmlspecialchars($next_link) ?>">&raquo;</a>
+            </div>
+        </div>
+
+        <!-- Reconciliation Status Banner -->
+        <div
+            style="background:<?= $is_reconciled ? '#dcfce7' : '#fef3c7' ?>; border:1px solid <?= $is_reconciled ? '#16a34a' : '#d97706' ?>; border-radius:8px; padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <?php if ($is_reconciled): ?>
+                    <span style="font-size:1.5rem;">✅</span>
+                    <div>
+                        <div style="font-weight:bold; color:#15803d;">Reconciled</div>
+                        <?php if ($reconciliation && $reconciliation['reconciled_at']): ?>
+                            <div style="font-size:0.8rem; color:#166534;">
+                                <?= date('M j, Y g:i A', strtotime($reconciliation['reconciled_at'])) ?></div>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <span style="font-size:1.5rem;">⚪</span>
+                    <div style="font-weight:bold; color:#92400e;">Not Reconciled</div>
+                <?php endif; ?>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <?php if ($is_reconciled && $reconciliation && !empty($reconciliation['csv_filename'])): ?>
+                    <a href="?w=<?= $week ?>&y=<?= $year ?>&download=1"
+                        style="background:#2563eb; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
+                        📎 Download CSV
+                    </a>
+                <?php endif; ?>
+                <?php if ($is_reconciled): ?>
+                    <form method="post" style="margin:0;"
+                        onsubmit="return confirm('Remove reconciliation status for this week?');">
+                        <button type="submit" name="unmark_reconciled"
+                            style="background:#dc2626; color:white; padding:6px 12px; border-radius:4px; border:none; cursor:pointer; font-size:0.85rem;">✕
+                            Unmark</button>
+                    </form>
+                <?php else: ?>
+                    <form method="post" style="margin:0;">
+                        <button type="submit" name="mark_reconciled"
+                            style="background:#16a34a; color:white; padding:6px 12px; border-radius:4px; border:none; cursor:pointer; font-size:0.85rem;">✓
+                            Mark Reconciled</button>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
 
