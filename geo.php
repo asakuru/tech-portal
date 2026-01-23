@@ -13,8 +13,9 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
 $db = getDB();
 $user_id = $_SESSION['user_id'];
+$msg = '';
 
-// --- ENSURE TABLES EXIST ---
+// --- ENSURE TABLES AND SETTINGS EXIST ---
 try {
     $db->exec("
         CREATE TABLE IF NOT EXISTS city_coords (
@@ -26,7 +27,52 @@ try {
             UNIQUE(city, state)
         )
     ");
+
+    // Ensure HOME_LAT/HOME_LNG settings exist
+    $check = $db->query("SELECT COUNT(*) FROM rate_card WHERE rate_key = 'HOME_LAT'")->fetchColumn();
+    if ($check == 0) {
+        $db->exec("INSERT INTO rate_card (rate_key, amount, description) VALUES ('HOME_LAT', 0, 'Home Base Latitude')");
+        $db->exec("INSERT INTO rate_card (rate_key, amount, description) VALUES ('HOME_LNG', 0, 'Home Base Longitude')");
+    }
 } catch (Exception $e) {
+}
+
+// --- HANDLE HOME BASE FORM SUBMISSION ---
+if (isset($_POST['save_home_base'])) {
+    try {
+        $lat = (float) $_POST['home_lat'];
+        $lng = (float) $_POST['home_lng'];
+        $db->prepare("UPDATE rate_card SET amount = ? WHERE rate_key = 'HOME_LAT'")->execute([$lat]);
+        $db->prepare("UPDATE rate_card SET amount = ? WHERE rate_key = 'HOME_LNG'")->execute([$lng]);
+        $msg = '✅ Home base updated!';
+    } catch (Exception $e) {
+        $msg = '❌ Error saving home base';
+    }
+}
+
+// --- AUTO-GEOCODE MISSING CITIES (limit 3 per page load to respect rate limits) ---
+function geocodeCity($city, $state)
+{
+    $query = urlencode("$city, $state, USA");
+    $url = "https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=1";
+
+    $opts = [
+        'http' => [
+            'method' => 'GET',
+            'header' => "User-Agent: TechPortal/1.0\r\n",
+            'timeout' => 5
+        ]
+    ];
+    $context = stream_context_create($opts);
+    $response = @file_get_contents($url, false, $context);
+
+    if ($response) {
+        $data = json_decode($response, true);
+        if (!empty($data[0]['lat']) && !empty($data[0]['lon'])) {
+            return [(float) $data[0]['lat'], (float) $data[0]['lon']];
+        }
+    }
+    return [null, null];
 }
 
 // --- FETCH DATA ---
@@ -101,6 +147,41 @@ try {
         $coords_map[$key] = ['lat' => $row['lat'], 'lng' => $row['lng']];
     }
 } catch (Exception $e) {
+}
+
+// 4.5 Auto-geocode missing cities (limit 3 per load to respect rate limits)
+$geocoded_count = 0;
+foreach ($city_data as $c) {
+    if ($geocoded_count >= 3)
+        break;
+
+    $key = strtolower($c['city'] . ',' . $c['state']);
+    if (!isset($coords_map[$key]) && !empty($c['city']) && !empty($c['state'])) {
+        // Check if already in DB (with null coords = failed before)
+        $stmt = $db->prepare("SELECT id FROM city_coords WHERE city = ? AND state = ?");
+        $stmt->execute([$c['city'], $c['state']]);
+        $exists = $stmt->fetch();
+
+        if (!$exists) {
+            // Try to geocode
+            list($lat, $lng) = geocodeCity($c['city'], $c['state']);
+
+            // Insert into cache (even if null, to avoid re-trying)
+            try {
+                $stmt = $db->prepare("INSERT OR REPLACE INTO city_coords (city, state, lat, lng) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$c['city'], $c['state'], $lat, $lng]);
+
+                if ($lat && $lng) {
+                    $coords_map[$key] = ['lat' => $lat, 'lng' => $lng];
+                    $geocoded_count++;
+                }
+            } catch (Exception $e) {
+            }
+
+            // Small delay to respect rate limits
+            usleep(200000); // 200ms
+        }
+    }
 }
 
 // 5. Get home base
@@ -430,11 +511,26 @@ $chart_colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e
                     </div>
                 </div>
             <?php else: ?>
-                <div class="chart-section" style="text-align: center; padding: 30px;">
-                    <div style="color: var(--text-muted); margin-bottom: 10px;">
-                        🏠 Set your home base in Settings to see the Efficiency chart
-                    </div>
-                    <a href="settings.php" class="btn btn-small">Configure Home Base</a>
+                <div class="chart-section">
+                    <div class="chart-title">🏠 Set Home Base Location</div>
+                    <?php if ($msg): ?>
+                        <div style="padding: 10px; margin-bottom: 15px; background: rgba(34, 197, 94, 0.1); border-radius: 6px; color: var(--success-text);">
+                            <?= $msg ?>
+                        </div>
+                    <?php endif; ?>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
+                        Enter your home coordinates to see the Efficiency chart (distance from home vs revenue).
+                        <br><small>Tip: Search your address on <a href="https://www.google.com/maps" target="_blank" style="color: var(--primary);">Google Maps</a>, right-click → "What's here?" to get coordinates.</small>
+                    </p>
+                    <form method="post" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <input type="text" name="home_lat" placeholder="Latitude (e.g. 40.7128)" 
+                               style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
+                               value="<?= $home_lat != 0 ? $home_lat : '' ?>">
+                        <input type="text" name="home_lng" placeholder="Longitude (e.g. -74.0060)" 
+                               style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
+                               value="<?= $home_lng != 0 ? $home_lng : '' ?>">
+                        <button type="submit" name="save_home_base" class="btn btn-small">Save Home Base</button>
+                    </form>
                 </div>
             <?php endif; ?>
 
