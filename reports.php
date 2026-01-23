@@ -148,6 +148,8 @@ foreach ($data as $date => $stats) {
     <title>Reports</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
     <style>
         .filter-bar { background: var(--bg-card); padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .view-toggles { display: flex; gap: 5px; }

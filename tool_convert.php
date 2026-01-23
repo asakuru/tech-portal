@@ -198,6 +198,8 @@ function finalizeJob($j, $top_lines, $rates, $install_names) {
     <title>Text to CSV</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
 </head>
 <body>
 

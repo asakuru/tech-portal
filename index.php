@@ -150,6 +150,8 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
     <title>Tech Portal - Home</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
     <style>
         .welcome-banner {
             margin-bottom: 24px;

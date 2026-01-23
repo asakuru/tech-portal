@@ -278,6 +278,8 @@ function renderRow($job, $install_names, $rates, $index)
     <title>Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
     <style>
         .controls-row {
             display: flex;
