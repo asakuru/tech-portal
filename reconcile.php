@@ -52,6 +52,15 @@ try {
     // Table may not exist yet - that's OK
 }
 
+// --- 1.5.1 LOAD SAVED CSV IF RECONCILED ---
+$saved_csv_path = null;
+if ($is_reconciled && !empty($reconciliation['csv_filename'])) {
+    $saved_csv_path = __DIR__ . '/scrubs/' . $reconciliation['csv_filename'];
+    if (!file_exists($saved_csv_path)) {
+        $saved_csv_path = null; // File doesn't exist
+    }
+}
+
 // --- 1.6 HANDLE CSV DOWNLOAD ---
 if (isset($_GET['download']) && $is_reconciled && !empty($reconciliation['csv_filename'])) {
     $csv_path = __DIR__ . '/scrubs/' . $reconciliation['csv_filename'];
@@ -261,10 +270,19 @@ $scrub_codes = []; // code => qty
 $comparison_mode = false;
 $code_variance = []; // For display
 
-// Handle CSV Upload
+// Determine CSV source: uploaded file OR saved reconciliation file
+$csv_source = null;
 if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
+    $csv_source = $_FILES['scrub_csv']['tmp_name'];
     $comparison_mode = true;
-    $handle = fopen($_FILES['scrub_csv']['tmp_name'], "r");
+} elseif ($saved_csv_path) {
+    $csv_source = $saved_csv_path;
+    $comparison_mode = true;
+}
+
+// Handle CSV (uploaded or saved)
+if ($csv_source) {
+    $handle = fopen($csv_source, "r");
 
     // Skip empty rows to find the header
     $header = null;
@@ -343,27 +361,29 @@ if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
     }
     fclose($handle);
 
-    // --- SAVE CSV TO SERVER ---
-    $scrubs_dir = __DIR__ . '/scrubs';
-    if (!is_dir($scrubs_dir)) {
-        mkdir($scrubs_dir, 0755, true);
-    }
-    $csv_filename = $_SESSION['user_id'] . '_' . $year . '_W' . str_pad($week, 2, '0', STR_PAD_LEFT) . '.csv';
-    $csv_path = $scrubs_dir . '/' . $csv_filename;
+    // --- SAVE CSV TO SERVER (only for new uploads, not saved files) ---
+    if (isset($_FILES['scrub_csv']) && $_FILES['scrub_csv']['error'] == 0) {
+        $scrubs_dir = __DIR__ . '/scrubs';
+        if (!is_dir($scrubs_dir)) {
+            mkdir($scrubs_dir, 0755, true);
+        }
+        $csv_filename = $_SESSION['user_id'] . '_' . $year . '_W' . str_pad($week, 2, '0', STR_PAD_LEFT) . '.csv';
+        $csv_path = $scrubs_dir . '/' . $csv_filename;
 
-    // Copy uploaded file to scrubs directory
-    if (move_uploaded_file($_FILES['scrub_csv']['tmp_name'], $csv_path) || copy($_FILES['scrub_csv']['tmp_name'], $csv_path)) {
-        // Mark week as reconciled in database
-        try {
-            $stmt = $db->prepare("
-                INSERT OR REPLACE INTO week_reconciliations (user_id, week, year, csv_filename, reconciled_at)
-                VALUES (?, ?, ?, ?, datetime('now'))
-            ");
-            $stmt->execute([$_SESSION['user_id'], $week, $year, $csv_filename]);
-            $is_reconciled = true;
-            $reconciliation = ['csv_filename' => $csv_filename, 'reconciled_at' => date('Y-m-d H:i:s')];
-        } catch (Exception $e) {
-            // Table may not exist yet
+        // Copy uploaded file to scrubs directory
+        if (move_uploaded_file($_FILES['scrub_csv']['tmp_name'], $csv_path) || copy($_FILES['scrub_csv']['tmp_name'], $csv_path)) {
+            // Mark week as reconciled in database
+            try {
+                $stmt = $db->prepare("
+                    INSERT OR REPLACE INTO week_reconciliations (user_id, week, year, csv_filename, reconciled_at)
+                    VALUES (?, ?, ?, ?, datetime('now'))
+                ");
+                $stmt->execute([$_SESSION['user_id'], $week, $year, $csv_filename]);
+                $is_reconciled = true;
+                $reconciliation = ['csv_filename' => $csv_filename, 'reconciled_at' => date('Y-m-d H:i:s')];
+            } catch (Exception $e) {
+                // Table may not exist yet
+            }
         }
     }
 }
@@ -682,7 +702,8 @@ usort($display_rows, function ($a, $b) {
                         <div style="font-weight:bold; color:#15803d;">Reconciled</div>
                         <?php if ($reconciliation && $reconciliation['reconciled_at']): ?>
                             <div style="font-size:0.8rem; color:#166534;">
-                                <?= date('M j, Y g:i A', strtotime($reconciliation['reconciled_at'])) ?></div>
+                                <?= date('M j, Y g:i A', strtotime($reconciliation['reconciled_at'])) ?>
+                            </div>
                         <?php endif; ?>
                     </div>
                 <?php else: ?>
