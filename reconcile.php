@@ -780,7 +780,7 @@ usort($display_rows, function ($a, $b) {
                 </table>
             </div>
 
-            <?php if (!$comparison_mode): ?>
+            <?php if (!$comparison_mode && !$is_reconciled): ?>
                 <h3 style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000;">Reconcile Scrub</h3>
                 <div class="upload-options">
                     <div
