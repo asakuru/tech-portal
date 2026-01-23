@@ -86,38 +86,40 @@ $ext_pd_rate = (float) ($rates['extra_pd'] ?? 0);
 $week_total = 0;
 for ($i = 0; $i < 7; $i++) {
     $loop_date = date('Y-m-d', strtotime($start_of_week . " +$i days"));
-    
-    // Skip future dates
-    if ($loop_date > $today) break;
-    
+
     $is_sun = (date('w', strtotime($loop_date)) == 0);
+    $is_future = ($loop_date > $today);
     $d_pay = 0;
     $d_work = false;
     $d_has_nd = false;
-    
-    foreach ($week_jobs_all as $wj) {
-        if ($wj['install_date'] === $loop_date) {
-            $d_pay += $wj['pay_amount'];
-            if ($wj['install_type'] !== 'DO' && $wj['install_type'] !== 'ND') {
-                $d_work = true;
-            }
-            if ($wj['install_type'] === 'ND') {
-                $d_has_nd = true;
+
+    // Only count jobs for current and past dates
+    if (!$is_future) {
+        foreach ($week_jobs_all as $wj) {
+            if ($wj['install_date'] === $loop_date) {
+                $d_pay += $wj['pay_amount'];
+                if ($wj['install_type'] !== 'DO' && $wj['install_type'] !== 'ND') {
+                    $d_work = true;
+                }
+                if ($wj['install_type'] === 'ND') {
+                    $d_has_nd = true;
+                }
             }
         }
     }
-    
+
     // Calculate per diem for this day
+    // Sunday always gets per diem (even if future), work days and ND days only if not future
     $d_pd_calc = 0;
-    if ($is_sun || $d_work || $d_has_nd) {
+    if ($is_sun || (!$is_future && ($d_work || $d_has_nd))) {
         $d_pd_calc += $std_pd_rate;
     }
-    
-    // Add extra per diem if logged
-    if (isset($week_logs_all[$loop_date]) && $week_logs_all[$loop_date] == 1) {
+
+    // Add extra per diem if logged (only for current/past dates)
+    if (!$is_future && isset($week_logs_all[$loop_date]) && $week_logs_all[$loop_date] == 1) {
         $d_pd_calc += $ext_pd_rate;
     }
-    
+
     $week_total += ($d_pay + $d_pd_calc);
 }
 
