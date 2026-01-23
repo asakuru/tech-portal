@@ -40,10 +40,14 @@ $next_link = "?w=" . date('W', $next_week_ts) . "&y=" . date('o', $next_week_ts)
 $reconciliation = null;
 $is_reconciled = false;
 try {
-    $stmt = $db->prepare("SELECT * FROM week_reconciliations WHERE user_id = ? AND week = ? AND year = ?");
-    $stmt->execute([$_SESSION['user_id'], $week, $year]);
-    $reconciliation = $stmt->fetch();
-    $is_reconciled = ($reconciliation !== false);
+    // First check if table exists
+    $table_check = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='week_reconciliations'");
+    if ($table_check && $table_check->fetch()) {
+        $stmt = $db->prepare("SELECT * FROM week_reconciliations WHERE user_id = ? AND week = ? AND year = ?");
+        $stmt->execute([$_SESSION['user_id'], $week, $year]);
+        $reconciliation = $stmt->fetch();
+        $is_reconciled = ($reconciliation !== false);
+    }
 } catch (Exception $e) {
     // Table may not exist yet - that's OK
 }
