@@ -3,7 +3,7 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/ravenscv/fuzzysolution.com/triage
     - /bin/cp -R .htaccess *.php *.css *.js *.json *.txt *.png $DEPLOYPATH/ 2>/dev/null || true
-    - /bin/mkdir -p $DEPLOYPATH/migrations $DEPLOYPATH/scrubs
-    - /bin/cp -R migrations/* $DEPLOYPATH/migrations/ 2>/dev/null || true
-    - /bin/cp -R scrubs/.htaccess $DEPLOYPATH/scrubs/ 2>/dev/null || true
+    - /bin/cp -R migrations $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp -R scrubs $DEPLOYPATH/ 2>/dev/null || true
+
 
