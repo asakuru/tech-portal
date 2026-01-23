@@ -424,6 +424,7 @@ else {
             let isRepairGroup = (t === 'F008');
             let isPhoneOnly = (t === 'F020');
             let isSimpleEntry = (isMissedGroup || isRepairGroup);
+            let hideNotes = (t === 'F008' || t === 'F009' || t === 'F011');
 
             document.getElementById('secDetails').style.display = hideAll ? 'none' : 'block';
             document.getElementById('secCustomer').style.display = hideAll ? 'none' : 'block';
@@ -431,6 +432,9 @@ else {
             document.getElementById('groupMissed').style.display = isMissedGroup ? 'block' : 'none';
             document.getElementById('groupRepair').style.display = isRepairGroup ? 'block' : 'none';
             document.getElementById('groupTechStandard').style.display = (isSimpleEntry || hideAll) ? 'none' : 'block';
+
+            let groupNotes = document.getElementById('groupNotes');
+            if (groupNotes) groupNotes.style.display = (hideNotes || hideAll) ? 'none' : 'block';
 
             let hardTech = document.getElementById('subTechSpecs');
             if (hardTech) hardTech.style.display = isPhoneOnly ? 'none' : 'block';
