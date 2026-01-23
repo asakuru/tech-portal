@@ -140,6 +140,14 @@ $entry_label = $is_admin ? 'Month to Date' : 'Entry';
             Dashboard
         </a>
 
+        <a href="geo.php" class="drawer-link <?= ($current_page == 'geo.php') ? 'active' : ''; ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            Geo Analytics
+        </a>
+
         <a href="reports.php" class="drawer-link <?= ($current_page == 'reports.php') ? 'active' : ''; ?>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="20" x2="18" y2="10"></line>
