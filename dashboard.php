@@ -15,7 +15,7 @@ $user_id = $_SESSION['user_id'];
 
 // Get rates
 $std_pd_rate = (float) ($rates['per_diem'] ?? 0.00);
-$lead_pay_rate = (float) ($rates['lead_pay'] ?? 0.00);
+$lead_pay_rate = (float) get_lead_pay_amount($db);
 
 // Date ranges
 $today = date('Y-m-d');
@@ -32,27 +32,31 @@ $twelve_weeks_ago = date('Y-m-d', strtotime('-12 weeks'));
 // ============================================
 $weekly_earnings = [];
 for ($i = 11; $i >= 0; $i--) {
-    $week_start = date('Y-m-d', strtotime("-$i weeks monday"));
-    $week_end = date('Y-m-d', strtotime("-$i weeks sunday"));
-    $week_label = date('M j', strtotime($week_start));
+    // Calculate week boundaries properly
+    // Start from today, go back $i weeks, then find that week's Monday
+    $reference_day = strtotime("-$i weeks", strtotime($today));
+    $day_of_week = date('N', $reference_day); // 1=Mon, 7=Sun
+    $week_start_ts = strtotime('-' . ($day_of_week - 1) . ' days', $reference_day);
+    $week_end_ts = strtotime('+6 days', $week_start_ts);
+
+    $week_start = date('Y-m-d', $week_start_ts);
+    $week_end = date('Y-m-d', $week_end_ts);
+    $week_label = date('M j', $week_start_ts);
 
     // Get jobs for this week
     $stmt = $db->prepare("SELECT SUM(pay_amount) as work FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO', 'ND')");
     $stmt->execute([$user_id, $week_start, $week_end]);
     $work = (float) ($stmt->fetch()['work'] ?? 0);
 
-    // Count work days for per diem
+    // Count work days for per diem (days with jobs excluding DO)
     $stmt = $db->prepare("SELECT COUNT(DISTINCT install_date) as days FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO')");
     $stmt->execute([$user_id, $week_start, $week_end]);
     $work_days = (int) ($stmt->fetch()['days'] ?? 0);
 
-    // Add Sundays
-    $current = strtotime($week_start);
-    $end = strtotime($week_end);
-    while ($current <= $end) {
-        if (date('N', $current) == 7)
-            $work_days++;
-        $current = strtotime('+1 day', $current);
+    // Add Sunday per diem (every week has a Sunday)
+    // Only count if this week has already passed or includes today
+    if ($week_end <= $today || ($week_start <= $today && $today <= $week_end)) {
+        $work_days++;
     }
 
     $pd = $work_days * $std_pd_rate;
