@@ -77,17 +77,21 @@ function geocodeCity($city, $state)
 
 // --- FETCH DATA ---
 
+// SQL snippet to clean city names (strip trailing ", XX" state codes)
+$clean_city_sql = "
+    CASE 
+        WHEN TRIM(cust_city) LIKE '%, ' || UPPER(TRIM(cust_state))
+        THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - LENGTH(TRIM(cust_state)) - 2))
+        WHEN TRIM(cust_city) LIKE '%, __'
+        THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - 4))
+        ELSE TRIM(cust_city)
+    END
+";
+
 // 1. Top cities by job count and revenue (case-insensitive grouping)
-// Clean city names: strip trailing ", XX" state codes if already in city name
 $stmt = $db->prepare("
     SELECT 
-        CASE 
-            WHEN TRIM(cust_city) LIKE '%, ' || UPPER(TRIM(cust_state))
-            THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - LENGTH(TRIM(cust_state)) - 2))
-            WHEN TRIM(cust_city) LIKE '%, __'
-            THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - 4))
-            ELSE TRIM(cust_city)
-        END as city,
+        $clean_city_sql as city,
         UPPER(TRIM(cust_state)) as state, 
         COUNT(*) as jobs, 
         SUM(pay_amount) as revenue,
@@ -95,15 +99,7 @@ $stmt = $db->prepare("
     FROM jobs 
     WHERE user_id = ? AND install_type NOT IN ('DO', 'ND') 
           AND cust_city IS NOT NULL AND cust_city != ''
-    GROUP BY LOWER(
-        CASE 
-            WHEN TRIM(cust_city) LIKE '%, ' || UPPER(TRIM(cust_state))
-            THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - LENGTH(TRIM(cust_state)) - 2))
-            WHEN TRIM(cust_city) LIKE '%, __'
-            THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - 4))
-            ELSE TRIM(cust_city)
-        END
-    ), LOWER(TRIM(cust_state))
+    GROUP BY LOWER($clean_city_sql), LOWER(TRIM(cust_state))
     ORDER BY jobs DESC
 ");
 $stmt->execute([$user_id]);
@@ -115,10 +111,10 @@ $job_code_dist = [];
 if (!empty($top_cities)) {
     $placeholders = implode(',', array_fill(0, count($top_cities), 'LOWER(TRIM(?))'));
     $stmt = $db->prepare("
-        SELECT TRIM(cust_city) as city, install_type, COUNT(*) as count
+        SELECT $clean_city_sql as city, install_type, COUNT(*) as count
         FROM jobs 
-        WHERE user_id = ? AND LOWER(TRIM(cust_city)) IN ($placeholders) AND install_type NOT IN ('DO', 'ND')
-        GROUP BY LOWER(TRIM(cust_city)), install_type
+        WHERE user_id = ? AND LOWER($clean_city_sql) IN ($placeholders) AND install_type NOT IN ('DO', 'ND')
+        GROUP BY LOWER($clean_city_sql), install_type
         ORDER BY city, count DESC
     ");
     $stmt->execute(array_merge([$user_id], $top_cities));
@@ -134,11 +130,11 @@ $city_trends = [];
 if (!empty($top_cities)) {
     $placeholders = implode(',', array_fill(0, count($top_cities), 'LOWER(TRIM(?))'));
     $stmt = $db->prepare("
-        SELECT TRIM(cust_city) as city, strftime('%Y-%m', install_date) as month, COUNT(*) as jobs
+        SELECT $clean_city_sql as city, strftime('%Y-%m', install_date) as month, COUNT(*) as jobs
         FROM jobs 
-        WHERE user_id = ? AND LOWER(TRIM(cust_city)) IN ($placeholders) 
+        WHERE user_id = ? AND LOWER($clean_city_sql) IN ($placeholders) 
               AND install_date >= date('now', '-6 months')
-        GROUP BY LOWER(TRIM(cust_city)), month
+        GROUP BY LOWER($clean_city_sql), month
         ORDER BY city, month
     ");
     $stmt->execute(array_merge([$user_id], $top_cities));
