@@ -78,15 +78,32 @@ function geocodeCity($city, $state)
 // --- FETCH DATA ---
 
 // 1. Top cities by job count and revenue (case-insensitive grouping)
+// Clean city names: strip trailing ", XX" state codes if already in city name
 $stmt = $db->prepare("
-    SELECT TRIM(cust_city) as city, UPPER(TRIM(cust_state)) as state, 
-           COUNT(*) as jobs, 
-           SUM(pay_amount) as revenue,
-           COUNT(DISTINCT install_type) as diversity
+    SELECT 
+        CASE 
+            WHEN TRIM(cust_city) LIKE '%, ' || UPPER(TRIM(cust_state))
+            THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - LENGTH(TRIM(cust_state)) - 2))
+            WHEN TRIM(cust_city) LIKE '%, __'
+            THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - 4))
+            ELSE TRIM(cust_city)
+        END as city,
+        UPPER(TRIM(cust_state)) as state, 
+        COUNT(*) as jobs, 
+        SUM(pay_amount) as revenue,
+        COUNT(DISTINCT install_type) as diversity
     FROM jobs 
     WHERE user_id = ? AND install_type NOT IN ('DO', 'ND') 
           AND cust_city IS NOT NULL AND cust_city != ''
-    GROUP BY LOWER(TRIM(cust_city)), LOWER(TRIM(cust_state)) 
+    GROUP BY LOWER(
+        CASE 
+            WHEN TRIM(cust_city) LIKE '%, ' || UPPER(TRIM(cust_state))
+            THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - LENGTH(TRIM(cust_state)) - 2))
+            WHEN TRIM(cust_city) LIKE '%, __'
+            THEN TRIM(SUBSTR(TRIM(cust_city), 1, LENGTH(TRIM(cust_city)) - 4))
+            ELSE TRIM(cust_city)
+        END
+    ), LOWER(TRIM(cust_state))
     ORDER BY jobs DESC
 ");
 $stmt->execute([$user_id]);
