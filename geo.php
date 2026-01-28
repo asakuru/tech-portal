@@ -77,16 +77,16 @@ function geocodeCity($city, $state)
 
 // --- FETCH DATA ---
 
-// 1. Top cities by job count and revenue
+// 1. Top cities by job count and revenue (case-insensitive grouping)
 $stmt = $db->prepare("
-    SELECT cust_city as city, cust_state as state, 
+    SELECT TRIM(cust_city) as city, UPPER(TRIM(cust_state)) as state, 
            COUNT(*) as jobs, 
            SUM(pay_amount) as revenue,
            COUNT(DISTINCT install_type) as diversity
     FROM jobs 
     WHERE user_id = ? AND install_type NOT IN ('DO', 'ND') 
           AND cust_city IS NOT NULL AND cust_city != ''
-    GROUP BY cust_city, cust_state 
+    GROUP BY LOWER(TRIM(cust_city)), LOWER(TRIM(cust_state)) 
     ORDER BY jobs DESC
 ");
 $stmt->execute([$user_id]);
@@ -96,13 +96,13 @@ $city_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $top_cities = array_slice(array_column($city_data, 'city'), 0, 10);
 $job_code_dist = [];
 if (!empty($top_cities)) {
-    $placeholders = implode(',', array_fill(0, count($top_cities), '?'));
+    $placeholders = implode(',', array_fill(0, count($top_cities), 'LOWER(TRIM(?))'));
     $stmt = $db->prepare("
-        SELECT cust_city as city, install_type, COUNT(*) as count
+        SELECT TRIM(cust_city) as city, install_type, COUNT(*) as count
         FROM jobs 
-        WHERE user_id = ? AND cust_city IN ($placeholders) AND install_type NOT IN ('DO', 'ND')
-        GROUP BY cust_city, install_type
-        ORDER BY cust_city, count DESC
+        WHERE user_id = ? AND LOWER(TRIM(cust_city)) IN ($placeholders) AND install_type NOT IN ('DO', 'ND')
+        GROUP BY LOWER(TRIM(cust_city)), install_type
+        ORDER BY city, count DESC
     ");
     $stmt->execute(array_merge([$user_id], $top_cities));
     $raw_dist = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -115,14 +115,14 @@ if (!empty($top_cities)) {
 // 3. 6-month trend per city (top 10)
 $city_trends = [];
 if (!empty($top_cities)) {
-    $placeholders = implode(',', array_fill(0, count($top_cities), '?'));
+    $placeholders = implode(',', array_fill(0, count($top_cities), 'LOWER(TRIM(?))'));
     $stmt = $db->prepare("
-        SELECT cust_city as city, strftime('%Y-%m', install_date) as month, COUNT(*) as jobs
+        SELECT TRIM(cust_city) as city, strftime('%Y-%m', install_date) as month, COUNT(*) as jobs
         FROM jobs 
-        WHERE user_id = ? AND cust_city IN ($placeholders) 
+        WHERE user_id = ? AND LOWER(TRIM(cust_city)) IN ($placeholders) 
               AND install_date >= date('now', '-6 months')
-        GROUP BY cust_city, month
-        ORDER BY cust_city, month
+        GROUP BY LOWER(TRIM(cust_city)), month
+        ORDER BY city, month
     ");
     $stmt->execute(array_merge([$user_id], $top_cities));
     $raw_trends = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -143,7 +143,7 @@ $coords_map = [];
 try {
     $stmt = $db->query("SELECT city, state, lat, lng FROM city_coords WHERE lat IS NOT NULL");
     while ($row = $stmt->fetch()) {
-        $key = strtolower($row['city'] . ',' . $row['state']);
+        $key = strtolower(trim($row['city']) . ',' . trim($row['state']));
         $coords_map[$key] = ['lat' => $row['lat'], 'lng' => $row['lng']];
     }
 } catch (Exception $e) {
@@ -155,21 +155,23 @@ foreach ($city_data as $c) {
     if ($geocoded_count >= 3)
         break;
 
-    $key = strtolower($c['city'] . ',' . $c['state']);
+    $key = strtolower(trim($c['city']) . ',' . trim($c['state']));
     if (!isset($coords_map[$key]) && !empty($c['city']) && !empty($c['state'])) {
-        // Check if already in DB (with null coords = failed before)
-        $stmt = $db->prepare("SELECT id FROM city_coords WHERE city = ? AND state = ?");
-        $stmt->execute([$c['city'], $c['state']]);
+        // Check if already in DB (with null coords = failed before) - case insensitive
+        $stmt = $db->prepare("SELECT id FROM city_coords WHERE LOWER(TRIM(city)) = LOWER(TRIM(?)) AND LOWER(TRIM(state)) = LOWER(TRIM(?))");
+        $stmt->execute([trim($c['city']), trim($c['state'])]);
         $exists = $stmt->fetch();
 
         if (!$exists) {
             // Try to geocode
             list($lat, $lng) = geocodeCity($c['city'], $c['state']);
 
-            // Insert into cache (even if null, to avoid re-trying)
+            // Insert into cache with normalized names (even if null coords, to avoid re-trying)
             try {
+                $normalized_city = trim($c['city']);
+                $normalized_state = strtoupper(trim($c['state']));
                 $stmt = $db->prepare("INSERT OR REPLACE INTO city_coords (city, state, lat, lng) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$c['city'], $c['state'], $lat, $lng]);
+                $stmt->execute([$normalized_city, $normalized_state, $lat, $lng]);
 
                 if ($lat && $lng) {
                     $coords_map[$key] = ['lat' => $lat, 'lng' => $lng];
@@ -202,7 +204,7 @@ $has_home_base = ($home_lat != 0 && $home_lng != 0);
 // Build map data with coordinates
 $map_data = [];
 foreach ($city_data as $c) {
-    $key = strtolower($c['city'] . ',' . $c['state']);
+    $key = strtolower(trim($c['city']) . ',' . trim($c['state']));
     $lat = $coords_map[$key]['lat'] ?? null;
     $lng = $coords_map[$key]['lng'] ?? null;
 
@@ -517,21 +519,24 @@ $chart_colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e
                 <div class="chart-section">
                     <div class="chart-title">🏠 Set Home Base Location</div>
                     <?php if ($msg): ?>
-                        <div style="padding: 10px; margin-bottom: 15px; background: rgba(34, 197, 94, 0.1); border-radius: 6px; color: var(--success-text);">
+                        <div
+                            style="padding: 10px; margin-bottom: 15px; background: rgba(34, 197, 94, 0.1); border-radius: 6px; color: var(--success-text);">
                             <?= $msg ?>
                         </div>
                     <?php endif; ?>
                     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
                         Enter your home coordinates to see the Efficiency chart (distance from home vs revenue).
-                        <br><small>Tip: Search your address on <a href="https://www.google.com/maps" target="_blank" style="color: var(--primary);">Google Maps</a>, right-click → "What's here?" to get coordinates.</small>
+                        <br><small>Tip: Search your address on <a href="https://www.google.com/maps" target="_blank"
+                                style="color: var(--primary);">Google Maps</a>, right-click → "What's here?" to get
+                            coordinates.</small>
                     </p>
                     <form method="post" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        <input type="text" name="home_lat" placeholder="Latitude (e.g. 40.7128)" 
-                               style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
-                               value="<?= $home_lat != 0 ? $home_lat : '' ?>">
-                        <input type="text" name="home_lng" placeholder="Longitude (e.g. -74.0060)" 
-                               style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
-                               value="<?= $home_lng != 0 ? $home_lng : '' ?>">
+                        <input type="text" name="home_lat" placeholder="Latitude (e.g. 40.7128)"
+                            style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
+                            value="<?= $home_lat != 0 ? $home_lat : '' ?>">
+                        <input type="text" name="home_lng" placeholder="Longitude (e.g. -74.0060)"
+                            style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
+                            value="<?= $home_lng != 0 ? $home_lng : '' ?>">
                         <button type="submit" name="save_home_base" class="btn btn-small">Save Home Base</button>
                     </form>
                 </div>
