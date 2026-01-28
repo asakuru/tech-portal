@@ -50,6 +50,15 @@ if (isset($_POST['save_home_base'])) {
     }
 }
 
+// --- DATA FIXES ---
+// Fix Troy Township -> Troy (User Request: "should be Troy PA")
+try {
+    $db->exec("UPDATE jobs SET cust_city = 'Troy' WHERE cust_city LIKE 'Troy Township%' AND cust_state = 'PA'");
+    $db->exec("DELETE FROM city_coords WHERE city LIKE 'Troy Township%'");
+    // Also remove any existing incorrect 'Troy' coords if they are suspicious? 
+    // No, better to let the map use existing Troy or geocode new Troy.
+} catch (Exception $e) {}
+
 // --- AUTO-GEOCODE MISSING CITIES (limit 3 per page load to respect rate limits) ---
 function geocodeCity($city, $state)
 {
