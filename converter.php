@@ -298,29 +298,17 @@ if (isset($_POST['parse_text'])) {
                      if (trim(preg_replace('/[Ff]\d{3}(?:-\d+)?/', '', $line)) == '') continue;
                 }
 
-                // 2. ONT Serial (Relaxed Regex)
-                // Looks for FTRO... or ONT tags
-                // User Ex: FTRO56414266 (Length 12, Prefix FTRO, Suffix 8 digits)
-                if (preg_match('/(?:ONT|FTRO)[(\s:-]*([A-Z0-9]{8,})/i', $line, $m)) {
-                    $job['ont'] = $m[1]; // Capture
+                // 2. ONT Serial (Strict FTRO per user)
+                if (preg_match('/\b(FTRO[A-Z0-9]{8,})\b/i', $line, $m)) {
+                    $job['ont'] = $m[1];
                     continue; // Skip adding to notes
                 }
-                // Standalone typical Serial check? Maybe dangerous.
-                if (preg_match('/^FTRO[A-Z0-9]{8,}$/i', $lineClean)) {
-                     $job['ont'] = $lineClean;
-                     continue;
-                }
 
-                // 3. Eero Serial (Relaxed)
-                // User Ex: GGC... (16 chars)
-                if (preg_match('/(?:Eero|GGC|GGB)[(\s:-]*([A-Z0-9]{12,})/i', $line, $m)) {
-                    $eeros_arr[] = $m[1];
+                // 3. Eero Serial (Strict GGC/GGB per user)
+                if (preg_match('/\b(GGC[A-Z0-9]{10,}|GGB[A-Z0-9]{10,})\b/i', $line, $m)) {
+                    // Normalize case? usually uppercase in DB
+                    $eeros_arr[] = strtoupper($m[1]);
                     continue;
-                }
-                 // Standalone Eero start
-                if (preg_match('/^GG[CB][A-Z0-9]{10,}$/i', $lineClean)) {
-                     $eeros_arr[] = $lineClean;
-                     continue;
                 }
                 // Skip "2 Eeros" counts
                 if (preg_match('/^\d+\s*Eeros?$/i', $lineClean)) continue;
