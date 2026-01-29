@@ -63,25 +63,37 @@ if (empty($rates)) {
     ];
 }
 
-// --- DROPDOWN LABELS ---
-$install_names = [
-    'F001' => 'Triple Play (Voice/Data/Video)',
-    'F002' => 'Double Play (Voice/Data)',
-    'F014-1' => 'Single Play (Data Only)',
-    'F003' => 'Internet & Video',
-    'F019' => 'Tel Only',
-    'F021' => 'Video Only',
-    'F015' => 'Reconnect/Add Triple',
-    'F016' => 'Reconnect/Add Double',
-    'F004' => 'Video Add/Reconnect',
-    'F005' => 'Addl Set Top Box',
-    'F008' => 'Trouble Call',
-    'F010' => 'Trouble Follow Up',
-    'F009' => 'Refer to Maintenance',
-    'F011' => 'Trip Charge',
-    'F012' => 'Hourly Rate',
-    'F014-17' => 'BBU Trouble',
-    'DO' => 'Day Off',
-    'ND' => 'Not Designated'
-];
+// --- DROPDOWN LABELS (Job Types) ---
+$install_names = [];
+if (function_exists('get_rate_descriptions')) {
+    $install_names = get_rate_descriptions($db);
+    // Filter to only include those that look like job codes (Fxxx) or specific types
+    $install_names = array_filter($install_names, function ($k) {
+        return (strpos($k, 'F') === 0 || $k === 'DO' || $k === 'ND');
+    }, ARRAY_FILTER_USE_KEY);
+}
+
+// Fallback Defaults if DB is not seeded yet
+if (empty($install_names)) {
+    $install_names = [
+        'F001' => 'Triple Play (Voice/Data/Video)',
+        'F002' => 'Double Play (Voice/Data)',
+        'F014-1' => 'Single Play (Data Only)',
+        'F003' => 'Internet & Video',
+        'F019' => 'Tel Only',
+        'F021' => 'Video Only',
+        'F015' => 'Reconnect/Add Triple',
+        'F016' => 'Reconnect/Add Double',
+        'F004' => 'Video Add/Reconnect',
+        'F005' => 'Addl Set Top Box',
+        'F008' => 'Trouble Call',
+        'F010' => 'Trouble Follow Up',
+        'F009' => 'Refer to Maintenance',
+        'F011' => 'Trip Charge',
+        'F012' => 'Hourly Rate',
+        'F014-17' => 'BBU Trouble',
+        'DO' => 'Day Off',
+        'ND' => 'Not Designated'
+    ];
+}
 ?>

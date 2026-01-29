@@ -651,32 +651,39 @@ else {
                         Job</a> <a href="financials.php" class="btn" style="padding:6px 12px;">Full Year &rarr;</a></div>
             </div>
             <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-label">Gross Revenue</div>
-                    <div class="kpi-value positive">$<?= number_format($gross_revenue, 2) ?></div>
-                    <div class="kpi-sub">PD: $<?= number_format($total_per_diem ?? 0) ?> | Work:
-                        $<?= number_format($gross_revenue - ($total_per_diem ?? 0)) ?></div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Mileage Deduction</div>
-                    <div class="kpi-value">$<?= number_format($mileage_deduction, 2) ?></div>
-                    <div class="kpi-sub"><?= number_format($total_miles) ?> Miles</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Actual Fuel</div>
-                    <div class="kpi-value negative">$<?= number_format($total_fuel_cost, 2) ?></div>
-                    <div class="kpi-sub">Real Expense</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Net Taxable</div>
-                    <div class="kpi-value">$<?= number_format($net_income, 2) ?></div>
-                    <div class="kpi-sub">Rev - Mileage</div>
-                </div>
-                <div class="kpi-card" style="border-color: var(--primary);">
-                    <div class="kpi-label" style="color:var(--primary);">Est. Tax Due</div>
-                    <div class="kpi-value">$<?= number_format($net_income > 0 ? $net_income * 0.25 : 0, 2) ?></div>
-                    <div class="kpi-sub">25% Rate</div>
-                </div>
+                <?php
+                include 'components/kpi_card.php';
+                $label = "Gross Revenue";
+                $value = "$" . number_format($gross_revenue, 2);
+                $class = "positive";
+                $sub = "PD: $" . number_format($total_per_diem ?? 0) . " | Work: $" . number_format($gross_revenue - ($total_per_diem ?? 0));
+                include 'components/kpi_card.php';
+
+                $label = "Mileage Deduction";
+                $value = "$" . number_format($mileage_deduction, 2);
+                $class = "";
+                $sub = number_format($total_miles) . " Miles";
+                include 'components/kpi_card.php';
+
+                $label = "Actual Fuel";
+                $value = "$" . number_format($total_fuel_cost, 2);
+                $class = "negative";
+                $sub = "Real Expense";
+                include 'components/kpi_card.php';
+
+                $label = "Net Taxable";
+                $value = "$" . number_format($net_income, 2);
+                $class = "";
+                $sub = "Rev - Mileage";
+                include 'components/kpi_card.php';
+
+                $label = "Est. Tax Due";
+                $value = "$" . number_format($net_income > 0 ? $net_income * 0.25 : 0, 2);
+                $class = "";
+                $sub = "25% Rate";
+                $style = "border-color: var(--primary);";
+                include 'components/kpi_card.php';
+                ?>
             </div>
             <div class="box">
                 <h3 style="margin-top:0;">📋 Recent Activity (All Users)</h3>
@@ -726,9 +733,11 @@ else {
                 <div style="text-align:center;">
                     <h3 style="margin:0;"><?= date('D, M j', strtotime($selected_date)) ?></h3>
                     <form action="entry.php" method="get" style="margin-top:2px;">
-                        <?php if (isset($_GET['view'])): ?><input type="hidden" name="view" value="<?= htmlspecialchars($_GET['view']) ?>"><?php endif; ?>
-                        <input type="date" name="date" value="<?= $selected_date ?>" onchange="this.form.submit()" 
-                            style="border:1px solid var(--border); background:var(--bg-input); color:var(--text-main); padding:2px 6px; border-radius:4px; font-size:0.9rem; cursor:pointer;" title="Jump to Date">
+                        <?php if (isset($_GET['view'])): ?><input type="hidden" name="view"
+                                value="<?= htmlspecialchars($_GET['view']) ?>"><?php endif; ?>
+                        <input type="date" name="date" value="<?= $selected_date ?>" onchange="this.form.submit()"
+                            style="border:1px solid var(--border); background:var(--bg-input); color:var(--text-main); padding:2px 6px; border-radius:4px; font-size:0.9rem; cursor:pointer;"
+                            title="Jump to Date">
                     </form>
                 </div>
                 <a href="entry.php?date=<?= date('Y-m-d', strtotime($selected_date . ' +1 day')) . '&view=' . (isset($_GET['view']) ? $_GET['view'] : 'entry') ?>"
@@ -736,46 +745,36 @@ else {
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                <div class="box" style="text-align:center; padding:10px; cursor:pointer; transition:all 0.2s;"
-                    onclick="openTallyModal('day')" onmouseover="this.style.borderColor='var(--primary)'"
-                    onmouseout="this.style.borderColor=''">
-                    <div style="font-size:0.8rem; color:var(--text-muted);">Day Total <span
-                            style="font-size:0.7rem;">🔍</span></div>
-                    <div style="font-size:1.5rem; font-weight:bold; color:var(--primary);">
-                        $<?= number_format($daily_total, 2) ?></div>
-                </div>
-                <div class="box" style="text-align:center; padding:10px; cursor:pointer; transition:all 0.2s;"
-                    onclick="openTallyModal('week')" onmouseover="this.style.borderColor='var(--success-text)'"
-                    onmouseout="this.style.borderColor=''">
-                    <div style="font-size:0.8rem; color:var(--text-muted);">Week Total <span
-                            style="font-size:0.7rem;">🔍</span></div>
-                    <div style="font-size:1.5rem; font-weight:bold; color:var(--success-text);">
-                        $<?= number_format($weekly_grand_total, 2) ?></div>
-                </div>
+                <?php
+                include 'components/kpi_card.php';
+                $label = "Day Total";
+                $value = "$" . number_format($daily_total, 2);
+                $class = "positive";
+                $sub = "🔍 View Details";
+                $onclick = "openTallyModal('day')";
+                $style = "padding:10px; border-color:var(--border);";
+                include 'components/kpi_card.php';
+
+                $label = "Week Total";
+                $value = "$" . number_format($weekly_grand_total, 2);
+                $class = "positive";
+                $sub = "🔍 View Details";
+                $onclick = "openTallyModal('week')";
+                $style = "padding:10px; border-color:var(--border);";
+                include 'components/kpi_card.php';
+                ?>
             </div>
 
-            <h4 style="margin:0 0 10px; color:var(--text-muted);">Jobs Today</h4>
             <?php if (empty($daily_jobs)): ?>
                 <div class="box" style="text-align:center; padding:20px; color:var(--text-muted); margin-bottom:20px;">No jobs
                     entered for today.</div>
             <?php else:
-                foreach ($daily_jobs as $job): ?>
-                    <div class="box" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                        <div onclick="window.location='edit_job.php?id=<?= $job['id'] ?>'" style="cursor:pointer; flex:1;">
-                            <div style="font-weight:bold;"><?= $job['ticket_number'] ?></div>
-                            <div style="font-size:0.85rem; color:var(--text-muted);"><?= $job['install_type'] ?> •
-                                <?= $job['cust_city'] ?>
-                            </div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-weight:bold; color:var(--success-text); margin-bottom:5px;">
-                                $<?= number_format($job['pay_amount'], 2) ?></div>
-                            <a href="entry.php?date=<?= $selected_date ?>&delete=<?= $job['id'] ?>&view=entry"
-                                onclick="if(!confirm('Delete this job?')) return false;" class="btn btn-small btn-danger">🗑️
-                                Delete</a>
-                        </div>
-                    </div>
-                <?php endforeach; endif; ?>
+                include 'components/job_summary_card.php';
+                foreach ($daily_jobs as $job): 
+                    $actions = '<a href="entry.php?date='.$selected_date.'&delete='.$job['id'].'&view=entry" onclick="if(!confirm(\'Delete this job?\')) return false;" class="btn btn-small btn-danger">🗑️ Delete</a>';
+                    include 'components/job_summary_card.php';
+                endforeach; 
+            endif; ?>
 
             <div class="box" style="margin-bottom:20px; background:var(--bg-card); border-left:4px solid var(--primary);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">

@@ -107,9 +107,8 @@ if (isset($_POST['unmark_reconciled'])) {
     }
 }
 
-// --- 2. FETCH & TALLY LOCAL DATA ---
+// --- 2. FETCH & TALLY LOCAL DATA (Using Centralized Brain) ---
 $local_jobs = [];
-$total_local = 0;
 $code_tally = [];
 
 function addToTally(&$tally, $code, $count, $rate, $desc)
@@ -123,146 +122,79 @@ function addToTally(&$tally, $code, $count, $rate, $desc)
     $tally[$code]['total'] += ($count * $rate);
 }
 
-// A. Get Jobs
-$stmt = $db->prepare("SELECT * FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? ORDER BY install_date ASC");
-$stmt->execute([$_SESSION['user_id'], $start_date, $end_date]);
-$do_dates = [];
+$weekly_payroll = calculate_weekly_payroll($db, $_SESSION['user_id'], $start_date, $end_date, $rates);
 
-while ($row = $stmt->fetch()) {
-    $t = trim($row['ticket_number']);
-    $type = $row['install_type'];
-    if ($type === 'DO') {
-        $do_dates[$row['install_date']] = true;
+foreach ($weekly_payroll['days'] as $date => $day) {
+    foreach ($day['jobs'] as $row) {
+        $t = trim($row['ticket_number']);
+        $type = $row['install_type'];
+
+        // Add each job's component to the code tally
+        $details = calculate_job_details($row, $rates);
+        foreach ($details as $item) {
+            $desc = $install_names[$item['code']] ?? $item['desc'];
+            addToTally($code_tally, $item['code'], $item['qty'], $item['rate'], $desc);
+        }
+
+        // Add to local jobs list for display
+        $cust_display = $row['cust_lname'];
+        if (!empty($row['cust_lname'])) {
+            if (!empty($row['cust_fname']))
+                $cust_display = substr($row['cust_fname'], 0, 1) . '. ' . $row['cust_lname'];
+        } elseif (!empty($row['cust_fname'])) {
+            $cust_display = $row['cust_fname'];
+        } else {
+            $cust_display = "Unknown";
+        }
+
+        $local_jobs[$t] = [
+            'date' => date('m/d', strtotime($row['install_date'])),
+            'full_date' => $row['install_date'],
+            'type' => $type,
+            'pay' => $row['pay_amount'],
+            'ticket' => $t,
+            'cust' => $cust_display,
+            'found_in_scrub' => false
+        ];
     }
+}
 
-    // --- USE BRAIN TO CALCULATE ---
-    $details = calculate_job_details($row, $rates);
-    $job_total = 0;
-
-    foreach ($details as $item) {
-        $desc = $install_names[$item['code']] ?? $item['desc'];
-        addToTally($code_tally, $item['code'], $item['qty'], $item['rate'], $desc);
-        $job_total += $item['total'];
+// Add Per Diem to Tally
+if ($weekly_payroll['std_pd_total'] > 0 || $weekly_payroll['ext_pd_total'] > 0) {
+    $total_pd_count = 0;
+    foreach ($weekly_payroll['days'] as $day) {
+        if ($day['std_pd'] > 0 || $day['ext_pd'] > 0) {
+            $total_pd_count++;
+        }
     }
-
-    $cust_display = $row['cust_lname'];
-    if (!empty($row['cust_lname'])) {
-        if (!empty($row['cust_fname']))
-            $cust_display = substr($row['cust_fname'], 0, 1) . '. ' . $row['cust_lname'];
-    } elseif (!empty($row['cust_fname'])) {
-        $cust_display = $row['cust_fname'];
-    } else {
-        $cust_display = "Unknown";
-    }
-
-    $local_jobs[$t] = [
-        'date' => date('m/d', strtotime($row['install_date'])),
-        'full_date' => $row['install_date'],
-        'type' => $type,
-        'pay' => $job_total,
-        'ticket' => $t,
-        'cust' => $cust_display,
-        'found_in_scrub' => false
+    $code_tally['PER DIEM'] = [
+        'desc' => 'Per Diem (Standard + Extra)',
+        'count' => $total_pd_count,
+        'rate' => 0, // Mixed rate
+        'total' => $weekly_payroll['std_pd_total'] + $weekly_payroll['ext_pd_total']
     ];
 }
 
-// B. PER DIEM & VEHICLE EXPENSES (Aligned with financials.php logic)
+// Add Lead Pay to Tally
+if ($weekly_payroll['lead_pay'] > 0) {
+    addToTally($code_tally, 'LEAD-PAY', 1, $weekly_payroll['lead_pay'], 'Weekly Lead/Triage Pay');
+}
+
+// Vehicle Expenses (Fees only from daily logs)
 $total_miles = 0;
 $total_fuel = 0;
-
-// Track work dates = days with billable jobs (not DO, not ND)
-// ND still gets per diem, just like Sundays
-$work_dates = [];
-$nd_dates = [];
-$legacy_extra_pd_days = 0; // Extra PD from jobs table (extra_per_diem = 'Yes')
-
-foreach ($local_jobs as $ticket => $job) {
-    $jtype = $job['type'];
-    $jdate = $job['full_date'];
-
-    if ($jtype === 'ND') {
-        $nd_dates[$jdate] = true; // ND gets PD but isn't "work"
-    } elseif ($jtype !== 'DO') {
-        $work_dates[$jdate] = true; // Actual billable work
-    }
-}
-
-// Check for legacy extra PD from jobs table
-$stmt = $db->prepare("SELECT COUNT(*) FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND extra_per_diem = 'Yes'");
-$stmt->execute([$_SESSION['user_id'], $start_date, $end_date]);
-$legacy_extra_pd_days = (int) $stmt->fetchColumn();
-
-// Calculate Standard Per Diem:
-// 1. Per diem for each WORK day (billable jobs)
-// 2. Per diem for each ND day (Not Designated = still gets PD)
-// 3. Per diem for Sunday (if not already counted as work or ND)
-
-$pd_days = 0;
-$pd_rate = $rates['per_diem'] ?? 0;
-
-// Add PD for work days
-foreach ($work_dates as $wdate => $val) {
-    $pd_days++;
-}
-
-// Add PD for ND days
-foreach ($nd_dates as $ndate => $val) {
-    $pd_days++;
-}
-
-// Add PD for Sunday (if not already counted)
-$sunday_date = $start_date;
-while (date('N', strtotime($sunday_date)) != 7) {
-    $sunday_date = date('Y-m-d', strtotime("$sunday_date +1 day"));
-}
-if ($sunday_date <= $end_date) {
-    // Only add if Sunday wasn't already a work day or ND day
-    if (!isset($work_dates[$sunday_date]) && !isset($nd_dates[$sunday_date])) {
-        $pd_days++;
-    }
-}
-
-// Fetch daily logs for Extra PD, Mileage, Fuel
-$extra_pd_days = 0;
 try {
-    $stmt = $db->prepare("SELECT log_date, extra_per_diem, mileage, fuel_cost FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
+    $stmt = $db->prepare("SELECT mileage, fuel_cost FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
     $stmt->execute([$_SESSION['user_id'], $start_date, $end_date]);
     while ($l = $stmt->fetch()) {
-        if ($l['extra_per_diem'] == 1) {
-            $extra_pd_days++;
-        }
         $total_miles += $l['mileage'];
         $total_fuel += $l['fuel_cost'];
     }
 } catch (Exception $e) {
 }
 
-// Combine ALL Per Diem into one entry (Standard + Extra from Logs + Legacy from Jobs)
-$total_pd_days = $pd_days + $extra_pd_days + $legacy_extra_pd_days;
-$extra_pd_rate = $rates['extra_pd'] ?? 0;
-$total_pd_amount = ($pd_days * $pd_rate) + (($extra_pd_days + $legacy_extra_pd_days) * $extra_pd_rate);
-
-if ($total_pd_days > 0) {
-    // We need to manually add this to avoid the rate calculation issue
-    if (!isset($code_tally['PER DIEM'])) {
-        $code_tally['PER DIEM'] = ['desc' => 'Per Diem (All Types Combined)', 'count' => 0, 'rate' => 0, 'total' => 0];
-    }
-    $code_tally['PER DIEM']['count'] = $total_pd_days;
-    $code_tally['PER DIEM']['total'] = $total_pd_amount;
-}
-
-// C. LEAD PAY
-if ((count($local_jobs) > 0 || $pd_days > 0) && $lead_pay_amount > 0) {
-    if (has_billable_work($db, $_SESSION['user_id'], $start_date, $end_date)) {
-        addToTally($code_tally, 'LEAD-PAY', 1, $lead_pay_amount, 'Weekly Lead/Triage Pay');
-    }
-}
-
-$grand_total_tally = 0;
-foreach ($code_tally as $i)
-    $grand_total_tally += $i['total'];
+$grand_total_tally = $weekly_payroll['grand_total'];
 ksort($code_tally);
-
 $net_profit = $grand_total_tally - $total_fuel;
 
 // --- 3. HANDLE CODE-BASED COMPARISON ---

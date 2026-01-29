@@ -31,104 +31,31 @@ $today_formatted = date('l, F j');
 $std_pd_rate = (float) ($rates['per_diem'] ?? 0.00);
 $lead_pay_rate = (float) ($rates['lead_pay'] ?? 500.00);
 
-// Today's jobs
-$stmt = $db->prepare("SELECT * FROM jobs WHERE user_id = ? AND install_date = ? ORDER BY id DESC");
-$stmt->execute([$user_id, $today]);
-$today_jobs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$today_job_pay = 0;
-$has_work_today = false;
-foreach ($today_jobs as $j) {
-    $today_job_pay += $j['pay_amount'];
-    if ($j['install_type'] !== 'DO' && $j['install_type'] !== 'ND') {
-        $has_work_today = true;
-    }
-}
-
-// Today's per diem
-$is_sunday = (date('w') == 0);
-$today_pd = ($is_sunday || $has_work_today) ? $std_pd_rate : 0;
-
-// Check for extra PD
-$stmt = $db->prepare("SELECT extra_per_diem FROM daily_logs WHERE user_id = ? AND log_date = ?");
-$stmt->execute([$user_id, $today]);
-$log = $stmt->fetch();
-if ($log && $log['extra_per_diem'] == 1) {
-    $today_pd += (float) ($rates['extra_pd'] ?? 0);
-}
-
-$today_total = $today_job_pay + $today_pd;
+// Today's pay (Using centralized brain)
+$today_payroll = calculate_daily_payroll($db, $user_id, $today, $rates);
+$today_job_pay = $today_payroll['job_pay'];
+$today_pd = $today_payroll['std_pd'] + $today_payroll['ext_pd'];
+$today_total = $today_payroll['total'];
+$today_jobs = $today_payroll['jobs'];
+$has_work_today = $today_payroll['has_billable'];
 
 // This week's data - using accurate day-by-day calculation
 $ts = strtotime($today);
 $start_of_week = (date('N', $ts) == 1) ? $today : date('Y-m-d', strtotime('last monday', $ts));
 $end_of_week = date('Y-m-d', strtotime($start_of_week . ' +6 days'));
 
-// Get job count for display (excluding DO/ND)
-$stmt = $db->prepare("SELECT COUNT(*) as count FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? AND install_type NOT IN ('DO', 'ND')");
-$stmt->execute([$user_id, $start_of_week, $end_of_week]);
-$week_jobs = (int) ($stmt->fetch()['count'] ?? 0);
+// Calculate week total using centralized logic
+$week_payroll = calculate_weekly_payroll($db, $user_id, $start_of_week, $end_of_week, $rates);
+$week_total = $week_payroll['grand_total'];
 
-// Fetch all jobs for the week
-$w_stmt = $db->prepare("SELECT install_date, install_type, pay_amount FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ?");
-$w_stmt->execute([$user_id, $start_of_week, $end_of_week]);
-$week_jobs_all = $w_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Fetch extra per diem logs for the week
-$wl_stmt = $db->prepare("SELECT log_date, extra_per_diem FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
-$wl_stmt->execute([$user_id, $start_of_week, $end_of_week]);
-$week_logs_all = $wl_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-
-// Get extra PD rate
-$ext_pd_rate = (float) ($rates['extra_pd'] ?? 0);
-
-// Calculate week total day-by-day (accurate method)
-$week_total = 0;
-for ($i = 0; $i < 7; $i++) {
-    $loop_date = date('Y-m-d', strtotime($start_of_week . " +$i days"));
-
-    $is_sun = (date('w', strtotime($loop_date)) == 0);
-    $is_future = ($loop_date > $today);
-    $d_pay = 0;
-    $d_work = false;
-    $d_has_nd = false;
-
-    // Only count jobs for current and past dates
-    if (!$is_future) {
-        foreach ($week_jobs_all as $wj) {
-            if ($wj['install_date'] === $loop_date) {
-                $d_pay += $wj['pay_amount'];
-                if ($wj['install_type'] !== 'DO' && $wj['install_type'] !== 'ND') {
-                    $d_work = true;
-                }
-                if ($wj['install_type'] === 'ND') {
-                    $d_has_nd = true;
-                }
-            }
+// Get billable job count for display
+$week_jobs = 0;
+foreach ($week_payroll['days'] as $day) {
+    foreach ($day['jobs'] as $job) {
+        if ($job['install_type'] !== 'DO' && $job['install_type'] !== 'ND') {
+            $week_jobs++;
         }
     }
-
-    // Calculate per diem for this day
-    // Sunday always gets per diem (even if future), work days and ND days only if not future
-    $d_pd_calc = 0;
-    if ($is_sun || (!$is_future && ($d_work || $d_has_nd))) {
-        $d_pd_calc += $std_pd_rate;
-    }
-
-    // Add extra per diem if logged (only for current/past dates)
-    if (!$is_future && isset($week_logs_all[$loop_date]) && $week_logs_all[$loop_date] == 1) {
-        $d_pd_calc += $ext_pd_rate;
-    }
-
-    $week_total += ($d_pay + $d_pd_calc);
-}
-
-// Add lead pay if there's billable work this week
-if (function_exists('has_billable_work') && has_billable_work($db, $user_id, $start_of_week, $end_of_week)) {
-    $week_total += $lead_pay_rate;
-} elseif ($week_jobs > 0) {
-    // Fallback if function doesn't exist
-    $week_total += $lead_pay_rate;
 }
 
 // Recent jobs (last 5)
@@ -343,20 +270,27 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
 
         <!-- Summary Cards -->
         <div class="summary-grid">
-            <div class="summary-card today" onclick="openTallyModal('day')"
-                style="cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'"
-                onmouseout="this.style.transform='scale(1)'">
-                <div class="title">Today</div>
-                <div class="value" style="color: var(--primary);">$<?= number_format($today_total, 2) ?></div>
-                <div class="sub"><?= count($today_jobs) ?> job<?= count($today_jobs) != 1 ? 's' : '' ?></div>
-            </div>
-            <div class="summary-card week" onclick="openTallyModal('week')"
-                style="cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'"
-                onmouseout="this.style.transform='scale(1)'">
-                <div class="title">This Week</div>
-                <div class="value" style="color: var(--success-text);">$<?= number_format($week_total, 2) ?></div>
-                <div class="sub"><?= $week_jobs ?> job<?= $week_jobs != 1 ? 's' : '' ?></div>
-            </div>
+            <?php
+            include 'components/kpi_card.php';
+
+            // Today Card
+            $label = "Today";
+            $value = "$" . number_format($today_total, 2);
+            $class = "positive";
+            $sub = count($today_jobs) . " job" . (count($today_jobs) != 1 ? 's' : '');
+            $onclick = "openTallyModal('day')";
+            $style = "border-left: 4px solid var(--primary);";
+            include 'components/kpi_card.php';
+
+            // Week Card
+            $label = "This Week";
+            $value = "$" . number_format($week_total, 2);
+            $class = "";
+            $sub = $week_jobs . " job" . ($week_jobs != 1 ? 's' : '');
+            $onclick = "openTallyModal('week')";
+            $style = "border-left: 4px solid var(--success-text);";
+            include 'components/kpi_card.php';
+            ?>
         </div>
 
         <!-- Recent Activity -->
@@ -367,17 +301,13 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                     No jobs entered yet. <a href="entry.php" style="color: var(--primary);">Add your first job →</a>
                 </div>
             <?php else: ?>
-                <?php foreach ($recent_jobs as $job): ?>
-                    <div class="recent-job" onclick="window.location='edit_job.php?id=<?= $job['id'] ?>'">
-                        <div class="info">
-                            <div class="ticket"><?= htmlspecialchars($job['ticket_number']) ?></div>
-                            <div class="meta"><?= date('M j', strtotime($job['install_date'])) ?> •
-                                <?= htmlspecialchars($job['install_type']) ?> • <?= htmlspecialchars($job['cust_city']) ?>
-                            </div>
-                        </div>
-                        <div class="pay">$<?= number_format($job['pay_amount'], 2) ?></div>
-                    </div>
-                <?php endforeach; ?>
+                <?php
+                include 'components/job_summary_card.php';
+                foreach ($recent_jobs as $job) {
+                    $showDate = true;
+                    include 'components/job_summary_card.php';
+                }
+                ?>
             <?php endif; ?>
         </div>
 
