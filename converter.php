@@ -338,8 +338,8 @@ if (isset($_POST['parse_text'])) {
                 $lineClean = trim($line);
                 if (empty($lineClean)) continue;
 
-                // Headers Detection (Supports //HEADER// and HEADER//-----//)
-                if (preg_match('/^(?:\/\/)?(.*?)\/\/(?:-*)?$/', $lineClean, $hm)) {
+                // Headers Detection (Supports //HEADER// and HEADER//-----// and any variation with //)
+                if (preg_match('/^(?:\/\/)?(.*?)\/\//', $lineClean, $hm)) {
                     $cur_header = strtoupper(trim($hm[1]));
                     continue; // Skip header line itself
                 }
@@ -348,6 +348,12 @@ if (isset($_POST['parse_text'])) {
                 if (preg_match_all('/[Ff]\d{3}(?:-\d+)?/i', $line, $fm)) {
                      foreach ($fm[0] as $code) $found_codes[] = strtoupper($code);
                      if (trim(preg_replace('/[Ff]\d{3}(?:-\d+)?/', '', $line)) == '') continue;
+                }
+
+                // --- ROBUST FALLBACK: Scan line for job types even without header ---
+                $fallbackType = $mapType($lineClean);
+                if ($fallbackType && $cur_header !== 'WIFI' && $cur_header !== 'SSID') {
+                    $found_codes[] = $fallbackType;
                 }
 
                 // Field Extraction based on Context (Header)
@@ -405,7 +411,7 @@ if (isset($_POST['parse_text'])) {
                         continue 2;
                     case 'EXTERIOR PENETRATION SEALED':
                         if (stripos($lineClean, 'Yes') !== false) $job['sealed'] = 'Yes';
-                        continue 2;
+                        break;
                     case 'CAT 6 LINES INSTALLED':
                         if (preg_match('/(\d+)/', $line, $m)) {
                              $job['cat6_lines'] = ($job['cat6_lines'] ? $job['cat6_lines'] + (int)$m[1] : (int)$m[1]);
@@ -415,33 +421,32 @@ if (isset($_POST['parse_text'])) {
                              $job['cat6_lines'] = $m[1];
                              continue 2;
                         }
-                        continue 2;
+                        break;
                     case 'OLD AERIAL COPPER LINE REMOVED':
                     case 'OLD COPPER LINE REMOVED':
+                    case 'COPPER':
                         if (stripos($lineClean, 'Yes') !== false) $job['copper'] = 'Yes';
-                        continue 2;
+                        break;
                     case 'UNBREAKABLE WIFI INSTALLED, OR REMOVED':
                         if (stripos($lineClean, 'N/A') === false && stripos($lineClean, 'No') === false) $job['unbreak'] = 'Yes';
-                        continue 2;
+                        break;
                     case 'WHOLE HOME WIFI INSTALLED, OR REMOVED':
                         if (stripos($lineClean, 'N/A') === false && stripos($lineClean, 'No') === false) $job['whole'] = 'Yes';
-                        continue 2;
+                        break;
                     case 'CUSTOMER EDUCATION PERFORMED':
                         if (stripos($lineClean, 'Yes') !== false) $job['ed'] = 'Yes';
-                        continue 2;
+                        break;
                     case 'PHONE INBOUND OUTBOUND TEST PERFORMED':
                         if (stripos($lineClean, 'Yes') !== false) $job['test'] = 'Yes';
-                        continue 2;
+                        break;
                 }
 
-                // General Regex (Fallback for lines not under specific headers or outside context)
+                // General Regex Fallbacks (If not captured by header switch)
                 if (preg_match('/\b(FTRO[A-Z0-9]{8,})\b/i', $line, $m) && empty($job['ont'])) {
                     $job['ont'] = $m[1];
-                    continue;
                 }
                 if (preg_match('/\b(GGC[A-Z0-9]{10,}|GGB[A-Z0-9]{10,})\b/i', $line, $m)) {
                     $eeros_arr[] = strtoupper($m[1]);
-                    continue;
                 }
                 if (preg_match('/(\d+)\s*\'?\s*drop/i', $line, $m) && $job['drop'] == 0) {
                     $job['drop'] = (int) $m[1];
@@ -462,8 +467,10 @@ if (isset($_POST['parse_text'])) {
                 $job['type'] = $found_codes[0]; // Take first
                 // Append other codes to notes if multiple
                 if (count($found_codes) > 1) {
-                    $notes_arr[] = "[Codes: " . implode(", ", $found_codes) . "]";
+                    $notes_arr[] = "[Codes Found: " . implode(", ", array_unique($found_codes)) . "]";
                 }
+            } else {
+                $notes_arr[] = "[No code found, defaulted to F011]";
             }
 
             $job['notes'] = implode("\n", $notes_arr);
