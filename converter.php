@@ -40,9 +40,18 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                 extra_per_diem, nid_installed, exterior_sealed, copper_removed
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
+            $count_skipped = 0;
             foreach ($jobs_to_import as $job) {
-                // Skip if already imported in this batch (simple dedup) or invalid
-                if (empty($job['ticket']))
+                // Check dup (Ticket + Date + Type)
+                $chk = $db->prepare("SELECT id FROM jobs WHERE ticket_number=? AND install_date=? AND install_type=? AND user_id=?");
+                $chk->execute([$job['ticket'], $job['date'], $job['type'] ?? 'F011', $target_user_id]);
+                if ($chk->fetch()) {
+                    $count_skipped++;
+                    continue;
+                }
+
+                // Skip if invalid
+                if (empty($job['ticket'])) 
                     continue;
 
                 $stmt->execute([
@@ -74,7 +83,7 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                 $count++;
             }
             $db->commit();
-            $success_msg = "✅ Successfully imported $count jobs!";
+            $success_msg = "✅ Successfully imported $count jobs!" . ($count_skipped > 0 ? " ($count_skipped duplicates skipped)" : "");
             // clear processed jobs
             $parsed_jobs = [];
         } catch (Exception $e) {
@@ -367,7 +376,20 @@ if (isset($_POST['parse_text'])) {
             <!-- PREVIEW COLUMN -->
             <div>
                 <?php if (!empty($parsed_jobs)): ?>
+                    <?php
+                    // Pre-check duplicates
+                    foreach ($parsed_jobs as &$pj) {
+                        $chk = $db->prepare("SELECT id FROM jobs WHERE ticket_number=? AND install_date=? AND install_type=? AND user_id=?");
+                        $chk->execute([$pj['ticket'], $pj['date'], $pj['type'], $_SESSION['user_id']]);
+                        $pj['is_dup'] = (bool) $chk->fetch();
+                    }
+                    unset($pj);
+                    ?>
                     <div class="box" style="border-left: 4px solid var(--success-text);">
+                        <div
+                            style="background:var(--bg-card); padding:10px; border-bottom:1px solid var(--border); margin:-10px -10px 10px -10px; border-radius:6px 6px 0 0;">
+                            <strong>Import Date:</strong> <?= htmlspecialchars($parsed_jobs[0]['date']) ?>
+                        </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                             <h3 style="margin:0;">Preview:
                                 <?= count($parsed_jobs) ?> Jobs Found
@@ -395,11 +417,18 @@ if (isset($_POST['parse_text'])) {
                         </div>
 
                         <div style="max-height: 500px; overflow-y: auto;">
-                            <?php foreach ($parsed_jobs as $job): ?>
-                                <div class="job-card">
+                                <?php foreach ($parsed_jobs as $job):
+                                    $is_dup = $job['is_dup'] ?? false;
+                                    ?>
+                        <div class="job-card"
+                                    style="<?= $is_dup ? 'border-left:4px solid var(--danger-text); opacity:0.8;' : '' ?>">
                                     <h4>
                                         <span>#
                                             <?= htmlspecialchars($job['ticket']) ?>
+                                            <?php if ($is_dup): ?>
+                                                <span
+                                                    style="font-size:0.7rem; background:var(--danger-text); color:#fff; padding:2px 4px; border-radius:4px; margin-left:5px;">DUPLICATE</span>
+                                            <?php endif; ?>
                                         </span>
                                         <span class="tag"
                                             style="background:#eee; color:#333; font-size:0.8rem; padding:2px 6px; border-radius:4px;">
@@ -437,7 +466,17 @@ if (isset($_POST['parse_text'])) {
                                     <div class="job-notes">
                                         <?= nl2br(htmlspecialchars($job['notes'])) ?>
                                     </div>
-                                </div>
+                                             <div style="margin-top:10px; text-align:right;">
+                                                <?php if ($is_dup): ?>
+                                                        <span style="color:var(--danger-text); font-size:0.85rem; font-weight:bold;">Already Imported</span>
+                                                <?php else: ?>
+                                                        <form method="post" style="display:inline;">
+                                                            <input type="hidden" name="jobs" value="<?= htmlspecialchars(json_encode([$job])) ?>">
+                                                            <button type="submit" name="import_jobs" class="btn btn-small">Import This Job</button>
+                                                        </form>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
