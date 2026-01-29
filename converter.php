@@ -236,7 +236,7 @@ if (isset($_POST['parse_text'])) {
             $header_idx = -1;
             
             for ($k = $start_body; $k < count($lines); $k++) {
-                if (preg_match('/\bF\d{3}|F011\b/i', $lines[$k])) { 
+                if (preg_match('/[Ff]\d{3}/', $lines[$k])) { 
                     $code_idx_last = $k;
                 }
                 if (strpos($lines[$k], '//WHAT TYPE OF INSTALL//') !== false) {
@@ -484,6 +484,7 @@ if (isset($_POST['parse_text'])) {
                         <div style="max-height: 500px; overflow-y: auto;">
                                 <?php foreach ($parsed_jobs as $job):
                                     $is_dup = $job['is_dup'] ?? false;
+                                    if ($is_dup) continue; 
                                     ?>
                         <div class="job-card"
                                     style="<?= $is_dup ? 'border-left:4px solid var(--danger-text); opacity:0.8;' : '' ?>">
