@@ -33,12 +33,12 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
         try {
             $stmt = $db->prepare("INSERT INTO jobs (
                 id, user_id, install_date, ticket_number, install_type, 
-                cust_name, cust_address, cust_phone,
+                cust_fname, cust_lname, cust_street, cust_city, cust_state, cust_zip, cust_phone,
                 spans, conduit_ft, jacks_installed, drop_length,
                 soft_jumper, ont_serial, eeros_serial, cat6_lines,
                 wifi_name, wifi_pass, addtl_work, pay_amount,
                 extra_per_diem, nid_installed, exterior_sealed, copper_removed
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
             $count_skipped = 0;
             foreach ($jobs_to_import as $job) {
@@ -54,14 +54,32 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                 if (empty($job['ticket'])) 
                     continue;
 
+                // Parse Name
+                $parts = explode(' ', trim($job['name'] ?? ''));
+                $fname = array_shift($parts) ?? '';
+                $lname = implode(' ', $parts);
+
+                // Parse Address (Simple heuristic)
+                $addr = $job['address'] ?? '';
+                $street = $addr;
+                $city = ''; $state = ''; $zip = '';
+                
+                // Try to parse "Street, City, ST Zip"
+                if (preg_match('/^(.*),\s*([^,]+),\s*([A-Z]{2})\s*(\d{5}(?:-\d{4})?)$/i', $addr, $m)) {
+                    $street = trim($m[1]);
+                    $city = trim($m[2]);
+                    $state = strtoupper(trim($m[3]));
+                    $zip = trim($m[4]);
+                }
+
                 $stmt->execute([
                     uniqid('imp_'),
                     $target_user_id,
                     $job['date'],
                     $job['ticket'],
                     $job['type'] ?? 'Imported',
-                    $job['name'] ?? '',
-                    $job['address'] ?? '',
+                    $fname, $lname, 
+                    $street, $city, $state, $zip, 
                     $job['phone'] ?? '',
                     $job['spans'] ?? 0,
                     0, // conduit
