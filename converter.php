@@ -267,6 +267,22 @@ if (isset($_POST['parse_text'])) {
             $notes_arr = [];
             $found_codes = [];
 
+            // Helper for job type mapping
+            $mapType = function($text) {
+                $t = strtolower($text);
+                if (strpos($t, 'triple play') !== false) return 'F001';
+                if (strpos($t, 'double play') !== false) return 'F002';
+                if (strpos($t, 'internet & video') !== false) return 'F003';
+                if (strpos($t, 'internet and video') !== false) return 'F003';
+                if (strpos($t, 'single play') !== false || strpos($t, 'data only') !== false) return 'F014-1';
+                if (strpos($t, 'tel only') !== false || strpos($t, 'phone only') !== false) return 'F019';
+                if (strpos($t, 'video only') !== false) return 'F021';
+                if (strpos($t, 'trouble call') !== false || strpos($t, 'repair') !== false) return 'F008';
+                if (strpos($t, 'trip charge') !== false) return 'F011';
+                if (strpos($t, 'maintenance') !== false) return 'F009';
+                return null;
+            };
+
             // --- WIFI EXTRACTION: Find text between contact info and first header ---
             $header_idx = -1;
             for ($k = $start_body; $k < count($lines); $k++) {
@@ -322,8 +338,8 @@ if (isset($_POST['parse_text'])) {
                 $lineClean = trim($line);
                 if (empty($lineClean)) continue;
 
-                // Headers Detection (Skip headers but set context?)
-                if (preg_match('/^\/\/(.*)\/\/$/', $lineClean, $hm)) {
+                // Headers Detection (Supports //HEADER// and HEADER//-----//)
+                if (preg_match('/^(?:\/\/)?(.*?)\/\/(?:-*)?$/', $lineClean, $hm)) {
                     $cur_header = strtoupper(trim($hm[1]));
                     continue; // Skip header line itself
                 }
@@ -336,6 +352,10 @@ if (isset($_POST['parse_text'])) {
 
                 // Field Extraction based on Context (Header)
                 switch ($cur_header) {
+                    case 'WHAT TYPE OF INSTALL':
+                        $mapped = $mapType($lineClean);
+                        if ($mapped) $found_codes[] = $mapped;
+                        continue 2;
                     case 'ONT INSTALLED S/N':
                         if (preg_match('/\b(FTRO[A-Z0-9]{8,})\b/i', $line, $m)) {
                              $job['ont'] = $m[1];
@@ -397,6 +417,7 @@ if (isset($_POST['parse_text'])) {
                         }
                         continue 2;
                     case 'OLD AERIAL COPPER LINE REMOVED':
+                    case 'OLD COPPER LINE REMOVED':
                         if (stripos($lineClean, 'Yes') !== false) $job['copper'] = 'Yes';
                         continue 2;
                     case 'UNBREAKABLE WIFI INSTALLED, OR REMOVED':
