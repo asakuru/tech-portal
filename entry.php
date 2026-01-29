@@ -652,37 +652,37 @@ else {
             </div>
             <div class="kpi-grid">
                 <?php
-                include __DIR__ . '/components/kpi_card.php';
+                include __DIR__ . '/includes/kpi_card.php';
                 $label = "Gross Revenue";
                 $value = "$" . number_format($gross_revenue, 2);
                 $class = "positive";
                 $sub = "PD: $" . number_format($total_per_diem ?? 0) . " | Work: $" . number_format($gross_revenue - ($total_per_diem ?? 0));
-                include __DIR__ . '/components/kpi_card.php';
+                include __DIR__ . '/includes/kpi_card.php';
 
                 $label = "Mileage Deduction";
                 $value = "$" . number_format($mileage_deduction, 2);
                 $class = "";
                 $sub = number_format($total_miles) . " Miles";
-                include __DIR__ . '/components/kpi_card.php';
+                include __DIR__ . '/includes/kpi_card.php';
 
                 $label = "Actual Fuel";
                 $value = "$" . number_format($total_fuel_cost, 2);
                 $class = "negative";
                 $sub = "Real Expense";
-                include __DIR__ . '/components/kpi_card.php';
+                include __DIR__ . '/includes/kpi_card.php';
 
                 $label = "Net Taxable";
                 $value = "$" . number_format($net_income, 2);
                 $class = "";
                 $sub = "Rev - Mileage";
-                include __DIR__ . '/components/kpi_card.php';
+                include __DIR__ . '/includes/kpi_card.php';
 
                 $label = "Est. Tax Due";
                 $value = "$" . number_format($net_income > 0 ? $net_income * 0.25 : 0, 2);
                 $class = "";
                 $sub = "25% Rate";
                 $style = "border-color: var(--primary);";
-                include __DIR__ . '/components/kpi_card.php';
+                include __DIR__ . '/includes/kpi_card.php';
                 ?>
             </div>
             <div class="box">
@@ -746,14 +746,14 @@ else {
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                 <?php
-                include __DIR__ . '/components/kpi_card.php';
+                include __DIR__ . '/includes/kpi_card.php';
                 $label = "Day Total";
                 $value = "$" . number_format($daily_total, 2);
                 $class = "positive";
                 $sub = "🔍 View Details";
                 $onclick = "openTallyModal('day')";
                 $style = "padding:10px; border-color:var(--border);";
-                include __DIR__ . '/components/kpi_card.php';
+                include __DIR__ . '/includes/kpi_card.php';
 
                 $label = "Week Total";
                 $value = "$" . number_format($weekly_grand_total, 2);
@@ -761,7 +761,7 @@ else {
                 $sub = "🔍 View Details";
                 $onclick = "openTallyModal('week')";
                 $style = "padding:10px; border-color:var(--border);";
-                include __DIR__ . '/components/kpi_card.php';
+                include __DIR__ . '/includes/kpi_card.php';
                 ?>
             </div>
 
@@ -769,10 +769,10 @@ else {
                 <div class="box" style="text-align:center; padding:20px; color:var(--text-muted); margin-bottom:20px;">No jobs
                     entered for today.</div>
             <?php else:
-                include __DIR__ . '/components/job_summary_card.php';
+                include __DIR__ . '/includes/job_summary_card.php';
                 foreach ($daily_jobs as $job):
                     $actions = '<a href="entry.php?date=' . $selected_date . '&delete=' . $job['id'] . '&view=entry" onclick="if(!confirm(\'Delete this job?\')) return false;" class="btn btn-small btn-danger">🗑️ Delete</a>';
-                    include __DIR__ . '/components/job_summary_card.php';
+                    include __DIR__ . '/includes/job_summary_card.php';
                 endforeach;
             endif; ?>
 
