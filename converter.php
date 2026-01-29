@@ -38,7 +38,7 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                 user_id, install_date, ticket_number, install_type, 
                 cust_fname, cust_lname, cust_street, cust_city, cust_state, cust_zip, cust_phone,
                 spans, conduit_ft, jacks_installed, drop_length,
-                soft_jumper, ont_serial, eeros_serial, cat6_lines,
+                path_notes, soft_jumper, ont_serial, eeros_serial, cat6_lines,
                 wifi_name, wifi_pass, addtl_work, pay_amount, tici_signal,
                 extra_per_diem, nid_installed, exterior_sealed, copper_removed
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
@@ -116,7 +116,8 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     0, // conduit
                     0, // jacks
                     $job['drop'] ?? 0,
-                    0, // soft jumper
+                    $job['path_notes'] ?? '',
+                    $job['soft_jumper'] ?? 0,
                     $job['ont'] ?? '',
                     $job['eero'] ?? '',
                     $job['cat6_lines'] ?? '',
@@ -126,9 +127,9 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     $pay_amount,
                     $tici_str, // TICI SIGNAL
                     'No', // extra PD
-                    'No', // NID
-                    'No', // Seal
-                    'No'  // Copper
+                    $job['nid'] ?? 'No',
+                    $job['sealed'] ?? 'No',
+                    $job['copper'] ?? 'No'
                 ]);
                 $count++;
             }
@@ -188,6 +189,11 @@ if (isset($_POST['parse_text'])) {
                 'eero' => '',
                 'drop' => 0,
                 'spans' => 0,
+                'path_notes' => '',
+                'soft_jumper' => 0,
+                'nid' => 'No',
+                'sealed' => 'No',
+                'copper' => 'No',
                 'cat6_lines' => '',
                 'tici_hub' => '',
                 'tici_ont' => '',
@@ -299,6 +305,7 @@ if (isset($_POST['parse_text'])) {
             // --------------------------------------------------------------------------
 
             $eeros_arr = [];
+            $cur_header = '';
 
             for ($k = $start_body; $k < count($lines); $k++) {
                 if (isset($wifi_lines_indices[$k])) continue;
@@ -307,63 +314,98 @@ if (isset($_POST['parse_text'])) {
                 if (empty($lineClean)) continue;
 
                 // Headers Detection (Skip headers but set context?)
-                // We rely on Regex for values mostly, but skipping headers keeps notes clean.
-                if (strpos($line, '//ONT INSTALLED') !== false) continue;
-                if (strpos($line, '//EEROS INSTALLED') !== false) continue;
-                if (strpos($line, '//TICI BEFORE') !== false) continue;
+                if (preg_match('/^\/\/(.*)\/\/$/', $lineClean, $hm)) {
+                    $cur_header = strtoupper(trim($hm[1]));
+                    continue; // Skip header line itself
+                }
                 
                 // 1. Job Types (F-codes)
                 if (preg_match_all('/[Ff]\d{3}(?:-\d+)?/i', $line, $fm)) {
                      foreach ($fm[0] as $code) $found_codes[] = strtoupper($code);
-                     // If line is ONLY codes, skip note
                      if (trim(preg_replace('/[Ff]\d{3}(?:-\d+)?/', '', $line)) == '') continue;
                 }
 
-                // 2. ONT Serial (Strict FTRO per user)
-                if (preg_match('/\b(FTRO[A-Z0-9]{8,})\b/i', $line, $m)) {
-                    $job['ont'] = $m[1];
-                    continue; // Skip adding to notes
+                // Field Extraction based on Context (Header)
+                switch ($cur_header) {
+                    case 'ONT INSTALLED S/N':
+                        if (preg_match('/\b(FTRO[A-Z0-9]{8,})\b/i', $line, $m)) {
+                             $job['ont'] = $m[1];
+                             continue 2;
+                        }
+                        break;
+                    case 'EEROS INSTALLED S/N':
+                        if (preg_match('/\b(GGC[A-Z0-9]{10,}|GGB[A-Z0-9]{10,})\b/i', $line, $m)) {
+                             $eeros_arr[] = strtoupper($m[1]);
+                             continue 2;
+                        }
+                        if (preg_match('/^\d+\s*Eeros?$/i', $lineClean)) continue 2;
+                        break;
+                    case 'TICI BEFORE AND AFTER':
+                        if (preg_match('/([-\d\.]+)\s*db\s*@\s*HUB/i', $line, $m)) {
+                             $job['tici_hub'] = $m[1];
+                             continue 2;
+                        }
+                        if (preg_match('/([-\d\.]+)\s*db\s*@\s*ONT/i', $line, $m)) {
+                             $job['tici_ont'] = $m[1];
+                             continue 2;
+                        }
+                        break;
+                    case 'PATH':
+                        $job['path_notes'] .= ($job['path_notes'] ? " " : "") . $lineClean;
+                        continue 2;
+                    case 'DROP':
+                        if (preg_match('/(\d+)/', $line, $m)) {
+                             $job['drop'] = (int) $m[1];
+                             continue 2;
+                        }
+                        break;
+                    case 'SPANS':
+                        if (preg_match('/(\d+)/', $line, $m)) {
+                             $job['spans'] = (int) $m[1];
+                             continue 2;
+                        }
+                        break;
+                    case 'FOOTAGE OF SOFT JUMPER INSTALLED':
+                        if (preg_match('/(\d+)/', $line, $m)) {
+                             $job['soft_jumper'] = (int) $m[1];
+                             continue 2;
+                        }
+                        break;
+                    case 'NID INSTALLED':
+                        if (stripos($lineClean, 'Yes') !== false) $job['nid'] = 'Yes';
+                        continue 2;
+                    case 'EXTERIOR PENETRATION SEALED':
+                        if (stripos($lineClean, 'Yes') !== false) $job['sealed'] = 'Yes';
+                        continue 2;
+                    case 'CAT 6 LINES INSTALLED':
+                        if (preg_match('/(\d+)/', $line, $m)) {
+                             $job['cat6_lines'] = ($job['cat6_lines'] ? $job['cat6_lines'] + (int)$m[1] : (int)$m[1]);
+                        }
+                        // Fallback for more descriptive lines
+                        if (preg_match('/(\d+)\s*for the Eero Router/i', $line, $m)) {
+                             $job['cat6_lines'] = $m[1];
+                             continue 2;
+                        }
+                        continue 2;
+                    case 'OLD AERIAL COPPER LINE REMOVED':
+                        if (stripos($lineClean, 'Yes') !== false) $job['copper'] = 'Yes';
+                        continue 2;
                 }
 
-                // 3. Eero Serial (Strict GGC/GGB per user)
+                // General Regex (Fallback for lines not under specific headers or outside context)
+                if (preg_match('/\b(FTRO[A-Z0-9]{8,})\b/i', $line, $m) && empty($job['ont'])) {
+                    $job['ont'] = $m[1];
+                    continue;
+                }
                 if (preg_match('/\b(GGC[A-Z0-9]{10,}|GGB[A-Z0-9]{10,})\b/i', $line, $m)) {
-                    // Normalize case? usually uppercase in DB
                     $eeros_arr[] = strtoupper($m[1]);
                     continue;
                 }
-                // Skip "2 Eeros" counts
-                if (preg_match('/^\d+\s*Eeros?$/i', $lineClean)) continue;
-
-                // 4. Drop
-                if (preg_match('/(\d+)\s*\'?\s*drop/i', $line, $m)) {
+                if (preg_match('/(\d+)\s*\'?\s*drop/i', $line, $m) && $job['drop'] == 0) {
                     $job['drop'] = (int) $m[1];
-                    // Keep in notes? User didn't complain about drop. Keep it.
                 }
-
-                // 5. Spans
-                if (preg_match('/(\d+)\s*spans?/i', $line, $m)) {
+                if (preg_match('/(\d+)\s*spans?/i', $line, $m) && $job['spans'] == 0) {
                     $job['spans'] = (int) $m[1];
-                }
-
-                // 5b. CAT 6 Lines
-                if (preg_match('/(\d+)\s*for the Eero Router/i', $line, $m)) {
-                    $job['cat6_lines'] = $m[1];
-                    continue;
-                }
-                if (preg_match('/\b(\d+)\s*CAT\s*6\b/i', $line, $m)) {
-                    $job['cat6_lines'] = $m[1];
-                    continue;
-                }
-
-                // 6. TICI
-                // -12.55 db @ HUB
-                if (preg_match('/([-\d\.]+)\s*db\s*@\s*HUB/i', $line, $m)) {
-                    $job['tici_hub'] = $m[1];
-                    continue;
-                }
-                if (preg_match('/([-\d\.]+)\s*db\s*@\s*ONT/i', $line, $m)) {
-                    $job['tici_ont'] = $m[1];
-                    continue;
                 }
 
                 $notes_arr[] = $line;
@@ -605,6 +647,11 @@ if (isset($_POST['parse_text'])) {
                                         <?php if ($job['drop']): ?>
                                             <div><strong>Drop:</strong>
                                                 <?= htmlspecialchars($job['drop']) ?>'
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($job['path_notes'])): ?>
+                                            <div style="grid-column: span 2; background:rgba(0,0,0,0.03); padding:4px; border-radius:4px; margin-top:5px;">
+                                                <strong>Path:</strong> <?= htmlspecialchars($job['path_notes']) ?>
                                             </div>
                                         <?php endif; ?>
                                         <?php if (!empty($job['cat6_lines'])): ?>
