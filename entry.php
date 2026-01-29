@@ -729,7 +729,8 @@ else {
 
         <?php else: ?>
             <?php if ($is_admin): ?>
-                <div style="margin-bottom:15px;"><a href="index.php" class="btn">&larr; Back to Dashboard</a></div>
+                <div style="margin-bottom:15px;"><a href="<?= htmlspecialchars(get_return_url('index.php')) ?>"
+                        class="btn">&larr; Back to Dashboard</a></div>
             <?php endif; ?>
             <?php if ($msg): ?>
                 <div class="alert" style="border-left:4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>

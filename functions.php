@@ -311,4 +311,22 @@ if (!function_exists('has_billable_work')) {
         }
     }
 }
+
+if (!function_exists('get_return_url')) {
+    function get_return_url($fallback = 'index.php')
+    {
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        if (!empty($referer)) {
+            $host = $_SERVER['HTTP_HOST'] ?? '';
+            if (strpos($referer, $host) !== false) {
+                $current = $_SERVER['REQUEST_URI'] ?? '';
+                if (empty($current) || strpos($referer, $current) === false) {
+                    return $referer;
+                }
+            }
+        }
+        return $fallback;
+    }
+}
+
 ?>

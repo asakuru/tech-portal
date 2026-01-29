@@ -480,7 +480,7 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             <div class="alert" style="border-left:4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>
 
         <div style="margin-bottom:15px;">
-            <a href="index.php?date=<?= $job['install_date'] ?>" class="btn"
+            <a href="<?= htmlspecialchars(get_return_url('index.php?date=' . $job['install_date'])) ?>" class="btn"
                 style="background:var(--bg-input); color:var(--text-main);">&larr; Back</a>
         </div>
 

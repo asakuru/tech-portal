@@ -549,17 +549,12 @@ try {
     <div class="container">
 
         <div style="margin-bottom:20px;">
-            <a href="vehicles.php" class="btn btn-small btn-secondary">&larr; Back to Vehicles</a>
+            <a href="<?= htmlspecialchars(get_return_url('vehicles.php')) ?>" class="btn btn-small btn-secondary">&larr; Back to Vehicles</a>
         </div>
 
         <?php if ($msg): ?>
             <div class="alert" style="border-left:4px solid var(--success-text); margin-bottom:20px;">
                 <?= $msg ?>
-            </div>
-        <?php endif; ?>
-        <?php if ($error): ?>
-            <div class="alert" style="background:var(--danger-bg); color:var(--danger-text); margin-bottom:20px;">
-                <?= $error ?>
             </div>
         <?php endif; ?>
 
