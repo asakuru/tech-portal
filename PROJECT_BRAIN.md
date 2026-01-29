@@ -29,5 +29,5 @@ Field technician portal for tracking jobs, pay (piece rate), expenses, and recon
 - **Deploy**: Uses `git push` to master (cPanel automation).
 
 ## Active Issues / Watchlist
-- **Data Quality**: City names vary (casing, state codes). `geo.php` handles this aggressively now.
+- **Data Quality**: City names vary (casing, state codes). `geo.php` handles this aggressively now. Also normalizes "PENNSYLVANIA" to "PA".
 - **Troy/Hillsgrove/Hallstead**: Specific fixes applied for these locations to standardize names and states.

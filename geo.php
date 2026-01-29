@@ -60,6 +60,11 @@ try {
     $db->exec("UPDATE jobs SET cust_state = 'PA' WHERE cust_city LIKE 'Hallstead%' AND cust_state = 'TN'");
     $db->exec("DELETE FROM city_coords WHERE city LIKE 'Hallstead%' AND state = 'TN'");
 
+    // Fix Full State Names (User Request: "Susquehanna, PENNSYLVANIA instead of PA")
+    $db->exec("UPDATE jobs SET cust_state = 'PA' WHERE UPPER(cust_state) = 'PENNSYLVANIA'");
+    // Clean coords if any full state names sneaked in
+    $db->exec("UPDATE city_coords SET state = 'PA' WHERE UPPER(state) = 'PENNSYLVANIA'");
+
     // Also remove any existing incorrect 'Troy' coords if they are suspicious? 
     // No, better to let the map use existing Troy or geocode new Troy.
 } catch (Exception $e) {
@@ -775,7 +780,7 @@ $chart_colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e
                 initJobCodeChart();
                 initEfficiencyChart();
             }
-    });
+        });
     </script>
 </body>
 
