@@ -721,10 +721,17 @@ else {
             <?php endif; ?>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <a href="entry.php?date=<?= date('Y-m-d', strtotime($selected_date . ' -1 day')) ?>&view=entry"
+                <a href="entry.php?date=<?= date('Y-m-d', strtotime($selected_date . ' -1 day')) . '&view=' . (isset($_GET['view']) ? $_GET['view'] : 'entry') ?>"
                     class="btn btn-small btn-secondary">◀</a>
-                <h3 style="margin:0;"><?= date('D, M j', strtotime($selected_date)) ?></h3>
-                <a href="entry.php?date=<?= date('Y-m-d', strtotime($selected_date . ' +1 day')) ?>&view=entry"
+                <div style="text-align:center;">
+                    <h3 style="margin:0;"><?= date('D, M j', strtotime($selected_date)) ?></h3>
+                    <form action="entry.php" method="get" style="margin-top:2px;">
+                        <?php if (isset($_GET['view'])): ?><input type="hidden" name="view" value="<?= htmlspecialchars($_GET['view']) ?>"><?php endif; ?>
+                        <input type="date" name="date" value="<?= $selected_date ?>" onchange="this.form.submit()" 
+                            style="border:1px solid var(--border); background:var(--bg-input); color:var(--text-main); padding:2px 6px; border-radius:4px; font-size:0.9rem; cursor:pointer;" title="Jump to Date">
+                    </form>
+                </div>
+                <a href="entry.php?date=<?= date('Y-m-d', strtotime($selected_date . ' +1 day')) . '&view=' . (isset($_GET['view']) ? $_GET['view'] : 'entry') ?>"
                     class="btn btn-small btn-secondary">▶</a>
             </div>
 
