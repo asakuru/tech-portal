@@ -32,13 +32,13 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
         $db->beginTransaction();
         try {
             $stmt = $db->prepare("INSERT INTO jobs (
-                id, user_id, install_date, ticket_number, install_type, 
+                user_id, install_date, ticket_number, install_type, 
                 cust_fname, cust_lname, cust_street, cust_city, cust_state, cust_zip, cust_phone,
                 spans, conduit_ft, jacks_installed, drop_length,
                 soft_jumper, ont_serial, eeros_serial, cat6_lines,
                 wifi_name, wifi_pass, addtl_work, pay_amount,
                 extra_per_diem, nid_installed, exterior_sealed, copper_removed
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
             $count_skipped = 0;
             foreach ($jobs_to_import as $job) {
@@ -73,7 +73,6 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                 }
 
                 $stmt->execute([
-                    uniqid('imp_'),
                     $target_user_id,
                     $job['date'],
                     $job['ticket'],
