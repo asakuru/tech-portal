@@ -83,8 +83,9 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     'drop_length' => $job['drop'] ?? 0,
                     'cat6_lines' => $job['cat6_lines'] ?? '',
                     'extra_per_diem' => 'No',
-                    'conduit_ft' => 0,
-                    'jacks_installed' => 0
+                    'conduit_ft' => $job['conduit'] ?? 0,
+                    'jacks_installed' => $job['jacks'] ?? 0,
+                    'copper_removed' => $job['copper'] ?? 'No'
                 ];
                 $pay_amount = calculate_job_pay($payParams, $rates);
 
@@ -114,8 +115,8 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     $street, $city, $state, $zip, 
                     $job['phone'] ?? '',
                     $job['spans'] ?? 0,
-                    0, // conduit
-                    0, // jacks
+                    $job['conduit'] ?? 0,
+                    $job['jacks'] ?? 0,
                     $job['drop'] ?? 0,
                     $job['path_notes'] ?? '',
                     $job['soft_jumper'] ?? 0,
@@ -208,6 +209,8 @@ if (isset($_POST['parse_text'])) {
                 'tici_ont' => '',
                 'wifi_name' => '',
                 'wifi_pass' => '',
+                'conduit' => 0,
+                'jacks' => 0,
                 'notes' => ''
             ];
 
@@ -272,9 +275,9 @@ if (isset($_POST['parse_text'])) {
                 $t = strtolower($text);
                 if (strpos($t, 'triple play') !== false) return 'F001';
                 if (strpos($t, 'double play') !== false) return 'F002';
+                if (strpos($t, 'single play') !== false || strpos($t, 'data only') !== false) return 'F014-1';
                 if (strpos($t, 'internet & video') !== false) return 'F003';
                 if (strpos($t, 'internet and video') !== false) return 'F003';
-                if (strpos($t, 'single play') !== false || strpos($t, 'data only') !== false) return 'F014-1';
                 if (strpos($t, 'tel only') !== false || strpos($t, 'phone only') !== false) return 'F019';
                 if (strpos($t, 'video only') !== false) return 'F021';
                 if (strpos($t, 'trouble call') !== false || strpos($t, 'repair') !== false) return 'F008';
@@ -400,6 +403,12 @@ if (isset($_POST['parse_text'])) {
                              continue 2;
                         }
                         break;
+                    case 'UNDERGROUND CONDUIT PULLED':
+                        if (preg_match('/(\d+)/', $line, $m)) {
+                             $job['conduit'] = (int) $m[1];
+                             continue 2;
+                        }
+                        break;
                     case 'FOOTAGE OF SOFT JUMPER INSTALLED':
                         if (preg_match('/(\d+)/', $line, $m)) {
                              $job['soft_jumper'] = (int) $m[1];
@@ -419,6 +428,12 @@ if (isset($_POST['parse_text'])) {
                         // Fallback for more descriptive lines
                         if (preg_match('/(\d+)\s*for the Eero Router/i', $line, $m)) {
                              $job['cat6_lines'] = $m[1];
+                             continue 2;
+                        }
+                        break;
+                    case 'JACKS INSTALLED':
+                        if (preg_match('/(\d+)/', $line, $m)) {
+                             $job['jacks'] = (int) $m[1];
                              continue 2;
                         }
                         break;
