@@ -37,11 +37,12 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
             $stmt = $db->prepare("INSERT INTO jobs (
                 user_id, install_date, ticket_number, install_type, 
                 cust_fname, cust_lname, cust_street, cust_city, cust_state, cust_zip, cust_phone,
-                spans, conduit_ft, jacks_installed, drop_length,
-                path_notes, soft_jumper, ont_serial, eeros_serial, cat6_lines,
-                wifi_name, wifi_pass, addtl_work, pay_amount, tici_signal,
-                extra_per_diem, nid_installed, exterior_sealed, copper_removed
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                spans, conduit_ft, jacks_installed, drop_length, 
+                path_notes, soft_jumper, ont_serial, eeros_serial, cat6_lines, 
+                wifi_name, wifi_pass, addtl_work, pay_amount, 
+                extra_per_diem, nid_installed, exterior_sealed, copper_removed, tici_signal,
+                unbreakable_wifi, whole_home_wifi, cust_education, phone_test
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
             $count_skipped = 0;
             foreach ($jobs_to_import as $job) {
@@ -125,11 +126,15 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     $job['wifi_pass'] ?? '',
                     $job['notes'] ?? '',
                     $pay_amount,
-                    $tici_str, // TICI SIGNAL
                     'No', // extra PD
                     $job['nid'] ?? 'No',
                     $job['sealed'] ?? 'No',
-                    $job['copper'] ?? 'No'
+                    $job['copper'] ?? 'No',
+                    $tici_str, // TICI SIGNAL
+                    $job['unbreak'] ?? 'No',
+                    $job['whole'] ?? 'No',
+                    $job['ed'] ?? 'No',
+                    $job['test'] ?? 'No'
                 ]);
                 $count++;
             }
@@ -194,6 +199,10 @@ if (isset($_POST['parse_text'])) {
                 'nid' => 'No',
                 'sealed' => 'No',
                 'copper' => 'No',
+                'unbreak' => 'No',
+                'whole' => 'No',
+                'ed' => 'No',
+                'test' => 'No',
                 'cat6_lines' => '',
                 'tici_hub' => '',
                 'tici_ont' => '',
@@ -389,6 +398,18 @@ if (isset($_POST['parse_text'])) {
                         continue 2;
                     case 'OLD AERIAL COPPER LINE REMOVED':
                         if (stripos($lineClean, 'Yes') !== false) $job['copper'] = 'Yes';
+                        continue 2;
+                    case 'UNBREAKABLE WIFI INSTALLED, OR REMOVED':
+                        if (stripos($lineClean, 'N/A') === false && stripos($lineClean, 'No') === false) $job['unbreak'] = 'Yes';
+                        continue 2;
+                    case 'WHOLE HOME WIFI INSTALLED, OR REMOVED':
+                        if (stripos($lineClean, 'N/A') === false && stripos($lineClean, 'No') === false) $job['whole'] = 'Yes';
+                        continue 2;
+                    case 'CUSTOMER EDUCATION PERFORMED':
+                        if (stripos($lineClean, 'Yes') !== false) $job['ed'] = 'Yes';
+                        continue 2;
+                    case 'PHONE INBOUND OUTBOUND TEST PERFORMED':
+                        if (stripos($lineClean, 'Yes') !== false) $job['test'] = 'Yes';
                         continue 2;
                 }
 
