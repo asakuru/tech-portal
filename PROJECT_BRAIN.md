@@ -30,4 +30,4 @@ Field technician portal for tracking jobs, pay (piece rate), expenses, and recon
 
 ## Active Issues / Watchlist
 - **Data Quality**: City names vary (casing, state codes). `geo.php` handles this aggressively now.
-- **Troy/Hillsgrove**: Specific fixes applied for these locations.
+- **Troy/Hillsgrove/Hallstead**: Specific fixes applied for these locations to standardize names and states.

@@ -55,9 +55,15 @@ if (isset($_POST['save_home_base'])) {
 try {
     $db->exec("UPDATE jobs SET cust_city = 'Troy' WHERE cust_city LIKE 'Troy Township%' AND cust_state = 'PA'");
     $db->exec("DELETE FROM city_coords WHERE city LIKE 'Troy Township%'");
+
+    // Fix Hallstead, TN -> Hallstead, PA (User Request: "it's actually Hallstead, PA")
+    $db->exec("UPDATE jobs SET cust_state = 'PA' WHERE cust_city LIKE 'Hallstead%' AND cust_state = 'TN'");
+    $db->exec("DELETE FROM city_coords WHERE city LIKE 'Hallstead%' AND state = 'TN'");
+
     // Also remove any existing incorrect 'Troy' coords if they are suspicious? 
     // No, better to let the map use existing Troy or geocode new Troy.
-} catch (Exception $e) {}
+} catch (Exception $e) {
+}
 
 // --- AUTO-GEOCODE MISSING CITIES (limit 3 per page load to respect rate limits) ---
 function geocodeCity($city, $state)
@@ -769,7 +775,7 @@ $chart_colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e
                 initJobCodeChart();
                 initEfficiencyChart();
             }
-        });
+    });
     </script>
 </body>
 
