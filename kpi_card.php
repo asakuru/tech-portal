@@ -8,6 +8,8 @@
  * @param string $style (optional)
  * @param string $onclick (optional)
  */
+if (!isset($label))
+    return;
 ?>
 <div class="kpi-card" style="<?= $style ?? '' ?> <?= isset($onclick) ? 'cursor:pointer;' : '' ?>" <?= isset($onclick) ? "onclick=\"$onclick\"" : "" ?>>
     <div class="kpi-label"><?= htmlspecialchars($label) ?></div>
