@@ -27,6 +27,9 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
 
     $jobs_to_import = json_decode($_POST['jobs'], true);
     $count = 0;
+    
+    // FETCH RATES FOR PAY CALC
+    $rates = get_active_rates($db);
 
     if (is_array($jobs_to_import)) {
         $db->beginTransaction();
@@ -72,6 +75,18 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     $zip = trim($m[4]);
                 }
 
+                // CALCULATE PAY
+                $payParams = [
+                    'install_type' => $job['type'] ?? 'F011',
+                    'spans' => $job['spans'] ?? 0,
+                    'drop_length' => $job['drop'] ?? 0,
+                    'cat6_lines' => '',
+                    'extra_per_diem' => 'No',
+                    'conduit_ft' => 0,
+                    'jacks_installed' => 0
+                ];
+                $pay_amount = calculate_job_pay($payParams, $rates);
+
                 $stmt->execute([
                     $target_user_id,
                     $job['date'],
@@ -91,7 +106,7 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     $job['wifi_name'] ?? '',
                     $job['wifi_pass'] ?? '',
                     $job['notes'] ?? '',
-                    0.00, // pay (could verify codes to calc)
+                    $pay_amount, // CALCULATED PAY
                     'No', // extra PD
                     'No', // NID
                     'No', // Seal
@@ -101,8 +116,11 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
             }
             $db->commit();
             $success_msg = "✅ Successfully imported $count jobs!" . ($count_skipped > 0 ? " ($count_skipped duplicates skipped)" : "");
-            // clear processed jobs
-            $parsed_jobs = [];
+            // Trigger Re-Parse to keep list
+            if (!empty($_POST['raw_text'])) {
+                $_POST['parse_text'] = true; 
+            }
+            $parsed_jobs = []; // Will be repopulated if re-parse triggers
         } catch (Exception $e) {
             $db->rollBack();
             $error_msg = "Import Failed: " . $e->getMessage();
@@ -412,6 +430,7 @@ if (isset($_POST['parse_text'])) {
                                 <?= count($parsed_jobs) ?> Jobs Found
                             </h3>
                             <form method="post">
+                                <input type="hidden" name="raw_text" value="<?= isset($_POST['raw_text']) ? htmlspecialchars($_POST['raw_text']) : '' ?>">
                                 <input type="hidden" name="jobs" value="<?= htmlspecialchars(json_encode($parsed_jobs)) ?>">
                                 <?php if (is_admin()): ?>
                                     <select name="target_user"
@@ -488,6 +507,7 @@ if (isset($_POST['parse_text'])) {
                                                         <span style="color:var(--danger-text); font-size:0.85rem; font-weight:bold;">Already Imported</span>
                                                 <?php else: ?>
                                                         <form method="post" style="display:inline;">
+                                                            <input type="hidden" name="raw_text" value="<?= isset($_POST['raw_text']) ? htmlspecialchars($_POST['raw_text']) : '' ?>">
                                                             <input type="hidden" name="jobs" value="<?= htmlspecialchars(json_encode([$job])) ?>">
                                                             <button type="submit" name="import_jobs" class="btn btn-small">Import This Job</button>
                                                         </form>

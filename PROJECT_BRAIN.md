@@ -26,7 +26,7 @@ Field technician portal for tracking jobs, pay (piece rate), expenses, and recon
 ### UI/UX
 - **Copy Notes**: Restored "Copy Notes" button for F008, F009, and F011 job codes (previously hidden).
 - **Date Navigation**: Added "Jump to Date" date picker in `entry.php` navigation.
-- **Job Converter**: Enhanced with Date Preview, Individual Import buttons, and Duplicate Detection (Ticket+Date+Type).
+- **Job Converter**: Enhanced with Date Preview, Individual Import, Duplicate Detection, **Pay Calculation**, and **List Persistence**.
 
 ## Environment Notes
 - **CLI Limitations**: PHP/SQLite CLI commands unavailable in agent environment.
