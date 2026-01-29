@@ -219,6 +219,11 @@ if (!function_exists('calculate_daily_payroll')) {
         } catch (Exception $e) {
         }
 
+        // --- SUNDAY ALWAYS LOCKED ---
+        if ($is_sunday) {
+            $is_locked = true;
+        }
+
         return [
             'date' => $date,
             'job_pay' => $job_pay,

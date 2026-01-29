@@ -29,6 +29,7 @@ csrf_check();
 $is_admin = is_admin();
 
 $selected_date = $_GET['date'] ?? date('Y-m-d');
+$is_sunday = (date('w', strtotime($selected_date)) == 0);
 $msg = "";
 $error = "";
 
@@ -60,6 +61,9 @@ if (isset($_GET['delete'])) {
 // 3. LOCK / UNLOCK DAY
 if (isset($_POST['toggle_lock'])) {
     try {
+        if ($is_sunday && !$is_admin) {
+            throw new Exception("Sundays are locked per system policy.");
+        }
         $new_status = ($_POST['toggle_lock'] == 'lock') ? 1 : 0;
         $stmt = $db->prepare("SELECT id FROM daily_logs WHERE user_id=? AND log_date=?");
         $stmt->execute([$user_id, $selected_date]);
@@ -80,6 +84,9 @@ if (isset($_POST['toggle_lock'])) {
 // 4. SAVE DAILY TRUCK LOG
 if (isset($_POST['save_truck_log'])) {
     try {
+        if ($is_sunday && !$is_admin) {
+            throw new Exception("Sundays are locked per system policy.");
+        }
         $pd_val = isset($_POST['extra_pd']) ? 1 : 0;
 
         $stmt = $db->prepare("SELECT id FROM daily_logs WHERE user_id=? AND log_date=?");
@@ -107,6 +114,9 @@ if (isset($_POST['save_truck_log'])) {
 // 5. ADD JOB (HANDLE SAVE VS DRAFT)
 if (isset($_POST['add_job']) || isset($_POST['save_draft'])) {
     try {
+        if ($is_sunday && !$is_admin) {
+            throw new Exception("Sundays are locked per system policy.");
+        }
         $is_draft = isset($_POST['save_draft']);
 
         // --- 1. RECALCULATE PAY ---
@@ -244,7 +254,7 @@ try {
 
 } catch (Exception $e) {
 }
-$is_day_locked = ($day_log['is_locked'] == 1);
+$is_day_locked = ($day_log['is_locked'] == 1 || $is_sunday);
 
 // =========================================================
 //  VIEW 1: FINANCIAL DASHBOARD (ADMIN ONLY)
@@ -766,8 +776,13 @@ else {
             </div>
 
             <?php if (empty($daily_jobs)): ?>
-                <div class="box" style="text-align:center; padding:20px; color:var(--text-muted); margin-bottom:20px;">No jobs
-                    entered for today.</div>
+                <div class="box" style="text-align:center; padding:20px; color:var(--text-muted); margin-bottom:20px;">
+                    <?php if ($is_sunday): ?>
+                        📅 <strong>Sunday Policy</strong>: Non-work day. Per diem is automatically awarded.
+                    <?php else: ?>
+                        No jobs entered for today.
+                    <?php endif; ?>
+                </div>
             <?php else:
                 include __DIR__ . '/job_summary_card.php';
                 foreach ($daily_jobs as $job):
@@ -786,14 +801,18 @@ else {
                             <button type="submit" name="toggle_lock" value="unlock" class="btn btn-small btn-secondary">🔓
                                 Unlock</button>
                         <?php else: ?>
-                            <button type="submit" name="toggle_lock" value="lock" class="btn btn-small btn-danger">🔒
-                                Lock</button>
+                            <?php if ($is_sunday): ?>
+                                <span class="badge badge-danger">🔒 SYSTEM LOCKED</span>
+                            <?php else: ?>
+                                <button type="submit" name="toggle_lock" value="lock" class="btn btn-small btn-danger">🔒
+                                    Lock</button>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </form>
                 </div>
 
                 <div id="truckLogContent" style="display:none;">
-                    <?php if ($is_day_locked): ?>
+                    <?php if ($is_day_locked && (!$is_sunday || $day_log['odometer'] > 0)): ?>
                         <?php
                         $l_mpg = "N/A";
                         if ($day_log['mileage'] > 0 && $day_log['gallons'] > 0) {
@@ -883,7 +902,14 @@ else {
                 </div>
             </div>
 
-            <?php if (!$is_day_locked): ?>
+            <?php if ($is_sunday): ?>
+                <div class="box"
+                    style="background:var(--bg-input); border:1px solid var(--primary); text-align:center; padding:15px; margin-bottom:20px;">
+                    <p style="margin:0; font-weight:bold; color:var(--primary);">
+                        🚫 Sunday entries are disabled. This is a non-work day.
+                    </p>
+                </div>
+            <?php elseif (!$is_day_locked): ?>
                 <div class="box">
                     <form method="post">
                         <?= csrf_field() ?>
