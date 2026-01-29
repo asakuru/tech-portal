@@ -39,9 +39,9 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                 cust_fname, cust_lname, cust_street, cust_city, cust_state, cust_zip, cust_phone,
                 spans, conduit_ft, jacks_installed, drop_length,
                 soft_jumper, ont_serial, eeros_serial, cat6_lines,
-                wifi_name, wifi_pass, addtl_work, pay_amount,
+                wifi_name, wifi_pass, addtl_work, pay_amount, tici_signal,
                 extra_per_diem, nid_installed, exterior_sealed, copper_removed
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
             $count_skipped = 0;
             foreach ($jobs_to_import as $job) {
@@ -87,6 +87,23 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                 ];
                 $pay_amount = calculate_job_pay($payParams, $rates);
 
+                // TICI String Construction
+                $tici_str = '';
+                if (!empty($job['tici_hub']) || !empty($job['tici_ont'])) {
+                     $h = $job['tici_hub'] ?? '';
+                     $o = $job['tici_ont'] ?? '';
+                     // format: value db @ LOC
+                     // User parsed value might include 'db @...' or just number?
+                     // Let's assume parser extracted full string or just number.
+                     // DB schema expects strings like "-12.55 db @ HUB" combined?
+                     // edit_job.php regex expects "(-12.55) db @ HUB".
+                     // So we construct strictly.
+                     $tici = [];
+                     if ($h) $tici[] = "$h db @ HUB";
+                     if ($o) $tici[] = "$o db @ ONT";
+                     $tici_str = implode("\n", $tici);
+                }
+
                 $stmt->execute([
                     $target_user_id,
                     $job['date'],
@@ -97,16 +114,17 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     $job['phone'] ?? '',
                     $job['spans'] ?? 0,
                     0, // conduit
-                    0, // jacks (unless parsed?)
+                    0, // jacks
                     $job['drop'] ?? 0,
-                    0, // soft jumper (INT mismatch fix?)
+                    0, // soft jumper
                     $job['ont'] ?? '',
                     $job['eero'] ?? '',
                     '', // cat6
                     $job['wifi_name'] ?? '',
                     $job['wifi_pass'] ?? '',
                     $job['notes'] ?? '',
-                    $pay_amount, // CALCULATED PAY
+                    $pay_amount,
+                    $tici_str, // TICI SIGNAL
                     'No', // extra PD
                     'No', // NID
                     'No', // Seal
@@ -259,35 +277,58 @@ if (isset($_POST['parse_text'])) {
             }
             // --------------------------------------------------------------------------
 
+            $eeros_arr = [];
+
             for ($k = $start_body; $k < count($lines); $k++) {
                 if (isset($wifi_lines_indices[$k])) continue;
                 $line = $lines[$k];
+                $lineClean = trim($line);
+                if (empty($lineClean)) continue;
 
+                // Headers Detection (Skip headers but set context?)
+                // We rely on Regex for values mostly, but skipping headers keeps notes clean.
+                if (strpos($line, '//ONT INSTALLED') !== false) continue;
+                if (strpos($line, '//EEROS INSTALLED') !== false) continue;
+                if (strpos($line, '//TICI BEFORE') !== false) continue;
+                
                 // 1. Job Types (F-codes)
-                // Regex: F followed by digits/dashes. e.g. F011, F014-1
-                if (preg_match_all('/\bF\d{3}(?:-\d+)?\b/i', $line, $fm)) {
-                    foreach ($fm[0] as $code)
-                        $found_codes[] = strtoupper($code);
-                    // Don't add simple code lines to notes? Or keep them?
-                    // Let's keep distinct code lines out of notes if they ONLY contain codes
-                    if (trim(str_replace($fm[0], '', $line)) == '')
-                        continue;
+                if (preg_match_all('/[Ff]\d{3}(?:-\d+)?/i', $line, $fm)) {
+                     foreach ($fm[0] as $code) $found_codes[] = strtoupper($code);
+                     // If line is ONLY codes, skip note
+                     if (trim(preg_replace('/[Ff]\d{3}(?:-\d+)?/', '', $line)) == '') continue;
                 }
 
-                // 2. ONT Serial
-                if (preg_match('/(?:ONT|FTRO)[(\s:-]*([A-Z0-9]{10,})/i', $line, $m)) {
-                    $job['ont'] = $m[1];
+                // 2. ONT Serial (Relaxed Regex)
+                // Looks for FTRO... or ONT tags
+                // User Ex: FTRO56414266 (Length 12, Prefix FTRO, Suffix 8 digits)
+                if (preg_match('/(?:ONT|FTRO)[(\s:-]*([A-Z0-9]{8,})/i', $line, $m)) {
+                    $job['ont'] = $m[1]; // Capture
+                    continue; // Skip adding to notes
+                }
+                // Standalone typical Serial check? Maybe dangerous.
+                if (preg_match('/^FTRO[A-Z0-9]{8,}$/i', $lineClean)) {
+                     $job['ont'] = $lineClean;
+                     continue;
                 }
 
-                // 3. Eero Serial
-                if (preg_match('/(?:Eero|GGC)[(\s:-]*([A-Z0-9]{10,})/i', $line, $m)) {
-                    // Could be multiple Eeros comma separated in parens
-                    $job['eero'] = $m[1];
+                // 3. Eero Serial (Relaxed)
+                // User Ex: GGC... (16 chars)
+                if (preg_match('/(?:Eero|GGC|GGB)[(\s:-]*([A-Z0-9]{12,})/i', $line, $m)) {
+                    $eeros_arr[] = $m[1];
+                    continue;
                 }
+                 // Standalone Eero start
+                if (preg_match('/^GG[CB][A-Z0-9]{10,}$/i', $lineClean)) {
+                     $eeros_arr[] = $lineClean;
+                     continue;
+                }
+                // Skip "2 Eeros" counts
+                if (preg_match('/^\d+\s*Eeros?$/i', $lineClean)) continue;
 
-                // 4. Drop Length
+                // 4. Drop
                 if (preg_match('/(\d+)\s*\'?\s*drop/i', $line, $m)) {
                     $job['drop'] = (int) $m[1];
+                    // Keep in notes? User didn't complain about drop. Keep it.
                 }
 
                 // 5. Spans
@@ -295,13 +336,23 @@ if (isset($_POST['parse_text'])) {
                     $job['spans'] = (int) $m[1];
                 }
 
-                // 6. Wifi
-                // Matches patterns like "Wifi: MyNet / Pass: 123" or separate lines
-                // Weak detection for now, maybe look for common phrases or just add to notes.
-                // Example 2 has "steves wifi" then "Lescowitch33!"
+                // 6. TICI
+                // -12.55 db @ HUB
+                if (preg_match('/([-\d\.]+)\s*db\s*@\s*HUB/i', $line, $m)) {
+                    $job['tici_hub'] = $m[1];
+                    continue;
+                }
+                if (preg_match('/([-\d\.]+)\s*db\s*@\s*ONT/i', $line, $m)) {
+                    $job['tici_ont'] = $m[1];
+                    continue;
+                }
 
                 $notes_arr[] = $line;
             }
+            if (!empty($eeros_arr)) {
+                $job['eero'] = implode(", ", $eeros_arr);
+            }
+
 
             // Determine Primary Type (First found or F011)
             if (!empty($found_codes)) {
