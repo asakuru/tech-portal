@@ -260,6 +260,7 @@ if (isset($_POST['parse_text'])) {
             // --------------------------------------------------------------------------
 
             for ($k = $start_body; $k < count($lines); $k++) {
+                if (isset($wifi_lines_indices[$k])) continue;
                 $line = $lines[$k];
 
                 // 1. Job Types (F-codes)
@@ -526,6 +527,16 @@ if (isset($_POST['parse_text'])) {
                                         <?php if ($job['drop']): ?>
                                             <div><strong>Drop:</strong>
                                                 <?= htmlspecialchars($job['drop']) ?>'
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($job['wifi_name'])): ?>
+                                            <div><strong>Wifi:</strong>
+                                                <?= htmlspecialchars($job['wifi_name']) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($job['wifi_pass'])): ?>
+                                            <div><strong>Pass:</strong>
+                                                <?= htmlspecialchars($job['wifi_pass']) ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>
