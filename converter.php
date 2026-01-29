@@ -80,7 +80,7 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     'install_type' => $job['type'] ?? 'F011',
                     'spans' => $job['spans'] ?? 0,
                     'drop_length' => $job['drop'] ?? 0,
-                    'cat6_lines' => '',
+                    'cat6_lines' => $job['cat6_lines'] ?? '',
                     'extra_per_diem' => 'No',
                     'conduit_ft' => 0,
                     'jacks_installed' => 0
@@ -119,7 +119,7 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     0, // soft jumper
                     $job['ont'] ?? '',
                     $job['eero'] ?? '',
-                    '', // cat6
+                    $job['cat6_lines'] ?? '',
                     $job['wifi_name'] ?? '',
                     $job['wifi_pass'] ?? '',
                     $job['notes'] ?? '',
@@ -188,6 +188,9 @@ if (isset($_POST['parse_text'])) {
                 'eero' => '',
                 'drop' => 0,
                 'spans' => 0,
+                'cat6_lines' => '',
+                'tici_hub' => '',
+                'tici_ont' => '',
                 'wifi_name' => '',
                 'wifi_pass' => '',
                 'notes' => ''
@@ -322,6 +325,16 @@ if (isset($_POST['parse_text'])) {
                 // 5. Spans
                 if (preg_match('/(\d+)\s*spans?/i', $line, $m)) {
                     $job['spans'] = (int) $m[1];
+                }
+
+                // 5b. CAT 6 Lines
+                if (preg_match('/(\d+)\s*for the Eero Router/i', $line, $m)) {
+                    $job['cat6_lines'] = $m[1];
+                    continue;
+                }
+                if (preg_match('/\b(\d+)\s*CAT\s*6\b/i', $line, $m)) {
+                    $job['cat6_lines'] = $m[1];
+                    continue;
                 }
 
                 // 6. TICI
@@ -574,6 +587,11 @@ if (isset($_POST['parse_text'])) {
                                         <?php if ($job['drop']): ?>
                                             <div><strong>Drop:</strong>
                                                 <?= htmlspecialchars($job['drop']) ?>'
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($job['cat6_lines'])): ?>
+                                            <div><strong>CAT 6:</strong>
+                                                <?= htmlspecialchars($job['cat6_lines']) ?>
                                             </div>
                                         <?php endif; ?>
                                         <?php if (!empty($job['wifi_name'])): ?>
