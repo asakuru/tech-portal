@@ -383,7 +383,7 @@ if (isset($_POST['parse_text'])) {
                     <form method="post">
                         <div style="margin-bottom:15px;">
                             <label>Default Date for Jobs</label>
-                            <input type="date" name="default_date" value="<?= date('Y-m-d') ?>" class="input-field">
+                            <input type="date" name="default_date" value="<?= isset($_POST['default_date']) ? $_POST['default_date'] : date('Y-m-d') ?>" class="input-field">
                         </div>
 
                         <label>Raw Text Input</label>
@@ -431,6 +431,7 @@ if (isset($_POST['parse_text'])) {
                             </h3>
                             <form method="post">
                                 <input type="hidden" name="raw_text" value="<?= isset($_POST['raw_text']) ? htmlspecialchars($_POST['raw_text']) : '' ?>">
+                                <input type="hidden" name="default_date" value="<?= isset($_POST['default_date']) ? $_POST['default_date'] : date('Y-m-d') ?>">
                                 <input type="hidden" name="jobs" value="<?= htmlspecialchars(json_encode($parsed_jobs)) ?>">
                                 <?php if (is_admin()): ?>
                                     <select name="target_user"
@@ -508,6 +509,7 @@ if (isset($_POST['parse_text'])) {
                                                 <?php else: ?>
                                                         <form method="post" style="display:inline;">
                                                             <input type="hidden" name="raw_text" value="<?= isset($_POST['raw_text']) ? htmlspecialchars($_POST['raw_text']) : '' ?>">
+                                                            <input type="hidden" name="default_date" value="<?= isset($_POST['default_date']) ? $_POST['default_date'] : date('Y-m-d') ?>">
                                                             <input type="hidden" name="jobs" value="<?= htmlspecialchars(json_encode([$job])) ?>">
                                                             <button type="submit" name="import_jobs" class="btn btn-small">Import This Job</button>
                                                         </form>
