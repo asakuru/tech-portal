@@ -231,6 +231,34 @@ if (isset($_POST['parse_text'])) {
             $notes_arr = [];
             $found_codes = [];
 
+            // --- WIFI EXTRACTION: Find text between last code and "WHAT TYPE OF INSTALL" ---
+            $code_idx_last = -1;
+            $header_idx = -1;
+            
+            for ($k = $start_body; $k < count($lines); $k++) {
+                if (preg_match('/\bF\d{3}|F011\b/i', $lines[$k])) { 
+                    $code_idx_last = $k;
+                }
+                if (strpos($lines[$k], '//WHAT TYPE OF INSTALL//') !== false) {
+                    $header_idx = $k;
+                    break; 
+                }
+            }
+
+            $wifi_lines_indices = [];
+            if ($code_idx_last > -1 && $header_idx > -1 && $header_idx > $code_idx_last) {
+                $candidates = [];
+                for ($k = $code_idx_last + 1; $k < $header_idx; $k++) {
+                    if (trim($lines[$k]) !== '') {
+                        $candidates[] = trim($lines[$k]);
+                        $wifi_lines_indices[$k] = true;
+                    }
+                }
+                if (isset($candidates[0])) $job['wifi_name'] = $candidates[0];
+                if (isset($candidates[1])) $job['wifi_pass'] = $candidates[1];
+            }
+            // --------------------------------------------------------------------------
+
             for ($k = $start_body; $k < count($lines); $k++) {
                 $line = $lines[$k];
 
