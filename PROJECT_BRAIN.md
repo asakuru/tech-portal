@@ -23,6 +23,9 @@ Field technician portal for tracking jobs, pay (piece rate), expenses, and recon
 ### Weekly Summary (`index.php`)
 - **Fix**: Loop no longer breaks early on future dates, ensuring Sunday Per Diem counts even if viewed mid-week.
 
+### UI/UX
+- **Copy Notes**: Restored "Copy Notes" button for F008, F009, and F011 job codes (previously hidden).
+
 ## Environment Notes
 - **CLI Limitations**: PHP/SQLite CLI commands unavailable in agent environment.
 - **Geocoding**: Uses Nominatim (OSM) with caching in `city_coords`.

@@ -427,7 +427,7 @@ else {
             let isRepairGroup = (t === 'F008');
             let isPhoneOnly = (t === 'F020');
             let isSimpleEntry = (isMissedGroup || isRepairGroup);
-            let hideNotes = (t === 'F008' || t === 'F009' || t === 'F011');
+            let hideNotes = false; // Always show notes block for valid jobs (User Request)
 
             document.getElementById('secDetails').style.display = hideAll ? 'none' : 'block';
             document.getElementById('secCustomer').style.display = hideAll ? 'none' : 'block';

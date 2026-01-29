@@ -286,7 +286,7 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             let isMissedGroup = (t === 'F009' || t === 'F011');
             let isRepairGroup = (t === 'F008');
             let isSimpleEntry = (isMissedGroup || isRepairGroup);
-            let hideNotes = (t === 'F008' || t === 'F009' || t === 'F011');
+            let hideNotes = false; // Always show notes block for valid jobs (User Request)
 
             document.getElementById('secCustomer').style.display = hideAll ? 'none' : 'block';
             document.getElementById('groupMissed').style.display = isMissedGroup ? 'block' : 'none';
