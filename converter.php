@@ -442,10 +442,13 @@ if (isset($_POST['parse_text'])) {
                 <?php if (!empty($parsed_jobs)): ?>
                     <?php
                     // Pre-check duplicates
+                    // Pre-check duplicates
+                    $dup_count = 0;
                     foreach ($parsed_jobs as &$pj) {
                         $chk = $db->prepare("SELECT id FROM jobs WHERE ticket_number=? AND install_date=? AND install_type=? AND user_id=?");
                         $chk->execute([$pj['ticket'], $pj['date'], $pj['type'], $_SESSION['user_id']]);
                         $pj['is_dup'] = (bool) $chk->fetch();
+                        if ($pj['is_dup']) $dup_count++;
                     }
                     unset($pj);
                     ?>
@@ -454,9 +457,9 @@ if (isset($_POST['parse_text'])) {
                             style="background:var(--bg-card); padding:10px; border-bottom:1px solid var(--border); margin:-10px -10px 10px -10px; border-radius:6px 6px 0 0;">
                             <strong>Import Date:</strong> <?= htmlspecialchars($parsed_jobs[0]['date']) ?>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <h3 style="margin:0;">Preview:
-                                <?= count($parsed_jobs) ?> Jobs Found
+                                <span style="font-weight:normal"><?= count($parsed_jobs) - $dup_count ?> New</span>
                             </h3>
                             <form method="post">
                                 <input type="hidden" name="raw_text" value="<?= isset($_POST['raw_text']) ? htmlspecialchars($_POST['raw_text']) : '' ?>">
@@ -481,6 +484,11 @@ if (isset($_POST['parse_text'])) {
                                 <button type="submit" name="import_jobs" class="btn">📥 Import All</button>
                             </form>
                         </div>
+                        <?php if ($dup_count > 0): ?>
+                             <div style="background:#fff3cd; color:#856404; padding:8px 12px; border-radius:4px; margin-bottom:15px; border:1px solid #ffeeba;">
+                                 ℹ️ <strong><?= $dup_count ?> duplicate job<?= $dup_count > 1 ? 's' : '' ?></strong> found and hidden from list.
+                             </div>
+                        <?php endif; ?>
 
                         <div style="max-height: 500px; overflow-y: auto;">
                                 <?php foreach ($parsed_jobs as $job):
