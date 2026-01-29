@@ -364,34 +364,34 @@ ksort($breakdown_data);
 
         <div class="kpi-grid">
             <?php
-            include __DIR__ . '/includes/kpi_card.php';
+            include __DIR__ . '/kpi_card.php';
             $label = "Gross Revenue";
             $value = "$" . number_format($job_revenue, 2);
             $class = "positive";
             $sub = "PD: $" . number_format($total_per_diem) . " | Lead: $" . number_format($total_lead_pay);
             $style = "";
-            include __DIR__ . '/includes/kpi_card.php';
+            include __DIR__ . '/kpi_card.php';
             $label = "Mileage Deduction";
             $value = "$" . number_format($mileage_deduction, 2);
             $class = "";
             $sub = number_format($total_miles) . " Miles";
-            include __DIR__ . '/includes/kpi_card.php';
+            include __DIR__ . '/kpi_card.php';
             $label = "Actual Fuel";
             $value = "$" . number_format($total_fuel, 2);
             $class = "negative";
             $sub = "Real Expense";
-            include __DIR__ . '/includes/kpi_card.php';
+            include __DIR__ . '/kpi_card.php';
             $label = "Net Taxable";
             $value = "$" . number_format($net_taxable_income, 2);
             $class = "";
             $sub = "Rev - Mileage";
-            include __DIR__ . '/includes/kpi_card.php';
+            include __DIR__ . '/kpi_card.php';
             $label = "Est. Tax Due";
             $value = "$" . number_format($estimated_tax_due, 2);
             $class = "";
             $sub = ($tax_percent * 100) . "% Rate";
             $style = "border-color: var(--primary);";
-            include __DIR__ . '/includes/kpi_card.php';
+            include __DIR__ . '/kpi_card.php';
             ?>
         </div>
 

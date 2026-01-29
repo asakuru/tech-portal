@@ -271,7 +271,7 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
         <!-- Summary Cards -->
         <div class="summary-grid">
             <?php
-            include __DIR__ . '/includes/kpi_card.php';
+            include __DIR__ . '/kpi_card.php';
 
             // Today Card
             $label = "Today";
@@ -280,7 +280,7 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
             $sub = count($today_jobs) . " job" . (count($today_jobs) != 1 ? 's' : '');
             $onclick = "openTallyModal('day')";
             $style = "border-left: 4px solid var(--primary);";
-            include __DIR__ . '/includes/kpi_card.php';
+            include __DIR__ . '/kpi_card.php';
 
             // Week Card
             $label = "This Week";
@@ -289,7 +289,7 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
             $sub = $week_jobs . " job" . ($week_jobs != 1 ? 's' : '');
             $onclick = "openTallyModal('week')";
             $style = "border-left: 4px solid var(--success-text);";
-            include __DIR__ . '/includes/kpi_card.php';
+            include __DIR__ . '/kpi_card.php';
             ?>
         </div>
 
@@ -302,10 +302,10 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                 </div>
             <?php else: ?>
                 <?php
-                include __DIR__ . '/includes/job_summary_card.php';
+                include __DIR__ . '/job_summary_card.php';
                 foreach ($recent_jobs as $job) {
                     $showDate = true;
-                    include __DIR__ . '/includes/job_summary_card.php';
+                    include __DIR__ . '/job_summary_card.php';
                 }
                 ?>
             <?php endif; ?>
