@@ -85,7 +85,7 @@ if (isset($_POST['import_jobs']) && isset($_POST['jobs'])) {
                     0, // conduit
                     0, // jacks (unless parsed?)
                     $job['drop'] ?? 0,
-                    '', // soft jumper
+                    0, // soft jumper (INT mismatch fix?)
                     $job['ont'] ?? '',
                     $job['eero'] ?? '',
                     '', // cat6
