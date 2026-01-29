@@ -269,11 +269,29 @@ if (isset($_POST['parse_text'])) {
             $wifi_lines_indices = [];
             if ($code_idx_last > -1 && $header_idx > -1 && $header_idx > $code_idx_last) {
                 $candidates = [];
+                $skip_labels = ['wifi name', 'wifi password', 'ssid', 'password', 'wifi', 'pass', 'name', 'password:', 'wifi:', 'ssid:', 'pass:', 'pwd', 'pwd:', 'wifi password:','wifi name:'];
+                
                 for ($k = $code_idx_last + 1; $k < $header_idx; $k++) {
-                    if (trim($lines[$k]) !== '') {
-                        $candidates[] = trim($lines[$k]);
-                        $wifi_lines_indices[$k] = true;
+                    $lineRaw = trim($lines[$k]);
+                    $lineLower = strtolower($lineRaw);
+                    if ($lineLower === '') continue;
+                    
+                    // Skip if the line is JUST a label
+                    $is_label = false;
+                    foreach ($skip_labels as $lbl) {
+                        if ($lineLower === $lbl) {
+                            $is_label = true;
+                            break;
+                        }
                     }
+                    
+                    if ($is_label) {
+                        $wifi_lines_indices[$k] = true;
+                        continue;
+                    }
+
+                    $candidates[] = $lineRaw;
+                    $wifi_lines_indices[$k] = true;
                 }
                 if (isset($candidates[0])) $job['wifi_name'] = $candidates[0];
                 if (isset($candidates[1])) $job['wifi_pass'] = $candidates[1];
