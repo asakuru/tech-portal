@@ -26,7 +26,9 @@ Field technician portal for tracking jobs, pay (piece rate), expenses, and recon
 ### UI/UX
 - **Copy Notes**: Restored "Copy Notes" button for F008, F009, and F011 job codes (previously hidden).
 - **Date Navigation**: Added "Jump to Date" date picker in `entry.php` navigation.
-- **Job Converter**: Enhanced with Date Preview, Individual Import, Duplicate Detection, Pay Calculation, **Wifi Extraction**, and List Persistence.
+- **Job Converter**: Enhanced with Date Preview, Individual Import, Duplicate Detection, Pay Calculation, **Wifi Extraction**, **Serial/TICI Parsing**, and List Persistence.
+    - **Parsing**: Strictly requires `FTRO` prefix for ONT and `GGC`/`GGB` for Eeros.
+    - **DB Logic**: Correctly maps TICI signal levels to `tici_signal` column.
 
 ## Environment Notes
 - **CLI Limitations**: PHP/SQLite CLI commands unavailable in agent environment.
