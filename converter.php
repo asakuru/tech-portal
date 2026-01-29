@@ -252,30 +252,25 @@ if (isset($_POST['parse_text'])) {
             $notes_arr = [];
             $found_codes = [];
 
-            // --- WIFI EXTRACTION: Find text between last code and "WHAT TYPE OF INSTALL" ---
-            $code_idx_last = -1;
+            // --- WIFI EXTRACTION: Find text between contact info and first header ---
             $header_idx = -1;
-            
             for ($k = $start_body; $k < count($lines); $k++) {
-                if (preg_match('/[Ff]\d{3}/', $lines[$k])) { 
-                    $code_idx_last = $k;
-                }
-                if (strpos($lines[$k], '//WHAT TYPE OF INSTALL//') !== false) {
+                if (strpos($lines[$k], '//') !== false) {
                     $header_idx = $k;
-                    break; 
+                    break;
                 }
             }
 
             $wifi_lines_indices = [];
-            if ($code_idx_last > -1 && $header_idx > -1 && $header_idx > $code_idx_last) {
+            if ($header_idx > -1) {
                 $candidates = [];
-                $skip_labels = ['wifi name', 'wifi password', 'ssid', 'password', 'wifi', 'pass', 'name', 'password:', 'wifi:', 'ssid:', 'pass:', 'pwd', 'pwd:', 'wifi password:','wifi name:'];
+                $skip_labels = ['wifi name', 'wifi password', 'ssid', 'password', 'wifi', 'pass', 'name', 'password:', 'wifi:', 'ssid:', 'pass:', 'pwd', 'pwd:', 'wifi password:', 'wifi name:'];
                 
-                for ($k = $code_idx_last + 1; $k < $header_idx; $k++) {
+                for ($k = $start_body; $k < $header_idx; $k++) {
                     $lineRaw = trim($lines[$k]);
                     $lineLower = strtolower($lineRaw);
                     if ($lineLower === '') continue;
-                    
+
                     // Skip if the line is JUST a label
                     $is_label = false;
                     foreach ($skip_labels as $lbl) {
@@ -284,9 +279,14 @@ if (isset($_POST['parse_text'])) {
                             break;
                         }
                     }
-                    
                     if ($is_label) {
                         $wifi_lines_indices[$k] = true;
+                        continue;
+                    }
+
+                    // Skip if it looks like a code line (so it doesn't get picked as wifi name/pass)
+                    // Matches lines starting with digits (e.g. 1-F...) or direct codes (F014...)
+                    if (preg_match('/^[0-9-]*[Ff]\d{3}/', $lineRaw)) {
                         continue;
                     }
 
