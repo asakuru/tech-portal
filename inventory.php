@@ -171,11 +171,11 @@ try {
                 <div style="font-size: 0.9rem; opacity: 0.7;">Auto-deducts when you save jobs</div>
             </div>
 
-            <div style="max-width: 1000px; margin: 0 auto; padding-bottom: 60px;">
-
-                <!-- Consolidated Groups -->
+            <div style="max-width: 1200px; margin: 0 auto; padding-bottom: 60px;">
+                
+                <h3 style="font-weight: 800; margin-bottom: 20px;">📦 Consolidated Categories</h3>
                 <div class="inv-group-grid">
-                    <?php
+                    <?php 
                     $groups = [
                         'NIDs' => ['icon' => '🏠', 'key' => 'NID-'],
                         'Jumpers' => ['icon' => '🔌', 'key' => 'JUMP-'],
@@ -184,74 +184,91 @@ try {
 
                     foreach ($groups as $name => $g):
                         $count = 0;
+                        $total_qty = 0;
                         $low_stock = false;
                         foreach ($raw_items as $item) {
                             if (strpos($item['item_key'], $g['key']) === 0) {
                                 $count++;
+                                $total_qty += $item['qty'];
                                 if (($item['qty'] / max(1, $item['par_level'])) < 0.3) {
                                     $low_stock = true;
                                 }
                             }
                         }
                         if ($count > 0):
-                            ?>
-                            <a href="inventory_detail.php?cat=<?= urlencode($name) ?>" class="inv-group-card">
-                                <div class="inv-group-icon"><?= $g['icon'] ?></div>
-                                <div class="inv-group-name"><?= $name ?></div>
-                                <div class="inv-group-count"><?= $count ?> sizes tracked</div>
-                                <?php if ($low_stock): ?>
-                                    <div class="inv-group-status status-alert">⚠️ Low Stock Inside</div>
-                                <?php else: ?>
-                                    <div class="inv-group-status status-ok">All Normal</div>
-                                <?php endif; ?>
-                            </a>
-                        <?php
+                    ?>
+                        <a href="inventory_detail.php?cat=<?= urlencode($name) ?>" class="inv-group-card">
+                            <div class="badge-qty"><?= number_format($total_qty) ?></div>
+                            <div class="inv-group-icon"><?= $g['icon'] ?></div>
+                            <div class="inv-group-name"><?= $name ?></div>
+                            <div class="inv-group-count"><?= $count ?> sizes tracked</div>
+                            <?php if ($low_stock): ?>
+                                <div class="inv-group-status status-alert">⚠️ Low Stock Inside</div>
+                            <?php else: ?>
+                                <div class="inv-group-status status-ok">All Normal</div>
+                            <?php endif; ?>
+                        </a>
+                    <?php 
                         endif;
-                    endforeach;
+                    endforeach; 
                     ?>
                 </div>
 
-                <!-- Individual Equipment -->
-                <?php if (count($categorized['Equipment']) > 0): ?>
-                    <div class="cat-section" style="margin-top: 40px;">
-                        <div class="cat-header">📟 Standard Equipment</div>
-                        <div class="cat-grid">
-                            <?php foreach ($categorized['Equipment'] as $item):
-                                $pct = ($item['qty'] / max(1, $item['par_level'])) * 100;
-                                $status = ($pct < 30) ? 'status-low' : (($pct > 80) ? 'status-good' : 'status-mid');
-                                ?>
-                                <div class="inv-item-compact <?= $status ?>">
-                                    <div class="inv-icon-box">📟</div>
-                                    <div class="inv-info">
-                                        <div class="inv-name-sm"><?= htmlspecialchars($item['item_name']) ?></div>
-                                        <div class="inv-meta-sm"><span>Target:
-                                                <?= htmlspecialchars($item['par_level']) ?></span></div>
-                                    </div>
-                                    <div class="inv-controls">
-                                        <form method="POST">
-                                            <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                            <input type="hidden" name="change" value="-1">
-                                            <button class="btn-inv-sm">−</button>
-                                        </form>
-                                        <div class="inv-qty-sm" data-key="<?= $item['item_key'] ?>">
-                                            <?= number_format($item['qty']) ?></div>
-                                        <form method="POST">
-                                            <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                            <input type="hidden" name="change" value="1">
-                                            <button class="btn-inv-sm">+</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
+                <h3 style="font-weight: 800; margin-top: 40px; margin-bottom: 20px;">📟 Standard Equipment</h3>
+                <div class="inv-group-grid">
+                    <?php foreach ($categorized['Equipment'] as $item): 
+                        $pct = ($item['qty'] / max(1, $item['par_level'])) * 100;
+                        $is_low = ($pct < 30);
+                    ?>
+                        <div class="inv-group-card single-unit" onclick="openUpdateModal('<?= $item['item_key'] ?>', '<?= htmlspecialchars($item['item_name']) ?>', '<?= $item['qty'] ?>', '📟')">
+                            <div class="inv-group-icon">📟</div>
+                            <div class="inv-group-name"><?= htmlspecialchars($item['item_name']) ?></div>
+                            <div class="inv-group-count"><?= number_format($item['qty']) ?></div>
+                            <div class="inv-group-status <?= $is_low ? 'status-alert' : 'status-ok' ?>">
+                                <?= $is_low ? '⚠️ Low Stock' : 'Stock OK' ?>
+                            </div>
                         </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            
+            <!-- MODAL OVERLAY -->
+            <div id="updateModal" class="modal-overlay">
+                <div class="modal-content-tech">
+                    <div class="modal-header">
+                        <div id="modalIcon" class="modal-icon">📟</div>
+                        <div>
+                            <h3 id="modalTitle" class="modal-title">Update Stock</h3>
+                            <div id="modalItemKey" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">ITEM_KEY</div>
+                        </div>
+                        <button class="modal-close" onclick="closeUpdateModal()">&times;</button>
                     </div>
-                <?php endif; ?>
+                    <form method="POST">
+                        <div class="modal-body">
+                            <input type="hidden" id="modalInputKey" name="item_key">
+                            
+                            <div>
+                                <label>Direct Quantity Update</label>
+                                <input type="number" step="0.1" name="set_qty" id="modalInputQty" class="form-control" placeholder="0.0">
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">Enter the exact amount currently in stock.</p>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <button type="button" class="btn btn-secondary" style="background: var(--danger-text); color: white; border: none;" onclick="adjustBy(-1)">-1 Quick</button>
+                                <button type="button" class="btn btn-secondary" style="background: var(--success-text); color: white; border: none;" onclick="adjustBy(1)">+1 Quick</button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeUpdateModal()">Cancel</button>
+                            <button type="submit" class="btn" style="flex: 2; background: var(--primary); color: white;">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            <!-- TRANSACTION LOG -->
-            <h3 style="margin-top:40px; margin-bottom:15px; font-weight:800;">📜 History</h3>
-            <div
-                style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+            <!-- TRANSACTION LOG (Kept as list for history) -->
+            <h3 style="font-weight: 800; margin-top: 40px; margin-bottom: 15px;">📜 History</h3>
+            <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom: 60px;">
                 <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
                     <thead>
                         <tr style="background:var(--bg-input); color:var(--text-muted); text-align:left;">
@@ -269,53 +286,50 @@ try {
                             </tr>
                         <?php else: ?>
                             <?php foreach ($logs as $l): ?>
-                                <tr style="border-bottom:1px solid var(--border);">
-                                    <td style="padding:10px;"><?= date('M j, g:i a', strtotime($l['log_date'])) ?></td>
-                                    <td style="padding:10px; font-weight:bold;"><?= htmlspecialchars($l['item_key']) ?></td>
-                                    <td
-                                        style="padding:10px; color: <?= $l['change_amount'] < 0 ? 'var(--danger-text)' : 'var(--success-text)' ?>;">
-                                        <?= $l['change_amount'] > 0 ? '+' : '' ?>        <?= $l['change_amount'] ?>
-                                    </td>
-                                    <td style="padding:10px; color:var(--text-muted);"><?= htmlspecialchars($l['reason']) ?>
-                                    </td>
-                                </tr>
+                            <tr style="border-bottom:1px solid var(--border);">
+                                <td style="padding:10px;"><?= date('M j, g:i a', strtotime($l['log_date'])) ?></td>
+                                <td style="padding:10px; font-weight:bold;"><?= htmlspecialchars($l['item_key']) ?></td>
+                                <td style="padding:10px; color: <?= $l['change_amount'] < 0 ? 'var(--danger-text)' : 'var(--success-text)' ?>;">
+                                    <?= $l['change_amount'] > 0 ? '+' : '' ?><?= $l['change_amount'] ?>
+                                </td>
+                                <td style="padding:10px; color:var(--text-muted);"><?= htmlspecialchars($l['reason']) ?></td>
+                            </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
-
-            <div
-                style="margin-top: 40px; padding: 20px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);">
-                <h3>💡 How to Update</h3>
-                <p style="color: var(--text-muted); margin-bottom:15px;">
-                    Use the <strong>+ / -</strong> buttons for quick changes. To set an exact number (e.g. after a
-                    restock), click the number.
-                </p>
-            </div>
+            
         </main>
     </div>
-
+    
     <script>
-        // Simple prompt for direct edit (can be enhanced to modal later)
-        document.querySelectorAll('.inv-qty-sm').forEach(el => {
-            el.style.cursor = 'pointer';
-            el.title = "Click to set exact quantity";
-            el.onclick = function () {
-                const key = this.dataset.key;
-                const current = this.innerText;
-                const newVal = prompt("Set exact quantity for " + key + ":", current);
-                if (newVal !== null && !isNaN(newVal)) {
-                    // Create hidden form to submit property
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.innerHTML = `<input type="hidden" name="item_key" value="${key}">
-                                      <input type="hidden" name="set_qty" value="${newVal}">`;
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            };
-        });
+        function openUpdateModal(key, name, qty, icon) {
+            document.getElementById('modalTitle').innerText = name;
+            document.getElementById('modalItemKey').innerText = key;
+            document.getElementById('modalInputKey').value = key;
+            document.getElementById('modalInputQty').value = qty;
+            document.getElementById('modalIcon').innerText = icon;
+            document.getElementById('updateModal').classList.add('active');
+        }
+
+        function closeUpdateModal() {
+            document.getElementById('updateModal').classList.remove('active');
+        }
+
+        function adjustBy(amt) {
+            let input = document.getElementById('modalInputQty');
+            let val = parseFloat(input.value) || 0;
+            input.value = Math.max(0, val + amt).toFixed(1);
+        }
+
+        // Close on backdrop click
+        window.onclick = function(event) {
+            let modal = document.getElementById('updateModal');
+            if (event.target == modal) {
+                closeUpdateModal();
+            }
+        }
     </script>
 </body>
 

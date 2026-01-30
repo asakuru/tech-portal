@@ -112,67 +112,97 @@ if ($cat == 'NIDs')
                 </div>
             </div>
 
-            <div style="max-width: 800px; margin: 0 auto; padding-bottom: 60px;">
-                <div class="cat-grid">
+            <div style="max-width: 1200px; margin: 0 auto; padding-bottom: 60px;">
+                <div class="inv-group-grid">
                     <?php foreach ($cat_items as $item):
                         $pct = ($item['qty'] / max(1, $item['par_level'])) * 100;
-                        $status = ($pct < 30) ? 'status-low' : (($pct > 80) ? 'status-good' : 'status-mid');
+                        $is_low = ($pct < 30);
                         ?>
-                        <div class="inv-item-compact <?= $status ?>" style="margin-bottom: 12px;">
-                            <div class="inv-info">
-                                <div class="inv-name-sm">
-                                    <?= htmlspecialchars($item['item_name']) ?>
-                                </div>
-                                <div class="inv-meta-sm">
-                                    <span>Target:
-                                        <?= htmlspecialchars($item['par_level']) ?>
-                                        <?= $item['unit'] ?>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="inv-controls">
-                                <form method="POST">
-                                    <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                    <input type="hidden" name="change" value="-1">
-                                    <button class="btn-inv-sm">−</button>
-                                </form>
-
-                                <div class="inv-qty-sm" data-key="<?= $item['item_key'] ?>">
-                                    <?= number_format($item['qty']) ?>
-                                </div>
-
-                                <form method="POST">
-                                    <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                    <input type="hidden" name="change" value="1">
-                                    <button class="btn-inv-sm">+</button>
-                                </form>
+                        <div class="inv-group-card single-unit"
+                            onclick="openUpdateModal('<?= $item['item_key'] ?>', '<?= htmlspecialchars($item['item_name']) ?>', '<?= $item['qty'] ?>', '<?= $icon ?>')">
+                            <div class="inv-group-icon"><?= $icon ?></div>
+                            <div class="inv-group-name"><?= htmlspecialchars($item['item_name']) ?></div>
+                            <div class="inv-group-count"><?= number_format($item['qty']) ?></div>
+                            <div class="inv-group-status <?= $is_low ? 'status-alert' : 'status-ok' ?>">
+                                <?= $is_low ? '⚠️ Low Stock' : 'Stock OK' ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- MODAL OVERLAY -->
+            <div id="updateModal" class="modal-overlay">
+                <div class="modal-content-tech">
+                    <div class="modal-header">
+                        <div id="modalIcon" class="modal-icon"><?= $icon ?></div>
+                        <div>
+                            <h3 id="modalTitle" class="modal-title">Update Stock</h3>
+                            <div id="modalItemKey"
+                                style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">ITEM_KEY</div>
+                        </div>
+                        <button class="modal-close" onclick="closeUpdateModal()">&times;</button>
+                    </div>
+                    <form method="POST">
+                        <div class="modal-body">
+                            <input type="hidden" id="modalInputKey" name="item_key">
+
+                            <div>
+                                <label>Direct Quantity Update</label>
+                                <input type="number" step="0.1" name="set_qty" id="modalInputQty" class="form-control"
+                                    placeholder="0.0">
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">Enter the
+                                    exact amount currently in stock.</p>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <button type="button" class="btn btn-secondary"
+                                    style="background: var(--danger-text); color: white; border: none;"
+                                    onclick="adjustBy(-1)">-1 Quick</button>
+                                <button type="button" class="btn btn-secondary"
+                                    style="background: var(--success-text); color: white; border: none;"
+                                    onclick="adjustBy(1)">+1 Quick</button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" style="flex: 1;"
+                                onclick="closeUpdateModal()">Cancel</button>
+                            <button type="submit" class="btn"
+                                style="flex: 2; background: var(--primary); color: white;">Save Changes</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        document.querySelectorAll('.inv-qty-sm').forEach(el => {
-            el.style.cursor = 'pointer';
-            el.title = "Click to set exact quantity";
-            el.onclick = function () {
-                const key = this.dataset.key;
-                const current = this.innerText.trim();
-                const newVal = prompt("Set exact quantity for " + key + ":", current);
-                if (newVal !== null && !isNaN(newVal)) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.innerHTML = `<input type="hidden" name="item_key" value="${key}">
-                                      <input type="hidden" name="set_qty" value="${newVal}">`;
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            };
-        });
+        function openUpdateModal(key, name, qty, icon) {
+            document.getElementById('modalTitle').innerText = name;
+            document.getElementById('modalItemKey').innerText = key;
+            document.getElementById('modalInputKey').value = key;
+            document.getElementById('modalInputQty').value = qty;
+            document.getElementById('modalIcon').innerText = icon;
+            document.getElementById('updateModal').classList.add('active');
+        }
+
+        function closeUpdateModal() {
+            document.getElementById('updateModal').classList.remove('active');
+        }
+
+        function adjustBy(amt) {
+            let input = document.getElementById('modalInputQty');
+            let val = parseFloat(input.value) || 0;
+            input.value = Math.max(0, val + amt).toFixed(1);
+        }
+
+        // Close on backdrop click
+        window.onclick = function (event) {
+            let modal = document.getElementById('updateModal');
+            if (event.target == modal) {
+                closeUpdateModal();
+            }
+        }
     </script>
 </body>
 
