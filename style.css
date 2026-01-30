@@ -33,6 +33,28 @@
     --grid-gap: 16px;
     --sidebar-width: 64px;
     --sidebar-expanded: 240px;
+
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- LIGHT MODE OVERRIDES --- */
+.light-mode {
+    --bg-body: #f5f5f7;
+    --bg-card: #ffffff;
+    --bg-input: #f0f0f2;
+    --bg-glass: rgba(255, 255, 255, 0.8);
+    --bg-sidebar: #ffffff;
+
+    --text-main: #1d1d1f;
+    --text-muted: #86868b;
+    --text-secondary: #424245;
+    --border: #d2d2d7;
+
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.15);
+
+    --gradient-card: linear-gradient(145deg, #ffffff, #fbfbfb);
 }
 
 /* --- BASE STYLES --- */
@@ -44,12 +66,12 @@ body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: var(--bg-body) !important;
     background-image: none !important;
-    /* Force remove any legacy background images */
     color: var(--text-main);
     margin: 0;
     line-height: 1.6;
     min-height: 100vh;
     display: flex;
+    transition: var(--transition);
 }
 
 /* Global SVG Constraint - Prevent icons from blowing up */
@@ -93,7 +115,7 @@ svg {
     flex-direction: column;
     padding: 16px 0;
     z-index: 1050;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s, border 0.3s;
     overflow: hidden;
 }
 
@@ -200,7 +222,7 @@ svg {
     border-radius: var(--radius);
     padding: 20px;
     box-shadow: var(--shadow-sm);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: var(--transition);
     overflow: hidden;
 }
 
