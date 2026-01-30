@@ -81,22 +81,28 @@ if ($job) {
         $parsed['outcome'] = str_replace(['-----//', '-----'], '', extract_val('//WHAT WAS TO DECIDED OUTCOME//', $notes));
         // Try both formats: with and without -----// suffix
         $complaint = extract_val('//WHAT IS THE COMPLAINT//-----//', $notes);
-        if ($complaint === '') $complaint = extract_val('//WHAT IS THE COMPLAINT//', $notes);
+        if ($complaint === '')
+            $complaint = extract_val('//WHAT IS THE COMPLAINT//', $notes);
         $parsed['complaint'] = str_replace(['-----//', '-----'], '', $complaint);
 
         $resolution = extract_val('//WHAT DID YOU DO TO RESOLVE THE ISSUE//-----//', $notes);
-        if ($resolution === '') $resolution = extract_val('//WHAT DID YOU DO TO RESOLVE THE ISSUE//', $notes);
+        if ($resolution === '')
+            $resolution = extract_val('//WHAT DID YOU DO TO RESOLVE THE ISSUE//', $notes);
         $parsed['resolution'] = str_replace(['-----//', '-----'], '', $resolution);
-        
+
         // Try strict F008 headers first (with suffix), then fallback to other formats
         $equip = extract_val('DID YOU REPLACE ANY EQUIPMENT//-----//', $notes);
-        if ($equip === '') $equip = extract_val('DID YOU REPLACE ANY EQUIPMENT', $notes);
-        if ($equip === '') $equip = extract_val('//DID YOU REPLACE ANY EQUIPMENT//', $notes);
+        if ($equip === '')
+            $equip = extract_val('DID YOU REPLACE ANY EQUIPMENT', $notes);
+        if ($equip === '')
+            $equip = extract_val('//DID YOU REPLACE ANY EQUIPMENT//', $notes);
         $parsed['equip_replaced'] = str_replace(['-----//', '-----'], '', $equip);
 
         $restored = extract_val('IS CUSTOMER SERVICE RESTORED//-----//', $notes);
-        if ($restored === '') $restored = extract_val('IS CUSTOMER SERVICE RESTORED', $notes);
-        if ($restored === '') $restored = extract_val('//IS CUSTOMER SERVICE RESTORED//', $notes);
+        if ($restored === '')
+            $restored = extract_val('IS CUSTOMER SERVICE RESTORED', $notes);
+        if ($restored === '')
+            $restored = extract_val('//IS CUSTOMER SERVICE RESTORED//', $notes);
         $parsed['service_restored'] = str_replace(['-----//', '-----'], '', $restored);
         $parsed['misc_notes'] = extract_val('//ADDITIONAL WORK NOT LISTED ABOVE//', $notes);
 
@@ -104,7 +110,8 @@ if ($job) {
         // put the raw notes into misc_notes to prevent data loss.
         $has_data = false;
         foreach ($parsed as $k => $v) {
-            if (!empty($v) && $k !== 'hub_val' && $k !== 'ont_val') $has_data = true;
+            if (!empty($v) && $k !== 'hub_val' && $k !== 'ont_val')
+                $has_data = true;
         }
 
         if (!$has_data && !empty(trim($notes))) {
@@ -226,7 +233,7 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
 <html lang="en">
 
 <head>
-    <title>Edit Job</title>
+    <title>Edit Job | Tech Portal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css?v=1.1">
     <link rel="icon" type="image/png" href="favicon.png?v=2">
@@ -234,42 +241,82 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
     <link rel="apple-touch-icon" href="favicon.png">
     <?php include 'head_pwa.php'; ?>
     <style>
-        /* Make textareas look like inputs but growable */
         .grow-wrap {
             width: 100%;
-            box-sizing: border-box;
         }
 
         .grow-wrap textarea {
             width: 100%;
             overflow: hidden;
             resize: none;
-            min-height: 40px;
-            padding: 10px;
+            min-height: 44px;
+            padding: 12px;
             border: 1px solid var(--border);
             background: var(--bg-input);
             color: var(--text-main);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             font-family: inherit;
             font-size: 1rem;
             line-height: 1.4;
-            transition: height 0.1s ease;
+            transition: var(--transition);
         }
 
         .grow-wrap textarea:focus {
             border-color: var(--primary);
             outline: none;
+            box-shadow: 0 0 0 2px var(--primary-glow);
         }
 
         .spacer {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 20px 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .checkbox-item input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
     </style>
     <script>
-        // AUTO-GROW FUNCTION
         function autoResize(el) {
-            el.style.height = 'auto'; // Reset to recalc
-            el.style.height = (el.scrollHeight) + 'px'; // Set to content height
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight) + 'px';
         }
 
         function initAutoResize() {
@@ -282,20 +329,19 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
         function toggleFields() {
             let el = document.getElementsByName('install_type')[0];
             if (!el) return;
-            let t = el.value;
+            let t = el.value.toUpperCase();
             let hideAll = (t === 'DO' || t === 'ND');
             let isMissedGroup = (t === 'F009' || t === 'F011');
             let isRepairGroup = (t === 'F008');
             let isSimpleEntry = (isMissedGroup || isRepairGroup);
-            let hideNotes = false; // Always show notes block for valid jobs (User Request)
 
             document.getElementById('secCustomer').style.display = hideAll ? 'none' : 'block';
             document.getElementById('groupMissed').style.display = isMissedGroup ? 'block' : 'none';
             document.getElementById('groupRepair').style.display = isRepairGroup ? 'block' : 'none';
-            document.getElementById('groupTechStandard').style.display = (isSimpleEntry) ? 'none' : 'block';
-            
+            document.getElementById('groupTechStandard').style.display = (isSimpleEntry || hideAll) ? 'none' : 'block';
+
             let groupNotes = document.getElementById('groupNotes');
-            if (groupNotes) groupNotes.style.display = (hideNotes || hideAll) ? 'none' : 'block';
+            if (groupNotes) groupNotes.style.display = hideAll ? 'none' : 'block';
         }
 
         function forceNegative(el) {
@@ -303,16 +349,13 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             if (!isNaN(val) && val > 0) el.value = (val * -1).toFixed(2);
         }
 
-        // LIVE PREVIEW LOGIC
         function generateNotesString() {
             let notes = "";
-            let t = document.getElementsByName('install_type')[0].value;
-            // In edit mode F002 is just 'F002', so we check against codes directly.
+            let t = document.getElementsByName('install_type')[0].value.toUpperCase();
             let isMissed = (t === 'F009' || t === 'F011');
             let isRepair = (t === 'F008');
 
             if (isMissed) {
-                // F009/F011 MISSED/SIMPLE FORMAT
                 let addField = (header, id) => {
                     let el = document.getElementsByName(id)[0];
                     if (el && el.value.trim() !== "") notes += header + "\n" + el.value.trim() + "\n\n";
@@ -325,17 +368,12 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 let misc = miscEl ? miscEl.value : "";
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
             } else if (isRepair) {
-                // F008 REPAIR SPECIFIC FORMAT
                 let addField = (header, id) => {
                     let el = document.getElementsByName(id)[0];
                     if (el && el.value.trim() !== "") notes += header + "\n" + el.value.trim() + "\n\n";
                 };
-                
                 addField('//WHAT IS THE COMPLAINT//-----//', 'complaint');
-                // Resolution usually goes with complaint or restored, but if filled we show it
                 addField('//WHAT DID YOU DO TO RESOLVE THE ISSUE//-----//', 'resolution');
-                
-                // User requested specific headers without leading // for these two
                 addField('DID YOU REPLACE ANY EQUIPMENT//-----//', 'equip_replaced');
                 addField('IS CUSTOMER SERVICE RESTORED//-----//', 'service_restored');
 
@@ -343,82 +381,43 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 let misc = miscEl ? miscEl.value : "";
                 if (misc.trim() !== "") notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + misc.trim() + "\n\n";
             } else {
-                // NEW STRICT FORMAT
-                let getVal = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.value.trim()!=='') ? el.value.trim() : ""; };
+                let getVal = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.value.trim() !== '') ? el.value.trim() : ""; };
                 let getCheck = (n) => { let el = document.getElementsByName(n)[0]; return (el && el.checked) ? "Yes" : "No"; };
-                
-                // TYPE - In edit mode we only have the code (e.g. F002), so we display that unless we map it.
-                // Given constraints, I'll display the code or best guess.
-                // Actually, let's try to pass the description via a map if possible, but simplest is Code for now.
-                notes += "//WHAT TYPE OF INSTALL//\n" + t + "\n\n";
 
-                // DROP
+                notes += "//WHAT TYPE OF INSTALL//\n" + t + "\n\n";
                 let drop = getVal('drop_length');
                 notes += "//DROP//\n" + (drop ? drop + "'" : "No") + "\n\n";
-
-                // SPANS
                 let spans = getVal('spans');
                 notes += "//SPANS//\n" + (spans ? spans + " Spans" : "No") + "\n\n";
-
-                // PATH
                 let path = getVal('path_notes');
                 notes += "//PATH//\n" + (path ? path : "Standard path.") + "\n\n";
-
-                // CONDUIT
                 let cond = getVal('conduit_ft');
                 notes += "//UNDERGROUND CONDUIT PULLED//\n" + (cond ? cond + "'" : "No") + "\n\n";
-
-                // NID
                 notes += "//NID INSTALLED//\n" + getCheck('nid_installed') + "\n\n";
-
-                // SEALED
                 notes += "//EXTERIOR PENETRATION SEALED//\n" + getCheck('exterior_sealed') + "\n\n";
-
-                // SOFT JUMPER
                 let soft = getVal('soft_jumper');
                 notes += "//FOOTAGE OF SOFT JUMPER INSTALLED//\n" + (soft ? soft + "'" : "No") + "\n\n";
-
-                // ONT
                 let ont = getVal('ont_serial');
                 notes += "//ONT INSTALLED S/N//\n" + (ont ? ont : "N/A") + "\n\n";
-
-                // CAT6
                 let cat = getVal('cat6_lines');
                 notes += "//CAT 6 LINES INSTALLED//\n" + (cat ? cat : "No") + "\n\n";
-
-                // JACKS
                 let jacks = getVal('jacks_installed');
                 notes += "//JACKS INSTALLED//\n" + (jacks ? jacks : "0") + "\n\n";
-
-                // EEROS
                 let eeros = getVal('eeros_serial');
                 notes += "//EEROS INSTALLED S/N//\n" + (eeros ? eeros : "N/A") + "\n\n";
-
-                // WIFI FEATURES
                 let unbreak = getCheck('unbreakable_wifi');
                 notes += "//UNBREAKABLE WIFI INSTALLED, OR REMOVED//\n" + (unbreak === 'Yes' ? 'Yes' : 'N/A') + "\n\n";
-
                 let whole = getCheck('whole_home_wifi');
                 notes += "//WHOLE HOME WIFI INSTALLED, OR REMOVED//\n" + (whole === 'Yes' ? 'Yes' : 'N/A') + "\n\n";
-
-                // EDUCATION
                 notes += "//CUSTOMER EDUCATION PERFORMED//\n" + getCheck('cust_education') + "\n\n";
-
-                // PHONE TEST
                 notes += "//PHONE INBOUND OUTBOUND TEST PERFORMED//\n" + getCheck('phone_test') + "\n\n";
-
-                // COPPER
                 let copperRem = getCheck('copper_removed');
                 notes += "//OLD AERIAL COPPER LINE REMOVED//\n" + (copperRem === 'Yes' ? 'Yes, removed old copper per client request.' : 'No') + "\n\n";
-
-                // TICI
                 let hub = getVal('tici_hub');
                 let ontSig = getVal('tici_ont');
                 notes += "//TICI BEFORE AND AFTER//\n";
                 notes += (hub ? hub + " db @ HUB" : "N/A @ HUB") + "\n";
                 notes += (ontSig ? ontSig + " db @ ONT" : "N/A @ ONT") + "\n\n";
-
-                // MISC
                 let miscEl = document.getElementsByName('misc_notes')[0];
                 let misc = miscEl ? miscEl.value : "";
                 notes += "//ADDITIONAL WORK NOT LISTED ABOVE//\n" + (misc.trim() !== "" ? misc.trim() : "No additional work.") + "\n\n";
@@ -430,9 +429,8 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             let notes = generateNotesString();
             if (notes === "") notes = "No additional work.";
             let el = document.getElementsByName('addtl_work')[0];
-            if(el) {
+            if (el) {
                 el.value = notes;
-                // autoResize(el); // autoResize might not be defined in edit_job.php?? checking.. yes it is usually.
             }
         }
 
@@ -440,15 +438,15 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             let notes = generateNotesString();
             if (notes === "") notes = "No additional work.";
             updatePreview();
-            
+
             navigator.clipboard.writeText(notes).then(function () {
                 let btn = document.getElementById('copyBtn');
-                let origText = btn.innerText;
-                btn.innerText = "✅ Copied!";
-                setTimeout(() => { btn.innerText = origText; }, 2000);
+                let origText = btn.innerHTML;
+                btn.innerHTML = "✅ Copied!";
+                setTimeout(() => { btn.innerHTML = origText; }, 2000);
             });
         }
-        
+
         function initLivePreview() {
             let inputs = document.querySelectorAll('input, textarea, select');
             inputs.forEach(el => {
@@ -456,9 +454,9 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 el.addEventListener('change', updatePreview);
             });
         }
-        
+
         window.addEventListener('DOMContentLoaded', () => {
-             initLivePreview();
+            initLivePreview();
         });
     </script>
 </head>
@@ -468,205 +466,306 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
         <?php include 'nav.php'; ?>
         <main class="main-content">
 
-        <?php if (!$job): ?>
-            <div class="box" style="text-align:center; padding:40px;">
-                <h2 style="color:var(--danger-text);">Job Not Found</h2>
-                <a href="index.php" class="btn">Dashboard</a>
+            <div class="welcome-banner">
+                <h2 style="font-weight: 800; letter-spacing: -0.03em;">✏️ Edit Job</h2>
+                <div class="date" style="font-weight: 500; opacity: 0.8;">
+                    <?= date('l, F j, Y', strtotime($job['install_date'])) ?></div>
             </div>
-            <?php die(); ?>
-        <?php endif; ?>
 
-        <?php if ($msg): ?>
-            <div class="alert" style="border-left:4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>
-
-        <div style="margin-bottom:15px;">
-            <a href="<?= htmlspecialchars(get_return_url('index.php?date=' . $job['install_date'])) ?>" class="btn"
-                style="background:var(--bg-input); color:var(--text-main);">&larr; Back</a>
-        </div>
-
-        <div class="box">
-            <form method="post">
-                <?= csrf_field() ?>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0;">Edit Job: <?= htmlspecialchars($job['ticket_number']) ?></h3>
-                    <button type="submit" name="delete_job" onclick="return confirm('Delete?')" class="btn"
-                        style="background:var(--danger-bg); color:var(--danger-text); border:none; font-size:0.8rem;">🗑️
-                        Delete</button>
+            <?php if (!$job): ?>
+                <div class="ha-card" style="text-align:center; padding:60px;">
+                    <h2 style="color:var(--danger-text); margin-bottom: 20px;">Job Not Found</h2>
+                    <a href="index.php" class="btn">Return to Dashboard</a>
                 </div>
+                <?php die(); ?>
+            <?php endif; ?>
 
-                <div class="grid-container">
-                    <div><label>Date</label><input type="date" name="install_date" value="<?= $job['install_date'] ?>"
-                            required></div>
-                    <div><label>Ticket</label><input type="text" name="ticket_number"
-                            value="<?= htmlspecialchars($job['ticket_number']) ?>" required></div>
-                    <div><label>Type</label><input type="text" name="install_type"
-                            value="<?= htmlspecialchars($job['install_type']) ?>" onchange="toggleFields()"></div>
-                </div>
+            <?php if ($msg): ?>
+                <div class="alert success" style="margin-bottom: 20px;"><?= $msg ?></div>
+            <?php endif; ?>
 
-                <div id="secCustomer" class="spacer" style="margin-top:15px;">
-                    <hr>
-                    <div class="grid-container">
-                        <div><input type="text" name="cust_fname" value="<?= htmlspecialchars($job['cust_fname']) ?>"
-                                placeholder="First Name"></div>
-                        <div><input type="text" name="cust_lname" value="<?= htmlspecialchars($job['cust_lname']) ?>"
-                                placeholder="Last Name"></div>
-                    </div>
-                    <div style="margin-top:10px;"><input type="text" name="cust_street"
-                            value="<?= htmlspecialchars($job['cust_street']) ?>" placeholder="Address"
-                            style="width:100%;"></div>
-                    <div class="grid-container" style="margin-top:10px;">
-                        <div><input type="text" name="cust_city" value="<?= htmlspecialchars($job['cust_city']) ?>"
-                                placeholder="City"></div>
-                        <div><input type="text" name="cust_zip" value="<?= htmlspecialchars($job['cust_zip']) ?>"
-                                placeholder="Zip"></div>
-                    </div>
-                    <div class="grid-container" style="margin-top:10px;">
-                        <div><input type="text" name="cust_state" value="<?= htmlspecialchars($job['cust_state']) ?>" placeholder="State"></div>
-                        <div><input type="text" name="cust_phone" value="<?= htmlspecialchars($job['cust_phone']) ?>" placeholder="Phone"></div>
-                    </div>
-                </div>
+            <div style="margin-bottom:20px;">
+                <a href="<?= htmlspecialchars(get_return_url('index.php?date=' . $job['install_date'])) ?>" class="btn"
+                    style="background:var(--bg-card); color:var(--text-main); border: 1px solid var(--border);">&larr;
+                    Back</a>
+            </div>
 
-                <div style="margin-top:15px;">
-                    <hr>
-                    <div id="groupMissed"
-                        style="display:none; background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:15px;">
-                        <h5 style="margin:0 0 10px; color:var(--text-muted);">Outcome Report</h5>
-                        <div class="grow-wrap spacer"><textarea name="why_missed"
-                                placeholder="Why Missed?"><?= htmlspecialchars($parsed['why_missed']) ?></textarea></div>
-                        <div class="grow-wrap spacer"><textarea name="supervisor"
-                                placeholder="Supervisor Contacted"><?= htmlspecialchars($parsed['supervisor']) ?></textarea>
+            <div class="ha-card">
+                <form method="post">
+                    <?= csrf_field() ?>
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 25px;">
+                        <div class="section-header" style="margin: 0; border:none; padding: 0; grid-column: auto;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Job Details
                         </div>
-                        <div class="grow-wrap"><textarea name="outcome"
-                                placeholder="Final Outcome"><?= htmlspecialchars($parsed['outcome']) ?></textarea></div>
+                        <?php if ($is_admin || $job['user_id'] == $user_id): ?>
+                            <button type="submit" name="delete_job" onclick="return confirm('Really delete this job?')"
+                                class="btn"
+                                style="background:rgba(229, 115, 115, 0.1); color:var(--danger-text); border:1px solid rgba(229, 115, 115, 0.2); font-size:0.85rem; padding: 6px 12px;">
+                                🗑️ Delete
+                            </button>
+                        <?php endif; ?>
                     </div>
 
-                    <div id="groupRepair"
-                        style="display:none; background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:15px;">
-                        <h5 style="margin:0 0 10px; color:var(--text-muted);">Repair Log</h5>
-                        <div class="grow-wrap spacer"><textarea name="complaint"
-                                placeholder="Customer Complaint"><?= htmlspecialchars($parsed['complaint']) ?></textarea>
+                    <div class="bento-grid">
+                        <div class="form-group" style="grid-column: span 4;">
+                            <label>Install Date</label>
+                            <input type="date" name="install_date" value="<?= $job['install_date'] ?>" required>
                         </div>
-                        <div class="grow-wrap spacer"><textarea name="resolution"
-                                placeholder="Resolution Steps"><?= htmlspecialchars($parsed['resolution']) ?></textarea>
+                        <div class="form-group" style="grid-column: span 4;">
+                            <label>Ticket Number</label>
+                            <input type="text" name="ticket_number"
+                                value="<?= htmlspecialchars($job['ticket_number']) ?>" required>
                         </div>
-                        <div class="grow-wrap spacer"><textarea name="equip_replaced"
-                                placeholder="Equipment Replaced"><?= htmlspecialchars($parsed['equip_replaced']) ?></textarea>
-                        </div>
-                        <div class="grow-wrap"><textarea name="service_restored"
-                                placeholder="Service Restored?"><?= htmlspecialchars($parsed['service_restored']) ?></textarea>
+                        <div class="form-group" style="grid-column: span 4;">
+                            <label>Unit Code</label>
+                            <input type="text" name="install_type" value="<?= htmlspecialchars($job['install_type']) ?>"
+                                onchange="toggleFields()">
                         </div>
                     </div>
 
-                    <div id="groupTechStandard">
-                        <div id="subTechSpecs">
-                            <div class="grid-container spacer">
-                                <div><input type="text" name="ont_serial"
-                                        value="<?= htmlspecialchars($job['ont_serial']) ?>" placeholder="ONT Serial">
-                                </div>
-                                <div><input type="text" name="eeros_serial"
-                                        value="<?= htmlspecialchars($job['eeros_serial']) ?>" placeholder="Router Serial">
-                                </div>
+                    <div id="secCustomer" class="spacer" style="margin-top:25px;">
+                        <hr>
+                        <div class="bento-grid">
+                            <div class="form-group" style="grid-column: span 6;">
+                                <label>Customer First Name</label>
+                                <input type="text" name="cust_fname" value="<?= htmlspecialchars($job['cust_fname']) ?>"
+                                    placeholder="First Name">
                             </div>
-                            <div class="grid-container spacer">
-                                <div><input type="text" name="wifi_name"
-                                        value="<?= htmlspecialchars($job['wifi_name']) ?>" placeholder="WiFi SSID"></div>
-                                <div><input type="text" name="wifi_pass"
-                                        value="<?= htmlspecialchars($job['wifi_pass']) ?>" placeholder="WiFi Password">
-                                </div>
+                            <div class="form-group" style="grid-column: span 6;">
+                                <label>Customer Last Name</label>
+                                <input type="text" name="cust_lname" value="<?= htmlspecialchars($job['cust_lname']) ?>"
+                                    placeholder="Last Name">
                             </div>
-                            <div class="grid-container spacer">
-                                <div><input type="number" step="0.01" name="tici_hub"
-                                        value="<?= htmlspecialchars($parsed['hub_val']) ?>" placeholder="Light @ Hub"
-                                        onchange="forceNegative(this)"></div>
-                                <div><input type="number" step="0.01" name="tici_ont"
-                                        value="<?= htmlspecialchars($parsed['ont_val']) ?>" placeholder="Light @ ONT"
-                                        onchange="forceNegative(this)"></div>
+                            <div class="form-group" style="grid-column: span 12;">
+                                <label>Street Address</label>
+                                <input type="text" name="cust_street"
+                                    value="<?= htmlspecialchars($job['cust_street']) ?>" placeholder="Address">
                             </div>
-                            <div class="grid-container spacer">
-                                <div><input type="number" name="spans" value="<?= $job['spans'] ?>" placeholder="Spans">
-                                </div>
-                                <div><input type="number" name="conduit_ft" value="<?= $job['conduit_ft'] ?>"
-                                        placeholder="Conduit (Ft)"></div>
+                            <div class="form-group" style="grid-column: span 4;">
+                                <label>City</label>
+                                <input type="text" name="cust_city" value="<?= htmlspecialchars($job['cust_city']) ?>"
+                                    placeholder="City">
                             </div>
-                            <div class="grid-container spacer">
-                                <div><input type="number" name="jacks_installed" value="<?= $job['jacks_installed'] ?>"
-                                        placeholder="Jacks"></div>
-                                <div><input type="number" name="drop_length" value="<?= $job['drop_length'] ?>"
-                                        placeholder="Drop (Ft)"></div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>State</label>
+                                <input type="text" name="cust_state" value="<?= htmlspecialchars($job['cust_state']) ?>"
+                                    placeholder="ST">
                             </div>
-                            <div class="grid-container spacer">
-                                <div><input type="number" name="soft_jumper" value="<?= $job['soft_jumper'] ?>"
-                                        placeholder="Soft Jumper (Ft)"></div>
-                                <div><input type="text" name="cat6_lines"
-                                        value="<?= htmlspecialchars($job['cat6_lines']) ?>" placeholder="Cat6 Lines">
+                            <div class="form-group" style="grid-column: span 3;">
+                                <label>Zip</label>
+                                <input type="text" name="cust_zip" value="<?= htmlspecialchars($job['cust_zip']) ?>"
+                                    placeholder="Zip">
+                            </div>
+                            <div class="form-group" style="grid-column: span 3;">
+                                <label>Phone</label>
+                                <input type="text" name="cust_phone" value="<?= htmlspecialchars($job['cust_phone']) ?>"
+                                    placeholder="Phone">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:25px;">
+                        <hr>
+                        <div id="groupMissed"
+                            style="display:none; background:rgba(255,152,0,0.05); padding:20px; border-radius:var(--radius); border:1px solid rgba(255,152,0,0.1); margin-bottom:20px;">
+                            <h5
+                                style="margin:0 0 15px; color:var(--accent); text-transform:uppercase; font-size:0.8rem; letter-spacing:0.05em;">
+                                Outcome Report</h5>
+                            <div class="form-group spacer">
+                                <label>Why Missed?</label>
+                                <div class="grow-wrap"><textarea
+                                        name="why_missed"><?= htmlspecialchars($parsed['why_missed']) ?></textarea>
                                 </div>
                             </div>
-                            <div class="grow-wrap spacer">
-                                <label>Path Notes</label>
-                                <textarea name="path_notes"><?= htmlspecialchars($job['path_notes']) ?></textarea>
+                            <div class="form-group spacer">
+                                <label>Supervisor Contacted</label>
+                                <div class="grow-wrap"><textarea
+                                        name="supervisor"><?= htmlspecialchars($parsed['supervisor']) ?></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Final Outcome</label>
+                                <div class="grow-wrap"><textarea
+                                        name="outcome"><?= htmlspecialchars($parsed['outcome']) ?></textarea></div>
                             </div>
                         </div>
 
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <label><input type="checkbox" name="nid_installed" value="Yes"
-                                    <?= ($job['nid_installed'] == 'Yes') ? 'checked' : '' ?>> NID</label>
-                            <label><input type="checkbox" name="copper_removed" value="Yes"
-                                    <?= ($job['copper_removed'] == 'Yes') ? 'checked' : '' ?>> Copper Rem</label>
-                            <label><input type="checkbox" name="exterior_sealed" value="Yes"
-                                    <?= ($job['exterior_sealed'] == 'Yes') ? 'checked' : '' ?>> Sealed</label>
-                            <label><input type="checkbox" name="unbreakable_wifi" value="Yes"
-                                    <?= ($job['unbreakable_wifi'] == 'Yes') ? 'checked' : '' ?>> Unbreakable</label>
-                            <label><input type="checkbox" name="whole_home_wifi" value="Yes"
-                                    <?= ($job['whole_home_wifi'] == 'Yes') ? 'checked' : '' ?>> Whole Home</label>
-                            <label><input type="checkbox" name="cust_education" value="Yes"
-                                    <?= ($job['cust_education'] == 'Yes') ? 'checked' : '' ?>> Cust Ed</label>
-                            <label><input type="checkbox" name="phone_test" value="Yes"
-                                    <?= ($job['phone_test'] == 'Yes') ? 'checked' : '' ?>> Phone Test</label>
-                            <label><input type="checkbox" name="extra_per_diem" value="Yes"
-                                    <?= ($job['extra_per_diem'] == 'Yes') ? 'checked' : '' ?>> Extra PD</label>
+                        <div id="groupRepair"
+                            style="display:none; background:rgba(3, 169, 244, 0.05); padding:20px; border-radius:var(--radius); border:1px solid rgba(3, 169, 244, 0.1); margin-bottom:20px;">
+                            <h5
+                                style="margin:0 0 15px; color:var(--primary); text-transform:uppercase; font-size:0.8rem; letter-spacing:0.05em;">
+                                Repair Log</h5>
+                            <div class="form-group spacer">
+                                <label>Customer Complaint</label>
+                                <div class="grow-wrap"><textarea
+                                        name="complaint"><?= htmlspecialchars($parsed['complaint']) ?></textarea></div>
+                            </div>
+                            <div class="form-group spacer">
+                                <label>Resolution Steps</label>
+                                <div class="grow-wrap"><textarea
+                                        name="resolution"><?= htmlspecialchars($parsed['resolution']) ?></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group spacer">
+                                <label>Equipment Replaced</label>
+                                <div class="grow-wrap"><textarea
+                                        name="equip_replaced"><?= htmlspecialchars($parsed['equip_replaced']) ?></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Service Restored?</label>
+                                <div class="grow-wrap"><textarea
+                                        name="service_restored"><?= htmlspecialchars($parsed['service_restored']) ?></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="groupTechStandard">
+                            <div class="bento-grid">
+                                <div class="form-group" style="grid-column: span 6;">
+                                    <label>ONT Serial</label>
+                                    <input type="text" name="ont_serial"
+                                        value="<?= htmlspecialchars($job['ont_serial']) ?>" placeholder="ONT S/N">
+                                </div>
+                                <div class="form-group" style="grid-column: span 6;">
+                                    <label>Router Serial</label>
+                                    <input type="text" name="eeros_serial"
+                                        value="<?= htmlspecialchars($job['eeros_serial']) ?>" placeholder="Router S/N">
+                                </div>
+                                <div class="form-group" style="grid-column: span 6;">
+                                    <label>WiFi SSID</label>
+                                    <input type="text" name="wifi_name"
+                                        value="<?= htmlspecialchars($job['wifi_name']) ?>" placeholder="Name">
+                                </div>
+                                <div class="form-group" style="grid-column: span 6;">
+                                    <label>WiFi Password</label>
+                                    <input type="text" name="wifi_pass"
+                                        value="<?= htmlspecialchars($job['wifi_pass']) ?>" placeholder="Pass">
+                                </div>
+                                <div class="form-group" style="grid-column: span 6;">
+                                    <label>Light @ Hub (db)</label>
+                                    <input type="number" step="0.01" name="tici_hub"
+                                        value="<?= htmlspecialchars($parsed['hub_val']) ?>"
+                                        onchange="forceNegative(this)">
+                                </div>
+                                <div class="form-group" style="grid-column: span 6;">
+                                    <label>Light @ ONT (db)</label>
+                                    <input type="number" step="0.01" name="tici_ont"
+                                        value="<?= htmlspecialchars($parsed['ont_val']) ?>"
+                                        onchange="forceNegative(this)">
+                                </div>
+                                <div class="form-group" style="grid-column: span 3;">
+                                    <label>Spans</label>
+                                    <input type="number" name="spans" value="<?= $job['spans'] ?>">
+                                </div>
+                                <div class="form-group" style="grid-column: span 3;">
+                                    <label>Conduit (Ft)</label>
+                                    <input type="number" name="conduit_ft" value="<?= $job['conduit_ft'] ?>">
+                                </div>
+                                <div class="form-group" style="grid-column: span 3;">
+                                    <label>Jacks</label>
+                                    <input type="number" name="jacks_installed" value="<?= $job['jacks_installed'] ?>">
+                                </div>
+                                <div class="form-group" style="grid-column: span 3;">
+                                    <label>Drop (Ft)</label>
+                                    <input type="number" name="drop_length" value="<?= $job['drop_length'] ?>">
+                                </div>
+                                <div class="form-group" style="grid-column: span 6;">
+                                    <label>Soft Jumper (Ft)</label>
+                                    <input type="number" name="soft_jumper" value="<?= $job['soft_jumper'] ?>">
+                                </div>
+                                <div class="form-group" style="grid-column: span 6;">
+                                    <label>Cat6 Lines</label>
+                                    <input type="text" name="cat6_lines"
+                                        value="<?= htmlspecialchars($job['cat6_lines']) ?>">
+                                </div>
+                                <div class="form-group" style="grid-column: span 12;">
+                                    <label>Path Notes</label>
+                                    <div class="grow-wrap"><textarea
+                                            name="path_notes"><?= htmlspecialchars($job['path_notes']) ?></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="checkbox-group">
+                                <label class="checkbox-item"><input type="checkbox" name="nid_installed" value="Yes"
+                                        <?= ($job['nid_installed'] == 'Yes') ? 'checked' : '' ?>> NID</label>
+                                <label class="checkbox-item"><input type="checkbox" name="copper_removed" value="Yes"
+                                        <?= ($job['copper_removed'] == 'Yes') ? 'checked' : '' ?>> Copper Rem</label>
+                                <label class="checkbox-item"><input type="checkbox" name="exterior_sealed" value="Yes"
+                                        <?= ($job['exterior_sealed'] == 'Yes') ? 'checked' : '' ?>> Sealed</label>
+                                <label class="checkbox-item"><input type="checkbox" name="unbreakable_wifi" value="Yes"
+                                        <?= ($job['unbreakable_wifi'] == 'Yes') ? 'checked' : '' ?>> Unbreakable</label>
+                                <label class="checkbox-item"><input type="checkbox" name="whole_home_wifi" value="Yes"
+                                        <?= ($job['whole_home_wifi'] == 'Yes') ? 'checked' : '' ?>> Whole Home</label>
+                                <label class="checkbox-item"><input type="checkbox" name="cust_education" value="Yes"
+                                        <?= ($job['cust_education'] == 'Yes') ? 'checked' : '' ?>> Cust Ed</label>
+                                <label class="checkbox-item"><input type="checkbox" name="phone_test" value="Yes"
+                                        <?= ($job['phone_test'] == 'Yes') ? 'checked' : '' ?>> Phone Test</label>
+                                <label class="checkbox-item"><input type="checkbox" name="extra_per_diem" value="Yes"
+                                        <?= ($job['extra_per_diem'] == 'Yes') ? 'checked' : '' ?>> Extra PD</label>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div style="margin-top:15px;" id="groupNotes">
-                    <div class="spacer">
-                        <label style="font-weight:bold; color:var(--text-muted);">Additional Notes (Misc)</label>
+                    <div style="margin-top:25px;" id="groupNotes">
+                        <hr>
+                        <div class="spacer">
+                            <div class="section-header" style="margin: 0 0 15px; border:none; padding: 0;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                Miscellaneous Notes
+                            </div>
+                            <div class="grow-wrap">
+                                <textarea id="misc_notes" name="misc_notes"
+                                    placeholder="Dog in yard, moved couch, etc..."><?= htmlspecialchars($parsed['misc_notes']) ?></textarea>
+                            </div>
+                        </div>
+
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; margin-top:25px;">
+                            <span
+                                style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Full
+                                Notes (Preview)</span>
+                            <button type="button" id="copyBtn" onclick="copyNotes()" class="btn"
+                                style="padding:6px 12px; font-size:0.8rem; background:var(--primary); color:#fff; border:none; border-radius:var(--radius-sm); font-weight:600;">📋
+                                Copy All</button>
+                        </div>
                         <div class="grow-wrap">
-                            <textarea id="misc_notes" name="misc_notes"
-                                placeholder="Dog in yard, moved couch, etc..."><?= htmlspecialchars($parsed['misc_notes']) ?></textarea>
+                            <textarea name="addtl_work" readonly
+                                style="background:var(--bg-input); color:var(--text-muted); font-size:0.85rem; border-color:var(--border);"><?= htmlspecialchars($job['addtl_work']) ?></textarea>
                         </div>
                     </div>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                        <label style="margin:0;">Full Notes (Preview Only)</label>
-                        <button type="button" id="copyBtn" onclick="copyNotes()" class="btn"
-                            style="padding:4px 10px; font-size:0.8rem; background:var(--primary); color:#fff; border:none;">📋
-                            Copy to Clipboard</button>
+                    <div
+                        style="margin-top:30px; padding: 20px; background: rgba(129, 199, 132, 0.05); border: 1px dashed var(--success-text); border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-weight: 700; color: var(--success-text);">PAY ESTIMATE</div>
+                        <div style="font-size:1.5rem; font-weight: 800; color: var(--success-text);">
+                            $<?= number_format($job['pay_amount'], 2) ?></div>
                     </div>
-                    <div class="grow-wrap">
-                        <textarea name="addtl_work" readonly
-                            style="background:#f3f4f6; color:#555;"><?= htmlspecialchars($job['addtl_work']) ?></textarea>
+
+                    <div style="display:flex; gap:16px; margin-top:30px;">
+                        <button type="submit" name="save_draft" class="btn"
+                            style="flex:1; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border);">💾
+                            Save Draft</button>
+                        <button type="submit" name="update_job" class="btn" style="flex:2;">💾 Update Job</button>
                     </div>
-                </div>
-
-                <div style="margin-top:15px;">
-                    <label>Pay Amount ($)</label>
-                    <input type="number" step="0.01" value="<?= $job['pay_amount'] ?>" readonly
-                        style="background:#f3f4f6; color:#666;">
-                </div>
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button type="submit" name="save_draft" class="btn"
-                        style="flex:1; background:var(--bg-input); color:var(--text-main); border:1px solid var(--border);">💾
-                        Save Draft</button>
-                    <button type="submit" name="update_job" class="btn" style="flex:2;">💾 Update Job</button>
-                </div>
-            </form>
-        </div>
-    </main>
-</div>
-
-<script>if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }</script>
+                </form>
+            </div>
+        </main>
+    </div>
 </body>
 
 </html>
