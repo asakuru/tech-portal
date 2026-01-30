@@ -10,6 +10,7 @@ $is_admin = is_admin();
 
 <!-- Persistent Slim Sidebar -->
 <aside class="side-drawer">
+    <script src="offline.js"></script>
     <!-- Brand Info (Top) -->
     <a href="index.php" class="drawer-link" title="Tech Portal">
         <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"

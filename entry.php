@@ -421,6 +421,7 @@ else {
     <?php include 'head_pwa.php'; ?>
     <script src="script.js?v=1.1"></script>
     <script src="enhancements.js"></script>
+    <script src="offline.js"></script>
     <style>
         /* Specific Overrides for Entry Page */
         .date-nav {
@@ -1148,25 +1149,28 @@ else {
                                         <button type="button" onclick="copyNotes()" class="btn btn-small btn-secondary">Copy
                                             Notes</button>
                                     </div>
-                                    </div>
-                                    <div class="grow-wrap"><textarea name="addtl_work" placeholder="Full Notes Preview..."
-                                            readonly style="background:var(--bg-input); color:var(--text-muted); border-color:var(--border);"></textarea></div>
+                                </div>
+                                <div class="grow-wrap"><textarea name="addtl_work" placeholder="Full Notes Preview..." readonly
+                                        style="background:var(--bg-input); color:var(--text-muted); border-color:var(--border);"></textarea>
                                 </div>
                             </div>
-
-                            <div style="display:flex; gap:16px; margin-top:30px;">
-                                <button type="submit" name="save_draft" class="btn btn-secondary" style="flex:1; padding:12px; border-radius:var(--radius);">
-                                    💾 Save Draft
-                                </button>
-                                <button type="submit" name="add_job" class="btn" style="flex:2; background:var(--primary); color:white; border:none; padding:12px; border-radius:var(--radius);">
-                                    ➕ Save Job
-                                </button>
-                            </div>
-                        </form>
                     </div>
-                <?php endif; ?>
 
-            <?php endif; ?>
+                    <div style="display:flex; gap:16px; margin-top:30px;">
+                        <button type="submit" name="save_draft" class="btn btn-secondary"
+                            style="flex:1; padding:12px; border-radius:var(--radius);">
+                            💾 Save Draft
+                        </button>
+                        <button type="submit" name="add_job" class="btn"
+                            style="flex:2; background:var(--primary); color:white; border:none; padding:12px; border-radius:var(--radius);">
+                            ➕ Save Job
+                        </button>
+                    </div>
+                    </form>
+            </div>
+        <?php endif; ?>
+
+    <?php endif; ?>
 
     </div>
     <!-- Tally Breakdown Modal -->

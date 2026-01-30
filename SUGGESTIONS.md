@@ -16,8 +16,8 @@
 - [ ] Create "Weekly Invoice" generator from Reports page.
 
 ## 4. 📶 Enhanced Offline Mode (True PWA)
-- [ ] Implement robust Service Worker for offline POST requests (Background Sync).
-- [ ] Allow entering jobs/editing vehicles with zero signal.
+- [x] Implement robust Service Worker for offline POST requests (Background Sync).
+- [x] Allow entering jobs/editing vehicles with zero signal.
 
 ## 5. 🗺️ Route Planning
 - [ ] Create "Today's Route" view using `geo.php` logic.
