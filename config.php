@@ -1,6 +1,7 @@
 <?php
 // --- DATABASE SETTINGS (SQLite) ---
 define('DB_FILE', __DIR__ . '/tech_portal.db');
+define('CLOSED_FILE', __DIR__ . '/closed_dates.txt');
 
 // --- TIMEZONE SETTING ---
 // Fixes issue where "current date" flips to tomorrow early (due to UTC server time)

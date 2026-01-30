@@ -147,67 +147,68 @@ $rates_list = $db->query("SELECT * FROM rate_card ORDER BY rate_key ASC")->fetch
 </head>
 
 <body>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>⚙️ Rate Settings</h2>
+                <a href="index.php" class="btn"
+                    style="background:var(--bg-input); color:var(--text-main); border:1px solid var(--border);">Back</a>
+            </div>
 
-    <?php include 'nav.php'; ?>
+            <?php if ($msg): ?>
+                <div class="alert" style="border-left: 4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>
 
-    <div class="container">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2>⚙️ Rate Settings</h2>
-            <a href="index.php" class="btn"
-                style="background:var(--bg-input); color:var(--text-main); border:1px solid var(--border);">Back</a>
-        </div>
+            <div class="box" style="padding:0; overflow:hidden;">
+                <form method="post">
+                    <?= csrf_field() ?>
 
-        <?php if ($msg): ?>
-            <div class="alert" style="border-left: 4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>
-
-        <div class="box" style="padding:0; overflow:hidden;">
-            <form method="post">
-                <?= csrf_field() ?>
-
-                <div class="rate-grid header-row">
-                    <div>Code</div>
-                    <div>Description</div>
-                    <div style="text-align:right;">Rate ($)</div>
-                </div>
-
-                <?php
-                $system_started = false;
-                foreach ($rates_list as $r):
-                    // Visual Separator logic:
-                    // If it's NOT an F-code (starts with F followed by number usually), and NOT a numeric code (like 1-F014...)
-                    // We assume it is a System Setting (IRS, Tax, Lead Pay)
-                    $is_f_code = (strpos($r['rate_key'], 'F') === 0 || is_numeric($r['rate_key'][0]));
-
-                    if (!$system_started && !$is_f_code) {
-                        $system_started = true;
-                        echo '<div class="separator">Calculator Settings (System Use)</div>';
-                    }
-                    ?>
-                    <div class="rate-grid">
-                        <div class="rate-key"><?= htmlspecialchars($r['rate_key']) ?></div>
-                        <div class="rate-desc"><?= htmlspecialchars($r['description']) ?></div>
-                        <div class="rate-input">
-                            <input type="text" inputmode="decimal" name="rates[<?= $r['rate_key'] ?>]"
-                                value="<?= number_format($r['amount'], (strpos($r['rate_key'], 'TAX') !== false ? 2 : 2)) ?>">
-                        </div>
+                    <div class="rate-grid header-row">
+                        <div>Code</div>
+                        <div>Description</div>
+                        <div style="text-align:right;">Rate ($)</div>
                     </div>
-                <?php endforeach; ?>
 
-                <div style="padding:20px; background:var(--bg-card); border-top:1px solid var(--border);">
-                    <button type="submit" name="save_rates" class="btn btn-full">💾 Save Changes</button>
-                </div>
-            </form>
+                    <?php
+                    $system_started = false;
+                    foreach ($rates_list as $r):
+                        // Visual Separator logic:
+                        // If it's NOT an F-code (starts with F followed by number usually), and NOT a numeric code (like 1-F014...)
+                        // We assume it is a System Setting (IRS, Tax, Lead Pay)
+                        $is_f_code = (strpos($r['rate_key'], 'F') === 0 || is_numeric($r['rate_key'][0]));
+
+                        if (!$system_started && !$is_f_code) {
+                            $system_started = true;
+                            echo '<div class="separator">Calculator Settings (System Use)</div>';
+                        }
+                        ?>
+                        <div class="rate-grid">
+                            <div class="rate-key"><?= htmlspecialchars($r['rate_key']) ?></div>
+                            <div class="rate-desc"><?= htmlspecialchars($r['description']) ?></div>
+                            <div class="rate-input">
+                                <input type="text" inputmode="decimal" name="rates[<?= $r['rate_key'] ?>]"
+                                    value="<?= number_format($r['amount'], (strpos($r['rate_key'], 'TAX') !== false ? 2 : 2)) ?>">
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <div style="padding:20px; background:var(--bg-card); border-top:1px solid var(--border);">
+                        <button type="submit" name="save_rates" class="btn btn-full">💾 Save Changes</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="backup-section">
+                <h3 style="margin-top:0;">🛡️ System Backup</h3>
+                <p style="color:var(--text-muted); font-size:0.9rem;">Manage database snapshots to keep your records
+                    safe.
+                </p>
+                <a href="backup.php" class="btn"
+                    style="background:#000; color:#fff; text-decoration:none; display:inline-block; padding:10px 20px;">Open
+                    Backup Manager</a>
         </div>
 
-        <div class="backup-section">
-            <h3 style="margin-top:0;">🛡️ System Backup</h3>
-            <p style="color:var(--text-muted); font-size:0.9rem;">Manage database snapshots to keep your records safe.
-            </p>
-            <a href="backup.php" class="btn"
-                style="background:#000; color:#fff; text-decoration:none; display:inline-block; padding:10px 20px;">Open
-                Backup Manager</a>
-        </div>
-
+        </main>
     </div>
 
     <script>

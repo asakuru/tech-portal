@@ -295,108 +295,108 @@ foreach ($data as $date => $stats) {
 </head>
 
 <body>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
 
-    <?php include 'nav.php'; ?>
-
-    <div class="container">
-
-        <div class="filter-bar">
-            <div class="view-toggles">
-                <a href="?view=daily" class="pill <?= ($view == 'daily') ? 'active' : '' ?>">Daily</a>
-                <a href="?view=weekly" class="pill <?= ($view == 'weekly') ? 'active' : '' ?>">Weekly</a>
-                <a href="?view=monthly" class="pill <?= ($view == 'monthly') ? 'active' : '' ?>">Monthly</a>
-            </div>
-
-            <form method="get" class="nav-controls">
-                <input type="hidden" name="view" value="<?= $view ?>">
-
-                <a href="<?= $prev_link ?>" class="nav-arrow">&laquo;</a>
-
-                <div style="flex:1; display:flex; gap:5px; justify-content:center;">
-                    <?php if ($view === 'daily'): ?>
-                        <select name="month" onchange="this.form.submit()"
-                            style="padding:5px; border-radius:4px; border:none; background:transparent; color:var(--text-main); font-weight:bold; cursor:pointer;">
-                            <?php for ($m = 1; $m <= 12; $m++): ?>
-                                <option value="<?= sprintf('%02d', $m) ?>" <?= ($selected_month == $m) ? 'selected' : '' ?>>
-                                    <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
-                                </option>
-                            <?php endfor; ?>
-                        </select>
-                    <?php endif; ?>
-
-                    <select name="year" onchange="this.form.submit()"
-                        style="padding:5px; border-radius:4px; border:none; background:transparent; color:var(--text-main); font-weight:bold; cursor:pointer;">
-                        <?php for ($y = date('Y') + 1; $y >= 2024; $y--): ?>
-                            <option value="<?= $y ?>" <?= ($selected_year == $y) ? 'selected' : '' ?>><?= $y ?></option>
-                        <?php endfor; ?>
-                    </select>
+            <div class="filter-bar">
+                <div class="view-toggles">
+                    <a href="?view=daily" class="pill <?= ($view == 'daily') ? 'active' : '' ?>">Daily</a>
+                    <a href="?view=weekly" class="pill <?= ($view == 'weekly') ? 'active' : '' ?>">Weekly</a>
+                    <a href="?view=monthly" class="pill <?= ($view == 'monthly') ? 'active' : '' ?>">Monthly</a>
                 </div>
 
-                <a href="<?= $next_link ?>" class="nav-arrow">&raquo;</a>
-            </form>
-        </div>
+                <form method="get" class="nav-controls">
+                    <input type="hidden" name="view" value="<?= $view ?>">
 
-        <div class="stat-grid">
-            <div class="stat-card">
-                <small>Total Gross</small>
-                <strong title="Jobs + PD">$<?= number_format($grand_total['gross'], 2) ?></strong>
-            </div>
-            <div class="stat-card">
-                <small>Fuel Cost</small>
-                <strong style="color:var(--danger-text);">$<?= number_format($grand_total['fuel'], 2) ?></strong>
-            </div>
-            <div class="stat-card">
-                <small>Net Profit</small>
-                <strong class="stat-net">$<?= number_format($grand_total['net'], 2) ?></strong>
-            </div>
-            <div class="stat-card">
-                <small>Miles Driven</small>
-                <strong>
-                    <?= number_format($grand_total['miles']) ?> mi
-                </strong>
-            </div>
-        </div>
+                    <a href="<?= $prev_link ?>" class="nav-arrow">&laquo;</a>
 
-        <div style="overflow-x:auto;">
-            <table class="report-table">
-                <thead>
-                    <tr>
-                        <th>Period</th>
-                        <th>Jobs</th>
-                        <th>Job Pay</th>
-                        <th>PD</th>
-                        <th>Fuel</th>
-                        <th>Net</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($report_rows)): ?>
+                    <div style="flex:1; display:flex; gap:5px; justify-content:center;">
+                        <?php if ($view === 'daily'): ?>
+                            <select name="month" onchange="this.form.submit()"
+                                style="padding:5px; border-radius:4px; border:none; background:transparent; color:var(--text-main); font-weight:bold; cursor:pointer;">
+                                <?php for ($m = 1; $m <= 12; $m++): ?>
+                                    <option value="<?= sprintf('%02d', $m) ?>" <?= ($selected_month == $m) ? 'selected' : '' ?>>
+                                        <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
+                                    </option>
+                                <?php endfor; ?>
+                            </select>
+                        <?php endif; ?>
+
+                        <select name="year" onchange="this.form.submit()"
+                            style="padding:5px; border-radius:4px; border:none; background:transparent; color:var(--text-main); font-weight:bold; cursor:pointer;">
+                            <?php for ($y = date('Y') + 1; $y >= 2024; $y--): ?>
+                                <option value="<?= $y ?>" <?= ($selected_year == $y) ? 'selected' : '' ?>><?= $y ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+
+                    <a href="<?= $next_link ?>" class="nav-arrow">&raquo;</a>
+                </form>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <small>Total Gross</small>
+                    <strong title="Jobs + PD">$<?= number_format($grand_total['gross'], 2) ?></strong>
+                </div>
+                <div class="stat-card">
+                    <small>Fuel Cost</small>
+                    <strong style="color:var(--danger-text);">$<?= number_format($grand_total['fuel'], 2) ?></strong>
+                </div>
+                <div class="stat-card">
+                    <small>Net Profit</small>
+                    <strong class="stat-net">$<?= number_format($grand_total['net'], 2) ?></strong>
+                </div>
+                <div class="stat-card">
+                    <small>Miles Driven</small>
+                    <strong>
+                        <?= number_format($grand_total['miles']) ?> mi
+                    </strong>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="report-table">
+                    <thead>
                         <tr>
-                            <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">No records
-                                found.</td>
+                            <th>Period</th>
+                            <th>Jobs</th>
+                            <th>Job Pay</th>
+                            <th>PD</th>
+                            <th>Fuel</th>
+                            <th>Net</th>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($report_rows as $row):
-                            $gross = $row['pay'] + $row['pd'];
-                            $net = $gross - $row['fuel'];
-                            ?>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($report_rows)): ?>
                             <tr>
-                                <td><strong><?= htmlspecialchars($row['label']) ?></strong></td>
-                                <td><?= $row['jobs'] ?></td>
-                                <td>$<?= number_format($row['pay'], 2) ?></td>
-                                <td style="color:var(--primary);">$<?= number_format($row['pd'], 2) ?></td>
-                                <td style="color:var(--danger-text);">$<?= number_format($row['fuel'], 2) ?></td>
-                                <td
-                                    style="font-weight:bold; color:<?= ($net >= 0 ? 'var(--success-text)' : 'var(--danger-text)') ?>">
-                                    $<?= number_format($net, 2) ?>
-                                </td>
+                                <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">No records
+                                    found.</td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+                        <?php else: ?>
+                            <?php foreach ($report_rows as $row):
+                                $gross = $row['pay'] + $row['pd'];
+                                $net = $gross - $row['fuel'];
+                                ?>
+                                <tr>
+                                    <td><strong><?= htmlspecialchars($row['label']) ?></strong></td>
+                                    <td><?= $row['jobs'] ?></td>
+                                    <td>$<?= number_format($row['pay'], 2) ?></td>
+                                    <td style="color:var(--primary);">$<?= number_format($row['pd'], 2) ?></td>
+                                    <td style="color:var(--danger-text);">$<?= number_format($row['fuel'], 2) ?></td>
+                                    <td
+                                        style="font-weight:bold; color:<?= ($net >= 0 ? 'var(--success-text)' : 'var(--danger-text)') ?>">
+                                        $<?= number_format($net, 2) ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
 
+        </main>
     </div>
     <script>if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }</script>
 </body>

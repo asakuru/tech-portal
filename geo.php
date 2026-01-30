@@ -472,317 +472,316 @@ $chart_colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e
 </head>
 
 <body>
-    <?php include 'nav.php'; ?>
-
-    <div class="container">
-        <div class="geo-header">
-            <h2>📍 Geo Analytics</h2>
-        </div>
-
-        <?php if (empty($city_data)): ?>
-            <div class="no-data">
-                <h3>No location data yet</h3>
-                <p>Start logging jobs with city information to see geographic insights.</p>
-            </div>
-        <?php else: ?>
-
-            <!-- Map + Leaderboard -->
-            <div class="geo-grid">
-                <div class="map-card">
-                    <div class="map-header">
-                        <span class="map-title">🗺️ Job Heatmap</span>
-                        <div class="toggle-btns">
-                            <button class="toggle-btn active" onclick="setMapMode('jobs')">Jobs</button>
-                            <button class="toggle-btn" onclick="setMapMode('revenue')">Revenue</button>
-                        </div>
-                    </div>
-                    <div id="map"></div>
-                </div>
-
-                <div class="leaderboard">
-                    <div class="leaderboard-title">🏆 Top Cities</div>
-                    <?php foreach (array_slice($city_data, 0, 10) as $idx => $city): ?>
-                        <div class="city-row">
-                            <div class="city-rank">
-                                <?= $idx + 1 ?>
-                            </div>
-                            <div class="city-info">
-                                <div class="city-name">
-                                    <?= htmlspecialchars($city['city']) ?>
-                                </div>
-                                <div class="city-meta">
-                                    <?= htmlspecialchars($city['state']) ?>
-                                    <span class="diversity-badge">
-                                        <?= $city['diversity'] ?> types
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="sparkline-container">
-                                <canvas id="spark-<?= $idx ?>"></canvas>
-                            </div>
-                            <div class="city-stats">
-                                <div class="city-jobs">
-                                    <?= $city['jobs'] ?> jobs
-                                </div>
-                                <div class="city-revenue">$
-                                    <?= number_format($city['revenue'], 0) ?>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
+            <div class="geo-header">
+                <h2 style="font-weight: 800; letter-spacing: -0.03em;">📍 Geo Analytics</h2>
             </div>
 
-            <!-- Job Code Distribution Chart -->
-            <div class="chart-section">
-                <div class="chart-title">📊 Job Code Distribution by City</div>
-                <div class="chart-container">
-                    <canvas id="jobCodeChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Efficiency Scatter (if home base configured) -->
-            <?php if ($has_home_base): ?>
-                <div class="chart-section">
-                    <div class="chart-title">🎯 Efficiency: Distance vs Revenue</div>
-                    <div class="chart-container">
-                        <canvas id="efficiencyChart"></canvas>
-                    </div>
+            <?php if (empty($city_data)): ?>
+                <div class="no-data">
+                    <h3>No location data yet</h3>
+                    <p>Start logging jobs with city information to see geographic insights.</p>
                 </div>
             <?php else: ?>
-                <div class="chart-section">
-                    <div class="chart-title">🏠 Set Home Base Location</div>
-                    <?php if ($msg): ?>
-                        <div
-                            style="padding: 10px; margin-bottom: 15px; background: rgba(34, 197, 94, 0.1); border-radius: 6px; color: var(--success-text);">
-                            <?= $msg ?>
+                <!-- Map + Leaderboard -->
+                <div class="geo-grid">
+                    <div class="map-card">
+                        <div class="map-header">
+                            <span class="map-title">🗺️ Job Heatmap</span>
+                            <div class="toggle-btns">
+                                <button class="toggle-btn active" onclick="setMapMode('jobs')">Jobs</button>
+                                <button class="toggle-btn" onclick="setMapMode('revenue')">Revenue</button>
+                            </div>
                         </div>
-                    <?php endif; ?>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
-                        Enter your home coordinates to see the Efficiency chart (distance from home vs revenue).
-                        <br><small>Tip: Search your address on <a href="https://www.google.com/maps" target="_blank"
-                                style="color: var(--primary);">Google Maps</a>, right-click → "What's here?" to get
-                            coordinates.</small>
-                    </p>
-                    <form method="post" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        <input type="text" name="home_lat" placeholder="Latitude (e.g. 40.7128)"
-                            style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
-                            value="<?= $home_lat != 0 ? $home_lat : '' ?>">
-                        <input type="text" name="home_lng" placeholder="Longitude (e.g. -74.0060)"
-                            style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
-                            value="<?= $home_lng != 0 ? $home_lng : '' ?>">
-                        <button type="submit" name="save_home_base" class="btn btn-small">Save Home Base</button>
-                    </form>
+                        <div id="map"></div>
+                    </div>
+
+                    <div class="leaderboard">
+                        <div class="leaderboard-title">🏆 Top Cities</div>
+                        <?php foreach (array_slice($city_data, 0, 10) as $idx => $city): ?>
+                            <div class="city-row">
+                                <div class="city-rank">
+                                    <?= $idx + 1 ?>
+                                </div>
+                                <div class="city-info">
+                                    <div class="city-name">
+                                        <?= htmlspecialchars($city['city']) ?>
+                                    </div>
+                                    <div class="city-meta">
+                                        <?= htmlspecialchars($city['state']) ?>
+                                        <span class="diversity-badge">
+                                            <?= $city['diversity'] ?> types
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="sparkline-container">
+                                    <canvas id="spark-<?= $idx ?>"></canvas>
+                                </div>
+                                <div class="city-stats">
+                                    <div class="city-jobs">
+                                        <?= $city['jobs'] ?> jobs
+                                    </div>
+                                    <div class="city-revenue">$
+                                        <?= number_format($city['revenue'], 0) ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
+
+                <!-- Job Code Distribution Chart -->
+                <div class="chart-section">
+                    <div class="chart-title">📊 Job Code Distribution by City</div>
+                    <div class="chart-container">
+                        <canvas id="jobCodeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Efficiency Scatter (if home base configured) -->
+                <?php if ($has_home_base): ?>
+                    <div class="chart-section">
+                        <div class="chart-title">🎯 Efficiency: Distance vs Revenue</div>
+                        <div class="chart-container">
+                            <canvas id="efficiencyChart"></canvas>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="chart-section">
+                        <div class="chart-title">🏠 Set Home Base Location</div>
+                        <?php if ($msg): ?>
+                            <div
+                                style="padding: 10px; margin-bottom: 15px; background: rgba(34, 197, 94, 0.1); border-radius: 6px; color: var(--success-text);">
+                                <?= $msg ?>
+                            </div>
+                        <?php endif; ?>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
+                            Enter your home coordinates to see the Efficiency chart (distance from home vs revenue).
+                            <br><small>Tip: Search your address on <a href="https://www.google.com/maps" target="_blank"
+                                    style="color: var(--primary);">Google Maps</a>, right-click → "What's here?" to get
+                                coordinates.</small>
+                        </p>
+                        <form method="post" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                            <input type="text" name="home_lat" placeholder="Latitude (e.g. 40.7128)"
+                                style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
+                                value="<?= $home_lat != 0 ? $home_lat : '' ?>">
+                            <input type="text" name="home_lng" placeholder="Longitude (e.g. -74.0060)"
+                                style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-main); width: 160px;"
+                                value="<?= $home_lng != 0 ? $home_lng : '' ?>">
+                            <button type="submit" name="save_home_base" class="btn btn-small">Save Home Base</button>
+                        </form>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
 
-        <?php endif; ?>
-    </div>
+            <script>
+                // Data from PHP
+                const mapData = <?= json_encode($map_data) ?>;
+                const cityTrends = <?= json_encode($city_trends) ?>;
+                const months = <?= json_encode($months) ?>;
+                const jobCodeDist = <?= json_encode($job_code_dist) ?>;
+                const allJobTypes = <?= json_encode($all_job_types) ?>;
+                const chartColors = <?= json_encode($chart_colors) ?>;
+                const topCities = <?= json_encode(array_slice(array_column($city_data, 'city'), 0, 10)) ?>;
+                const hasHomeBase = <?= $has_home_base ? 'true' : 'false' ?>;
+                const homeLat = <?= $home_lat ?>;
+                const homeLng = <?= $home_lng ?>;
 
-    <script>
-        // Data from PHP
-        const mapData = <?= json_encode($map_data) ?>;
-        const cityTrends = <?= json_encode($city_trends) ?>;
-        const months = <?= json_encode($months) ?>;
-        const jobCodeDist = <?= json_encode($job_code_dist) ?>;
-        const allJobTypes = <?= json_encode($all_job_types) ?>;
-        const chartColors = <?= json_encode($chart_colors) ?>;
-        const topCities = <?= json_encode(array_slice(array_column($city_data, 'city'), 0, 10)) ?>;
-        const hasHomeBase = <?= $has_home_base ? 'true' : 'false' ?>;
-        const homeLat = <?= $home_lat ?>;
-        const homeLng = <?= $home_lng ?>;
+                let map, heatLayer;
+                let currentMode = 'jobs';
 
-        let map, heatLayer;
-        let currentMode = 'jobs';
+                // Initialize Leaflet Map
+                function initMap() {
+                    // Find center from data or default to US
+                    let centerLat = 39.8283, centerLng = -98.5795;
+                    const validPoints = mapData.filter(d => d.lat && d.lng);
 
-        // Initialize Leaflet Map
-        function initMap() {
-            // Find center from data or default to US
-            let centerLat = 39.8283, centerLng = -98.5795;
-            const validPoints = mapData.filter(d => d.lat && d.lng);
-
-            if (validPoints.length > 0) {
-                centerLat = validPoints.reduce((sum, d) => sum + d.lat, 0) / validPoints.length;
-                centerLng = validPoints.reduce((sum, d) => sum + d.lng, 0) / validPoints.length;
-            }
-
-            map = L.map('map').setView([centerLat, centerLng], 7);
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap, &copy; CARTO'
-            }).addTo(map);
-
-            updateHeatmap();
-
-            // Add markers for cities with coords
-            validPoints.forEach(d => {
-                L.circleMarker([d.lat, d.lng], {
-                    radius: Math.min(4 + d.jobs, 15),
-                    fillColor: '#6366f1',
-                    color: '#fff',
-                    weight: 1,
-                    opacity: 1,
-                    fillOpacity: 0.7
-                }).addTo(map).bindPopup(`<b>${d.city}, ${d.state}</b><br>${d.jobs} jobs<br>$${d.revenue.toLocaleString()}`);
-            });
-        }
-
-        function updateHeatmap() {
-            if (heatLayer) map.removeLayer(heatLayer);
-
-            const points = mapData
-                .filter(d => d.lat && d.lng)
-                .map(d => {
-                    const intensity = currentMode === 'jobs' ? d.jobs : d.revenue / 100;
-                    return [d.lat, d.lng, intensity];
-                });
-
-            if (points.length > 0) {
-                heatLayer = L.heatLayer(points, {
-                    radius: 35,
-                    blur: 20,
-                    maxZoom: 10,
-                    gradient: { 0.2: '#3b82f6', 0.4: '#8b5cf6', 0.6: '#d946ef', 0.8: '#f43f5e', 1: '#f97316' }
-                }).addTo(map);
-            }
-        }
-
-        function setMapMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            updateHeatmap();
-        }
-
-        // Sparklines
-        function initSparklines() {
-            topCities.forEach((city, idx) => {
-                const canvas = document.getElementById(`spark-${idx}`);
-                if (!canvas) return;
-
-                const trend = cityTrends[city] || {};
-                const data = months.map(m => trend[m] || 0);
-
-                new Chart(canvas, {
-                    type: 'line',
-                    data: {
-                        labels: months,
-                        datasets: [{
-                            data: data,
-                            borderColor: '#6366f1',
-                            borderWidth: 1.5,
-                            fill: false,
-                            tension: 0.4,
-                            pointRadius: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                        scales: {
-                            x: { display: false },
-                            y: { display: false, beginAtZero: true }
-                        }
+                    if (validPoints.length > 0) {
+                        centerLat = validPoints.reduce((sum, d) => sum + d.lat, 0) / validPoints.length;
+                        centerLng = validPoints.reduce((sum, d) => sum + d.lng, 0) / validPoints.length;
                     }
-                });
-            });
-        }
 
-        // Job Code Distribution Chart
-        function initJobCodeChart() {
-            const ctx = document.getElementById('jobCodeChart');
-            if (!ctx) return;
+                    map = L.map('map').setView([centerLat, centerLng], 7);
 
-            const datasets = allJobTypes.map((type, i) => ({
-                label: type,
-                data: topCities.map(city => jobCodeDist[city]?.[type] || 0),
-                backgroundColor: chartColors[i % chartColors.length]
-            }));
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                        attribution: '&copy; OpenStreetMap, &copy; CARTO'
+                    }).addTo(map);
 
-            new Chart(ctx, {
-                type: 'bar',
-                data: { labels: topCities, datasets: datasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } }
-                    },
-                    scales: {
-                        x: { stacked: true },
-                        y: { stacked: true, beginAtZero: true }
+                    updateHeatmap();
+
+                    // Add markers for cities with coords
+                    validPoints.forEach(d => {
+                        L.circleMarker([d.lat, d.lng], {
+                            radius: Math.min(4 + d.jobs, 15),
+                            fillColor: '#6366f1',
+                            color: '#fff',
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.7
+                        }).addTo(map).bindPopup(`<b>${d.city}, ${d.state}</b><br>${d.jobs} jobs<br>$${d.revenue.toLocaleString()}`);
+                    });
+                }
+
+                function updateHeatmap() {
+                    if (heatLayer) map.removeLayer(heatLayer);
+
+                    const points = mapData
+                        .filter(d => d.lat && d.lng)
+                        .map(d => {
+                            const intensity = currentMode === 'jobs' ? d.jobs : d.revenue / 100;
+                            return [d.lat, d.lng, intensity];
+                        });
+
+                    if (points.length > 0) {
+                        heatLayer = L.heatLayer(points, {
+                            radius: 35,
+                            blur: 20,
+                            maxZoom: 10,
+                            gradient: { 0.2: '#3b82f6', 0.4: '#8b5cf6', 0.6: '#d946ef', 0.8: '#f43f5e', 1: '#f97316' }
+                        }).addTo(map);
                     }
                 }
-            });
-        }
 
-        // Efficiency Scatter
-        function initEfficiencyChart() {
-            if (!hasHomeBase) return;
-            const ctx = document.getElementById('efficiencyChart');
-            if (!ctx) return;
+                function setMapMode(mode) {
+                    currentMode = mode;
+                    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                    event.target.classList.add('active');
+                    updateHeatmap();
+                }
 
-            // Calculate distance for each city (simple Haversine)
-            function haversine(lat1, lon1, lat2, lon2) {
-                const R = 3959; // miles
-                const dLat = (lat2 - lat1) * Math.PI / 180;
-                const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            }
+                // Sparklines
+                function initSparklines() {
+                    topCities.forEach((city, idx) => {
+                        const canvas = document.getElementById(`spark-${idx}`);
+                        if (!canvas) return;
 
-            const points = mapData
-                .filter(d => d.lat && d.lng)
-                .map(d => ({
-                    x: haversine(homeLat, homeLng, d.lat, d.lng),
-                    y: d.revenue,
-                    r: Math.min(5 + d.jobs * 2, 25),
-                    label: d.city
-                }));
+                        const trend = cityTrends[city] || {};
+                        const data = months.map(m => trend[m] || 0);
 
-            new Chart(ctx, {
-                type: 'bubble',
-                data: {
-                    datasets: [{
-                        label: 'Cities',
-                        data: points,
-                        backgroundColor: 'rgba(99, 102, 241, 0.6)',
-                        borderColor: '#6366f1',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => `${ctx.raw.label}: ${ctx.raw.x.toFixed(1)}mi, $${ctx.raw.y.toLocaleString()}`
+                        new Chart(canvas, {
+                            type: 'line',
+                            data: {
+                                labels: months,
+                                datasets: [{
+                                    data: data,
+                                    borderColor: '#6366f1',
+                                    borderWidth: 1.5,
+                                    fill: false,
+                                    tension: 0.4,
+                                    pointRadius: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                                scales: {
+                                    x: { display: false },
+                                    y: { display: false, beginAtZero: true }
+                                }
+                            }
+                        });
+                    });
+                }
+
+                // Job Code Distribution Chart
+                function initJobCodeChart() {
+                    const ctx = document.getElementById('jobCodeChart');
+                    if (!ctx) return;
+
+                    const datasets = allJobTypes.map((type, i) => ({
+                        label: type,
+                        data: topCities.map(city => jobCodeDist[city]?.[type] || 0),
+                        backgroundColor: chartColors[i % chartColors.length]
+                    }));
+
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: { labels: topCities, datasets: datasets },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } }
+                            },
+                            scales: {
+                                x: { stacked: true },
+                                y: { stacked: true, beginAtZero: true }
                             }
                         }
-                    },
-                    scales: {
-                        x: { title: { display: true, text: 'Distance from Home (miles)' }, beginAtZero: true },
-                        y: { title: { display: true, text: 'Revenue ($)' }, beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } }
-                    }
+                    });
                 }
-            });
-        }
 
-        // Init
-        document.addEventListener('DOMContentLoaded', () => {
-            if (mapData.length > 0) {
-                initMap();
-                initSparklines();
-                initJobCodeChart();
-                initEfficiencyChart();
-            }
-        });
-    </script>
+                // Efficiency Scatter
+                function initEfficiencyChart() {
+                    if (!hasHomeBase) return;
+                    const ctx = document.getElementById('efficiencyChart');
+                    if (!ctx) return;
+
+                    // Calculate distance for each city (simple Haversine)
+                    function haversine(lat1, lon1, lat2, lon2) {
+                        const R = 3959; // miles
+                        const dLat = (lat2 - lat1) * Math.PI / 180;
+                        const dLon = (lon2 - lon1) * Math.PI / 180;
+                        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                    }
+
+                    const points = mapData
+                        .filter(d => d.lat && d.lng)
+                        .map(d => ({
+                            x: haversine(homeLat, homeLng, d.lat, d.lng),
+                            y: d.revenue,
+                            r: Math.min(5 + d.jobs * 2, 25),
+                            label: d.city
+                        }));
+
+                    new Chart(ctx, {
+                        type: 'bubble',
+                        data: {
+                            datasets: [{
+                                label: 'Cities',
+                                data: points,
+                                backgroundColor: 'rgba(99, 102, 241, 0.6)',
+                                borderColor: '#6366f1',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: ctx => `${ctx.raw.label}: ${ctx.raw.x.toFixed(1)}mi, $${ctx.raw.y.toLocaleString()}`
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: { title: { display: true, text: 'Distance from Home (miles)' }, beginAtZero: true },
+                                y: { title: { display: true, text: 'Revenue ($)' }, beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } }
+                            }
+                        }
+                    });
+                }
+
+                // Init
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (mapData.length > 0) {
+                        initMap();
+                        initSparklines();
+                        initJobCodeChart();
+                        initEfficiencyChart();
+                    }
+                });
+            </script>
+        </main>
+    </div>
 </body>
 
 </html>

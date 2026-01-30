@@ -544,10 +544,9 @@ try {
 </head>
 
 <body>
-
-    <?php include 'nav.php'; ?>
-
-    <div class="container">
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
 
         <div style="margin-bottom:20px;">
             <a href="<?= htmlspecialchars(get_return_url('vehicles.php')) ?>" class="btn btn-small btn-secondary">&larr; Back to Vehicles</a>
@@ -1139,9 +1138,8 @@ try {
             </p>
         </div>
 
+        </main>
     </div>
-
-</body>
 
 <script>
     // Auto-format money inputs on blur
@@ -1175,5 +1173,5 @@ try {
         event.target.classList.remove('btn-secondary');
     }
 </script>
-
+</body>
 </html>

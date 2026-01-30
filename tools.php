@@ -185,77 +185,76 @@ if (isset($_GET['q'])) {
 </head>
 
 <body>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
 
-    <?php include 'nav.php'; ?>
-
-    <div class="container">
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2>🔍 Job Search</h2>
-        </div>
-
-        <form method="get" class="search-box">
-            <input type="text" name="q" class="search-input" placeholder="Search ticket #, name, address..."
-                value="<?= htmlspecialchars($term) ?>" autocomplete="off" autofocus onfocus="this.select()">
-            <button type="submit" class="btn btn-full" style="margin-top:10px;">Search Records</button>
-        </form>
-
-        <?php if (!empty($term)): ?>
-            <h3 style="margin-bottom:15px; color:var(--text-muted);">
-                Results for "<?= htmlspecialchars($term) ?>"
-                <span style="font-weight:normal; font-size:0.9rem;">(<?= count($results) ?> found)</span>
-            </h3>
-
-            <div class="results-list">
-                <?php if (empty($results)): ?>
-                    <div
-                        style="text-align:center; padding:40px; color:var(--text-muted); background:var(--bg-input); border-radius:8px;">
-                        No jobs found matching your search.
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($results as $r):
-                        // Format Date
-                        $d = date('M j, Y', strtotime($r['install_date']));
-
-                        // Handle Name (New fields vs Old fields)
-                        $name = $r['cust_fname'] . ' ' . $r['cust_lname'];
-                        if (trim($name) === '')
-                            $name = $r['cust_name']; // Fallback to old field
-                        if (empty(trim($name)))
-                            $name = "Unknown Customer";
-
-                        // Handle Address (New fields vs Old fields)
-                        $addr = $r['cust_street'] . ' ' . $r['cust_city'];
-                        if (trim($addr) === '')
-                            $addr = $r['cust_address']; // Fallback to old field
-                        ?>
-                        <a href="edit_job.php?id=<?= htmlspecialchars($r['id']) ?>" class="result-card">
-                            <div>
-                                <div class="res-date">
-                                    <?= htmlspecialchars($d) ?>
-                                    <span class="tag"><?= htmlspecialchars($r['install_type']) ?></span>
-                                </div>
-                                <div class="res-title">
-                                    <?= htmlspecialchars($r['ticket_number']) ?>
-                                </div>
-                                <div class="res-sub">
-                                    <?= htmlspecialchars($name) ?>
-                                </div>
-                                <div class="res-addr">
-                                    📍 <?= htmlspecialchars($addr) ?>
-                                </div>
-                            </div>
-                            <div>
-                                <span style="font-size:1.5rem; color:var(--text-muted);">›</span>
-                            </div>
-                        </a>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>🔍 Job Search</h2>
             </div>
-        <?php endif; ?>
 
+            <form method="get" class="search-box">
+                <input type="text" name="q" class="search-input" placeholder="Search ticket #, name, address..."
+                    value="<?= htmlspecialchars($term) ?>" autocomplete="off" autofocus onfocus="this.select()">
+                <button type="submit" class="btn btn-full" style="margin-top:10px;">Search Records</button>
+            </form>
+
+            <?php if (!empty($term)): ?>
+                <h3 style="margin-bottom:15px; color:var(--text-muted);">
+                    Results for "<?= htmlspecialchars($term) ?>"
+                    <span style="font-weight:normal; font-size:0.9rem;">(<?= count($results) ?> found)</span>
+                </h3>
+
+                <div class="results-list">
+                    <?php if (empty($results)): ?>
+                        <div
+                            style="text-align:center; padding:40px; color:var(--text-muted); background:var(--bg-input); border-radius:8px;">
+                            No jobs found matching your search.
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($results as $r):
+                            // Format Date
+                            $d = date('M j, Y', strtotime($r['install_date']));
+
+                            // Handle Name (New fields vs Old fields)
+                            $name = $r['cust_fname'] . ' ' . $r['cust_lname'];
+                            if (trim($name) === '')
+                                $name = $r['cust_name']; // Fallback to old field
+                            if (empty(trim($name)))
+                                $name = "Unknown Customer";
+
+                            // Handle Address (New fields vs Old fields)
+                            $addr = $r['cust_street'] . ' ' . $r['cust_city'];
+                            if (trim($addr) === '')
+                                $addr = $r['cust_address']; // Fallback to old field
+                            ?>
+                            <a href="edit_job.php?id=<?= htmlspecialchars($r['id']) ?>" class="result-card">
+                                <div>
+                                    <div class="res-date">
+                                        <?= htmlspecialchars($d) ?>
+                                        <span class="tag"><?= htmlspecialchars($r['install_type']) ?></span>
+                                    </div>
+                                    <div class="res-title">
+                                        <?= htmlspecialchars($r['ticket_number']) ?>
+                                    </div>
+                                    <div class="res-sub">
+                                        <?= htmlspecialchars($name) ?>
+                                    </div>
+                                    <div class="res-addr">
+                                        📍 <?= htmlspecialchars($addr) ?>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span style="font-size:1.5rem; color:var(--text-muted);">›</span>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+        </main>
     </div>
-
     <script>
         if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
     </script>

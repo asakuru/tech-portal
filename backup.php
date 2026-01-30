@@ -209,105 +209,113 @@ if ($files) {
 </head>
 
 <body>
-    <?php include 'nav.php'; ?>
-    <div class="container">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2>🛡️ Backup Manager</h2>
-            <a href="settings.php" class="btn" style="background:var(--bg-input); color:var(--text-main);">Settings</a>
-        </div>
-
-        <?php if ($msg): ?>
-            <div class="alert" style="border-left:4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>
-        <?php if ($error): ?>
-            <div class="alert" style="background:var(--danger-bg); color:var(--danger-text); border:none;"><?= $error ?>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>🛡️ Backup Manager</h2>
+                <a href="settings.php" class="btn"
+                    style="background:var(--bg-input); color:var(--text-main);">Settings</a>
             </div>
-        <?php endif; ?>
 
-        <div class="box" style="text-align:center; padding:30px;">
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:20px;">
-                <div>
-                    <h3 style="margin:0 0 10px 0;">Database Snapshot</h3>
-                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">Backs up only your data
-                        (Jobs, Customers, Settings).</p>
-                    <form method="post">
-                        <?= csrf_field() ?>
-                        <button type="submit" name="create_db_backup" class="btn btn-full"
-                            style="background:var(--primary);">💾 Backup Data Only (.db)</button>
-                    </form>
+            <?php if ($msg): ?>
+                <div class="alert" style="border-left:4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>
+            <?php if ($error): ?>
+                <div class="alert" style="background:var(--danger-bg); color:var(--danger-text); border:none;"><?= $error ?>
                 </div>
-                <div style="border-left:1px solid var(--border); padding-left:20px;">
-                    <h3 style="margin:0 0 10px 0;">Full Site Backup</h3>
-                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">Backs up everything: Data
-                        + PHP Code + Styles.</p>
-                    <form method="post">
-                        <?= csrf_field() ?>
-                        <button type="submit" name="create_full_backup" class="btn btn-full" style="background:#000;">📦
-                            Backup Everything (.zip)</button>
-                    </form>
+            <?php endif; ?>
+
+            <div class="box" style="text-align:center; padding:30px;">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:20px;">
+                    <div>
+                        <h3 style="margin:0 0 10px 0;">Database Snapshot</h3>
+                        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">Backs up only your
+                            data
+                            (Jobs, Customers, Settings).</p>
+                        <form method="post">
+                            <?= csrf_field() ?>
+                            <button type="submit" name="create_db_backup" class="btn btn-full"
+                                style="background:var(--primary);">💾 Backup Data Only (.db)</button>
+                        </form>
+                    </div>
+                    <div style="border-left:1px solid var(--border); padding-left:20px;">
+                        <h3 style="margin:0 0 10px 0;">Full Site Backup</h3>
+                        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">Backs up everything:
+                            Data
+                            + PHP Code + Styles.</p>
+                        <form method="post">
+                            <?= csrf_field() ?>
+                            <button type="submit" name="create_full_backup" class="btn btn-full"
+                                style="background:#000;">📦
+                                Backup Everything (.zip)</button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="box" style="padding:0; overflow:hidden;">
-            <table style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr style="background:var(--bg-input); text-align:left;">
-                        <th style="padding:15px;">Type</th>
-                        <th style="padding:15px;">Filename</th>
-                        <th style="padding:15px;">Date</th>
-                        <th style="padding:15px; text-align:right;">Size</th>
-                        <th style="padding:15px; text-align:right;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($files)): ?>
-                        <tr>
-                            <td colspan="5" style="padding:20px; text-align:center; color:var(--text-muted);">No backups
-                                found.</td>
+            <div class="box" style="padding:0; overflow:hidden;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:var(--bg-input); text-align:left;">
+                            <th style="padding:15px;">Type</th>
+                            <th style="padding:15px;">Filename</th>
+                            <th style="padding:15px;">Date</th>
+                            <th style="padding:15px; text-align:right;">Size</th>
+                            <th style="padding:15px; text-align:right;">Action</th>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($files as $f):
-                            $name = basename($f);
-                            $ext = pathinfo($f, PATHINFO_EXTENSION);
-                            $date = date('M j, Y H:i', filemtime($f));
-                            $size = number_format(filesize($f) / 1024, 2) . ' KB';
-                            $badge = ($ext == 'zip') ? '<span class="badge badge-zip">ZIP</span>' : '<span class="badge badge-db">DB</span>';
-                            $is_db = ($ext === 'db');
-                            ?>
-                            <tr style="border-bottom:1px solid var(--border);">
-                                <td style="padding:15px;"><?= $badge ?></td>
-                                <td style="padding:15px; font-weight:bold; font-size:0.9rem; word-break:break-all;"><?= $name ?>
-                                </td>
-                                <td style="padding:15px; color:var(--text-muted); font-size:0.85rem;"><?= $date ?></td>
-                                <td style="padding:15px; text-align:right; font-family:monospace;"><?= $size ?></td>
-                                <td style="padding:15px; text-align:right; white-space:nowrap;">
+                    </thead>
+                    <tbody>
+                        <?php if (empty($files)): ?>
+                            <tr>
+                                <td colspan="5" style="padding:20px; text-align:center; color:var(--text-muted);">No backups
+                                    found.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($files as $f):
+                                $name = basename($f);
+                                $ext = pathinfo($f, PATHINFO_EXTENSION);
+                                $date = date('M j, Y H:i', filemtime($f));
+                                $size = number_format(filesize($f) / 1024, 2) . ' KB';
+                                $badge = ($ext == 'zip') ? '<span class="badge badge-zip">ZIP</span>' : '<span class="badge badge-db">DB</span>';
+                                $is_db = ($ext === 'db');
+                                ?>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <td style="padding:15px;"><?= $badge ?></td>
+                                    <td style="padding:15px; font-weight:bold; font-size:0.9rem; word-break:break-all;">
+                                        <?= $name ?>
+                                    </td>
+                                    <td style="padding:15px; color:var(--text-muted); font-size:0.85rem;"><?= $date ?></td>
+                                    <td style="padding:15px; text-align:right; font-family:monospace;"><?= $size ?></td>
+                                    <td style="padding:15px; text-align:right; white-space:nowrap;">
 
-                                    <?php if ($is_db): ?>
-                                        <form method="post"
-                                            onsubmit="return confirm('⚠️ WARNING: This will OVERWRITE your current live data with this backup.\n\nAny data entered AFTER this backup date will be LOST.\n\nAre you sure?');"
+                                        <?php if ($is_db): ?>
+                                            <form method="post"
+                                                onsubmit="return confirm('⚠️ WARNING: This will OVERWRITE your current live data with this backup.\n\nAny data entered AFTER this backup date will be LOST.\n\nAre you sure?');"
+                                                style="display:inline;">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="restore_file" value="<?= $name ?>">
+                                                <button type="submit" class="btn-small btn-warning" title="Restore this backup">↺
+                                                    Restore</button>
+                                            </form>
+                                        <?php endif; ?>
+
+                                        <a href="?download=<?= $name ?>" class="btn-small btn-secondary" title="Download">⬇️</a>
+
+                                        <form method="post" onsubmit="return confirm('Delete this backup?');"
                                             style="display:inline;">
                                             <?= csrf_field() ?>
-                                            <input type="hidden" name="restore_file" value="<?= $name ?>">
-                                            <button type="submit" class="btn-small btn-warning" title="Restore this backup">↺
-                                                Restore</button>
+                                            <input type="hidden" name="delete_file" value="<?= $name ?>">
+                                            <button type="submit" class="btn-small btn-danger"
+                                                style="margin-left:5px;">✖</button>
                                         </form>
-                                    <?php endif; ?>
-
-                                    <a href="?download=<?= $name ?>" class="btn-small btn-secondary" title="Download">⬇️</a>
-
-                                    <form method="post" onsubmit="return confirm('Delete this backup?');"
-                                        style="display:inline;">
-                                        <?= csrf_field() ?>
-                                        <input type="hidden" name="delete_file" value="<?= $name ?>">
-                                        <button type="submit" class="btn-small btn-danger" style="margin-left:5px;">✖</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </main>
     </div>
     <script>if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }</script>
 </body>

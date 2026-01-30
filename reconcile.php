@@ -611,316 +611,323 @@ usort($display_rows, function ($a, $b) {
 </head>
 
 <body>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
 
-    <?php include 'nav.php'; ?>
-
-    <div class="container">
-
-        <div class="control-bar">
-            <div class="week-nav">
-                <a href="<?= htmlspecialchars($prev_link) ?>">&laquo;</a>
-                <div style="text-align:center;">
-                    <div style="font-weight:bold; font-size:1.1rem;">Week <?= htmlspecialchars($week) ?></div>
-                    <div style="color:var(--text-muted); font-size:0.85rem;"><?= htmlspecialchars($week_label_start) ?>
-                        - <?= htmlspecialchars($week_label_end) ?></div>
-                </div>
-                <a href="<?= htmlspecialchars($next_link) ?>">&raquo;</a>
-            </div>
-        </div>
-
-        <!-- Reconciliation Status Banner -->
-        <div
-            style="background:<?= $is_reconciled ? '#dcfce7' : '#fef3c7' ?>; border:1px solid <?= $is_reconciled ? '#16a34a' : '#d97706' ?>; border-radius:8px; padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <?php if ($is_reconciled): ?>
-                    <span style="font-size:1.5rem;">✅</span>
-                    <div>
-                        <div style="font-weight:bold; color:#15803d;">Reconciled</div>
-                        <?php if ($reconciliation && $reconciliation['reconciled_at']): ?>
-                            <div style="font-size:0.8rem; color:#166534;">
-                                <?= date('M j, Y g:i A', strtotime($reconciliation['reconciled_at'])) ?>
-                            </div>
-                        <?php endif; ?>
+            <div class="control-bar">
+                <div class="week-nav">
+                    <a href="<?= htmlspecialchars($prev_link) ?>">&laquo;</a>
+                    <div style="text-align:center;">
+                        <div style="font-weight:bold; font-size:1.1rem;">Week <?= htmlspecialchars($week) ?></div>
+                        <div style="color:var(--text-muted); font-size:0.85rem;">
+                            <?= htmlspecialchars($week_label_start) ?>
+                            - <?= htmlspecialchars($week_label_end) ?></div>
                     </div>
-                <?php else: ?>
-                    <span style="font-size:1.5rem;">⚪</span>
-                    <div style="font-weight:bold; color:#92400e;">Not Reconciled</div>
-                <?php endif; ?>
+                    <a href="<?= htmlspecialchars($next_link) ?>">&raquo;</a>
+                </div>
             </div>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <?php if ($is_reconciled && $reconciliation && !empty($reconciliation['csv_filename'])): ?>
-                    <a href="?w=<?= $week ?>&y=<?= $year ?>&download=1"
-                        style="background:#2563eb; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
-                        📎 Download CSV
-                    </a>
-                <?php endif; ?>
-                <?php if ($is_reconciled): ?>
-                    <form method="post" style="margin:0;"
-                        onsubmit="return confirm('Remove reconciliation status for this week?');">
-                        <button type="submit" name="unmark_reconciled"
-                            style="background:#dc2626; color:white; padding:6px 12px; border-radius:4px; border:none; cursor:pointer; font-size:0.85rem;">✕
-                            Unmark</button>
-                    </form>
-                <?php else: ?>
-                    <form method="post" style="margin:0;">
-                        <button type="submit" name="mark_reconciled"
-                            style="background:#16a34a; color:white; padding:6px 12px; border-radius:4px; border:none; cursor:pointer; font-size:0.85rem;">✓
-                            Mark Reconciled</button>
-                    </form>
-                <?php endif; ?>
-            </div>
-        </div>
 
-        <div class="paper-sheet">
-
+            <!-- Reconciliation Status Banner -->
             <div
-                style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; padding-bottom:10px; border-bottom:2px solid #000;">
-                <div>
-                    <h2 style="margin:0; font-size:1.4rem; text-transform:uppercase; color:#000;">Weekly Summary</h2>
+                style="background:<?= $is_reconciled ? '#dcfce7' : '#fef3c7' ?>; border:1px solid <?= $is_reconciled ? '#16a34a' : '#d97706' ?>; border-radius:8px; padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <?php if ($is_reconciled): ?>
+                        <span style="font-size:1.5rem;">✅</span>
+                        <div>
+                            <div style="font-weight:bold; color:#15803d;">Reconciled</div>
+                            <?php if ($reconciliation && $reconciliation['reconciled_at']): ?>
+                                <div style="font-size:0.8rem; color:#166534;">
+                                    <?= date('M j, Y g:i A', strtotime($reconciliation['reconciled_at'])) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php else: ?>
+                        <span style="font-size:1.5rem;">⚪</span>
+                        <div style="font-weight:bold; color:#92400e;">Not Reconciled</div>
+                    <?php endif; ?>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:0.8rem; text-transform:uppercase; color:#666;">Miles Driven</div>
-                    <div style="font-size:1.2rem; font-weight:800; color:#000;"><?= number_format($total_miles) ?> mi
-                    </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <?php if ($is_reconciled && $reconciliation && !empty($reconciliation['csv_filename'])): ?>
+                        <a href="?w=<?= $week ?>&y=<?= $year ?>&download=1"
+                            style="background:#2563eb; color:white; padding:6px 12px; border-radius:4px; text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:5px;">
+                            📎 Download CSV
+                        </a>
+                    <?php endif; ?>
+                    <?php if ($is_reconciled): ?>
+                        <form method="post" style="margin:0;"
+                            onsubmit="return confirm('Remove reconciliation status for this week?');">
+                            <button type="submit" name="unmark_reconciled"
+                                style="background:#dc2626; color:white; padding:6px 12px; border-radius:4px; border:none; cursor:pointer; font-size:0.85rem;">✕
+                                Unmark</button>
+                        </form>
+                    <?php else: ?>
+                        <form method="post" style="margin:0;">
+                            <button type="submit" name="mark_reconciled"
+                                style="background:#16a34a; color:white; padding:6px 12px; border-radius:4px; border:none; cursor:pointer; font-size:0.85rem;">✓
+                                Mark Reconciled</button>
+                        </form>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <div class="table-wrap">
-                <table class="summary-table">
-                    <thead>
-                        <tr>
-                            <th>Code</th>
-                            <th>Description</th>
-                            <th style="text-align:center;">Qty</th>
-                            <th class="num">Rate</th>
-                            <th class="num">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($code_tally)): ?>
-                            <tr>
-                                <td colspan="5" style="padding:20px; text-align:center; color:#555;">No activity recorded
-                                    for this week.</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($code_tally as $code => $d): ?>
-                                <tr>
-                                    <td style="font-weight:bold;"><?= htmlspecialchars($code) ?></td>
-                                    <td><?= htmlspecialchars($d['desc']) ?></td>
-                                    <td style="text-align:center;"><?= $d['count'] ?></td>
-                                    <td class="num">$<?= number_format($d['rate'], 2) ?></td>
-                                    <td class="num">$<?= number_format($d['total'], 2) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
+            <div class="paper-sheet">
 
-                            <tr style="height:10px;">
-                                <td colspan="5" style="border:none;"></td>
-                            </tr>
-
-                            <tr>
-                                <td colspan="4" style="text-align:right; font-weight:bold; padding-top:10px;">GROSS REVENUE
-                                </td>
-                                <td class="num" style="padding-top:10px; font-weight:bold;">
-                                    $<?= number_format($grand_total_tally, 2) ?></td>
-                            </tr>
-                            <tr>
-                                <td colspan="4" style="text-align:right; color:#dc2626;">LESS FUEL COST</td>
-                                <td class="num" style="color:#dc2626;">-$<?= number_format($total_fuel, 2) ?></td>
-                            </tr>
-                            <tr class="profit-row">
-                                <td colspan="4" style="text-align:right; color:#15803d;">NET PROFIT</td>
-                                <td class="num" style="color:#15803d; border-bottom:2px solid #000;">
-                                    $<?= number_format($net_profit, 2) ?></td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <?php if (!$comparison_mode && !$is_reconciled): ?>
-                <h3 style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000;">Reconcile Scrub</h3>
-                <div class="upload-options">
-                    <div
-                        style="background:#f9fafb; border:1px dashed #999; padding:15px; text-align:center; border-radius:4px;">
-                        <form method="post" enctype="multipart/form-data">
-                            <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:#333;">Option 1:
-                                Upload CSV</div>
-                            <input type="file" name="scrub_csv" accept=".csv"
-                                style="font-size:0.9rem; max-width:200px; color:#333; margin-bottom:10px;">
-                            <br><button type="submit" class="btn"
-                                style="padding:5px 15px; background:#000; color:#fff; border:none; cursor:pointer;">Compare
-                                CSV</button>
-                        </form>
+                <div
+                    style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; padding-bottom:10px; border-bottom:2px solid #000;">
+                    <div>
+                        <h2 style="margin:0; font-size:1.4rem; text-transform:uppercase; color:#000;">Weekly Summary
+                        </h2>
                     </div>
-                    <div
-                        style="background:#f9fafb; border:1px dashed #999; padding:15px; text-align:center; border-radius:4px;">
-                        <form method="post">
-                            <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:#333;">Option 2: Paste
-                                Text</div>
-                            <textarea name="scrub_text" rows="3" placeholder="Paste report text..."
-                                style="width:100%; font-size:0.8rem; margin-bottom:10px; border:1px solid #ccc;"></textarea>
-                            <br><button type="submit" class="btn"
-                                style="padding:5px 15px; background:#000; color:#fff; border:none; cursor:pointer;">Compare
-                                Text</button>
-                        </form>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.8rem; text-transform:uppercase; color:#666;">Miles Driven</div>
+                        <div style="font-size:1.2rem; font-weight:800; color:#000;"><?= number_format($total_miles) ?>
+                            mi
+                        </div>
                     </div>
                 </div>
-            <?php endif; ?>
 
-            <?php if ($comparison_mode && !empty($code_variance)): ?>
-                <h3
-                    style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000; border-bottom:2px solid #000; padding-bottom:5px;">
-                    📊 Code Comparison
-                </h3>
-                <div style="margin-bottom:15px; font-size:0.85rem;">
-                    <span
-                        style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; margin-right:10px;">🔴
-                        Missing (In DB, Not in Scrub)</span>
-                    <span
-                        style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; margin-right:10px;">🟢
-                        Extra (In Scrub, Not in DB)</span>
-                    <span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px;">🟡 Qty
-                        Variance</span>
-                </div>
                 <div class="table-wrap">
-                    <table class="summary-table" style="margin-bottom:20px;">
+                    <table class="summary-table">
                         <thead>
                             <tr>
                                 <th>Code</th>
                                 <th>Description</th>
-                                <th style="text-align:center;">My Qty</th>
-                                <th style="text-align:center;">Scrub Qty</th>
-                                <th class="num">My Total</th>
-                                <th>Status</th>
+                                <th style="text-align:center;">Qty</th>
+                                <th class="num">Rate</th>
+                                <th class="num">Total</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($code_variance as $code => $v):
-                                $row_bg = '';
-                                $status_text = '';
-                                $status_color = '';
-
-                                if ($v['status'] === 'missing') {
-                                    $row_bg = 'background:#fee2e2;';
-                                    $status_text = 'MISSING';
-                                    $status_color = 'color:#dc2626; font-weight:bold;';
-                                } elseif ($v['status'] === 'extra') {
-                                    $row_bg = 'background:#dcfce7;';
-                                    $status_text = 'EXTRA';
-                                    $status_color = 'color:#16a34a; font-weight:bold;';
-                                } elseif ($v['status'] === 'variance') {
-                                    $row_bg = 'background:#fef3c7;';
-                                    $status_text = 'VARIANCE';
-                                    $status_color = 'color:#d97706; font-weight:bold;';
-                                } else {
-                                    $status_text = '✓ Match';
-                                    $status_color = 'color:#10b981;';
-                                }
-                                ?>
-                                <tr style="<?= $row_bg ?>">
-                                    <td style="font-weight:bold;"><?= htmlspecialchars($code) ?></td>
-                                    <td style="font-size:0.85rem;"><?= htmlspecialchars(substr($v['desc'], 0, 40)) ?></td>
-                                    <td style="text-align:center; font-weight:bold;"><?= $v['local_qty'] ?></td>
-                                    <td style="text-align:center; font-weight:bold;"><?= $v['scrub_qty'] ?></td>
-                                    <td class="num">$<?= number_format($v['local_total'], 2) ?></td>
-                                    <td style="<?= $status_color ?>"><?= $status_text ?></td>
+                            <?php if (empty($code_tally)): ?>
+                                <tr>
+                                    <td colspan="5" style="padding:20px; text-align:center; color:#555;">No activity
+                                        recorded
+                                        for this week.</td>
                                 </tr>
-                            <?php endforeach; ?>
-                            <?php
-                            // Calculate totals
-                            $total_local_qty = 0;
-                            $total_scrub_qty = 0;
-                            $total_local_amount = 0;
-                            foreach ($code_variance as $v) {
-                                $total_local_qty += $v['local_qty'];
-                                $total_scrub_qty += $v['scrub_qty'];
-                                $total_local_amount += $v['local_total'];
-                            }
-                            ?>
-                            <tr style="border-top:2px solid #000; font-weight:bold; background:#f0f0f0;">
-                                <td colspan="2" style="text-align:right;">TOTALS:</td>
-                                <td style="text-align:center;"><?= $total_local_qty ?></td>
-                                <td style="text-align:center;"><?= $total_scrub_qty ?></td>
-                                <td class="num">$<?= number_format($total_local_amount, 2) ?></td>
-                                <td><?= ($total_local_qty == $total_scrub_qty) ? '✓' : '⚠️' ?></td>
-                            </tr>
+                            <?php else: ?>
+                                <?php foreach ($code_tally as $code => $d): ?>
+                                    <tr>
+                                        <td style="font-weight:bold;"><?= htmlspecialchars($code) ?></td>
+                                        <td><?= htmlspecialchars($d['desc']) ?></td>
+                                        <td style="text-align:center;"><?= $d['count'] ?></td>
+                                        <td class="num">$<?= number_format($d['rate'], 2) ?></td>
+                                        <td class="num">$<?= number_format($d['total'], 2) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+
+                                <tr style="height:10px;">
+                                    <td colspan="5" style="border:none;"></td>
+                                </tr>
+
+                                <tr>
+                                    <td colspan="4" style="text-align:right; font-weight:bold; padding-top:10px;">GROSS
+                                        REVENUE
+                                    </td>
+                                    <td class="num" style="padding-top:10px; font-weight:bold;">
+                                        $<?= number_format($grand_total_tally, 2) ?></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" style="text-align:right; color:#dc2626;">LESS FUEL COST</td>
+                                    <td class="num" style="color:#dc2626;">-$<?= number_format($total_fuel, 2) ?></td>
+                                </tr>
+                                <tr class="profit-row">
+                                    <td colspan="4" style="text-align:right; color:#15803d;">NET PROFIT</td>
+                                    <td class="num" style="color:#15803d; border-bottom:2px solid #000;">
+                                        $<?= number_format($net_profit, 2) ?></td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
-                <a href="?" class="btn" style="margin-bottom:20px; display:inline-block;">← Clear Comparison</a>
-            <?php endif; ?>
 
-            <h3
-                style="margin:0 0 10px 0; font-size:1rem; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:5px; color:#000;">
-                Job Detail List</h3>
-            <div class="table-wrap">
-                <table class="sheet-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Ticket</th>
-                            <th>Type</th>
-                            <th>Cust</th>
-                            <th class="num">My Pay</th>
-                            <?php if ($comparison_mode): ?>
-                                <th class="num">Scrub</th>
-                                <th class="num">Diff</th>
-                                <th style="padding-left:10px;">Status</th>
-                            <?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($display_rows)): ?>
-                            <tr>
-                                <td colspan="8" style="text-align:center; padding:30px; color:#555;">No jobs recorded.</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($display_rows as $row):
-                                $st_class = '';
-                                $row_status = $row['status'] ?? '';
-                                if ($row_status == 'Match')
-                                    $st_class = 'st-match';
-                                if ($row_status == 'Variance')
-                                    $st_class = 'st-var';
-                                if ($row_status == 'Missing')
-                                    $st_class = 'st-miss';
-                                if ($row_status == 'Extra')
-                                    $st_class = 'st-extra';
-                                ?>
+                <?php if (!$comparison_mode && !$is_reconciled): ?>
+                    <h3 style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000;">Reconcile Scrub
+                    </h3>
+                    <div class="upload-options">
+                        <div
+                            style="background:#f9fafb; border:1px dashed #999; padding:15px; text-align:center; border-radius:4px;">
+                            <form method="post" enctype="multipart/form-data">
+                                <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:#333;">Option 1:
+                                    Upload CSV</div>
+                                <input type="file" name="scrub_csv" accept=".csv"
+                                    style="font-size:0.9rem; max-width:200px; color:#333; margin-bottom:10px;">
+                                <br><button type="submit" class="btn"
+                                    style="padding:5px 15px; background:#000; color:#fff; border:none; cursor:pointer;">Compare
+                                    CSV</button>
+                            </form>
+                        </div>
+                        <div
+                            style="background:#f9fafb; border:1px dashed #999; padding:15px; text-align:center; border-radius:4px;">
+                            <form method="post">
+                                <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:#333;">Option 2:
+                                    Paste
+                                    Text</div>
+                                <textarea name="scrub_text" rows="3" placeholder="Paste report text..."
+                                    style="width:100%; font-size:0.8rem; margin-bottom:10px; border:1px solid #ccc;"></textarea>
+                                <br><button type="submit" class="btn"
+                                    style="padding:5px 15px; background:#000; color:#fff; border:none; cursor:pointer;">Compare
+                                    Text</button>
+                            </form>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($comparison_mode && !empty($code_variance)): ?>
+                    <h3
+                        style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000; border-bottom:2px solid #000; padding-bottom:5px;">
+                        📊 Code Comparison
+                    </h3>
+                    <div style="margin-bottom:15px; font-size:0.85rem;">
+                        <span
+                            style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; margin-right:10px;">🔴
+                            Missing (In DB, Not in Scrub)</span>
+                        <span
+                            style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; margin-right:10px;">🟢
+                            Extra (In Scrub, Not in DB)</span>
+                        <span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px;">🟡 Qty
+                            Variance</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="summary-table" style="margin-bottom:20px;">
+                            <thead>
                                 <tr>
-                                    <td><?= htmlspecialchars($row['date']) ?></td>
-                                    <td><?= htmlspecialchars($row['ticket']) ?></td>
-                                    <td><?= htmlspecialchars($row['type']) ?></td>
-                                    <td><?= htmlspecialchars(substr($row['cust'] ?? 'Unknown', 0, 20)) ?></td>
-                                    <td class="num"><?= ($row['pay'] > 0) ? number_format($row['pay'], 2) : '-' ?></td>
-
-                                    <?php if ($comparison_mode): ?>
-                                        <?php
-                                        $scrub_pay = $row['scrub_pay'] ?? 0;
-                                        $diff = $row['diff'] ?? 0;
-                                        ?>
-                                        <td class="num"><?= ($scrub_pay != 0) ? number_format($scrub_pay, 2) : '-' ?>
-                                        </td>
-                                        <td class="num" style="color:<?= $diff >= 0 ? '#10b981' : '#ef4444' ?>;">
-                                            <?= ($diff != 0) ? number_format($diff, 2) : '-' ?>
-                                        </td>
-                                        <td style="padding-left:10px;" class="<?= htmlspecialchars($st_class) ?>">
-                                            <?= htmlspecialchars($row_status) ?>
-                                        </td>
-                                    <?php endif; ?>
+                                    <th>Code</th>
+                                    <th>Description</th>
+                                    <th style="text-align:center;">My Qty</th>
+                                    <th style="text-align:center;">Scrub Qty</th>
+                                    <th class="num">My Total</th>
+                                    <th>Status</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($code_variance as $code => $v):
+                                    $row_bg = '';
+                                    $status_text = '';
+                                    $status_color = '';
+
+                                    if ($v['status'] === 'missing') {
+                                        $row_bg = 'background:#fee2e2;';
+                                        $status_text = 'MISSING';
+                                        $status_color = 'color:#dc2626; font-weight:bold;';
+                                    } elseif ($v['status'] === 'extra') {
+                                        $row_bg = 'background:#dcfce7;';
+                                        $status_text = 'EXTRA';
+                                        $status_color = 'color:#16a34a; font-weight:bold;';
+                                    } elseif ($v['status'] === 'variance') {
+                                        $row_bg = 'background:#fef3c7;';
+                                        $status_text = 'VARIANCE';
+                                        $status_color = 'color:#d97706; font-weight:bold;';
+                                    } else {
+                                        $status_text = '✓ Match';
+                                        $status_color = 'color:#10b981;';
+                                    }
+                                    ?>
+                                    <tr style="<?= $row_bg ?>">
+                                        <td style="font-weight:bold;"><?= htmlspecialchars($code) ?></td>
+                                        <td style="font-size:0.85rem;"><?= htmlspecialchars(substr($v['desc'], 0, 40)) ?></td>
+                                        <td style="text-align:center; font-weight:bold;"><?= $v['local_qty'] ?></td>
+                                        <td style="text-align:center; font-weight:bold;"><?= $v['scrub_qty'] ?></td>
+                                        <td class="num">$<?= number_format($v['local_total'], 2) ?></td>
+                                        <td style="<?= $status_color ?>"><?= $status_text ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                <?php
+                                // Calculate totals
+                                $total_local_qty = 0;
+                                $total_scrub_qty = 0;
+                                $total_local_amount = 0;
+                                foreach ($code_variance as $v) {
+                                    $total_local_qty += $v['local_qty'];
+                                    $total_scrub_qty += $v['scrub_qty'];
+                                    $total_local_amount += $v['local_total'];
+                                }
+                                ?>
+                                <tr style="border-top:2px solid #000; font-weight:bold; background:#f0f0f0;">
+                                    <td colspan="2" style="text-align:right;">TOTALS:</td>
+                                    <td style="text-align:center;"><?= $total_local_qty ?></td>
+                                    <td style="text-align:center;"><?= $total_scrub_qty ?></td>
+                                    <td class="num">$<?= number_format($total_local_amount, 2) ?></td>
+                                    <td><?= ($total_local_qty == $total_scrub_qty) ? '✓' : '⚠️' ?></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="?" class="btn" style="margin-bottom:20px; display:inline-block;">← Clear Comparison</a>
+                <?php endif; ?>
+
+                <h3
+                    style="margin:0 0 10px 0; font-size:1rem; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:5px; color:#000;">
+                    Job Detail List</h3>
+                <div class="table-wrap">
+                    <table class="sheet-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Ticket</th>
+                                <th>Type</th>
+                                <th>Cust</th>
+                                <th class="num">My Pay</th>
+                                <?php if ($comparison_mode): ?>
+                                    <th class="num">Scrub</th>
+                                    <th class="num">Diff</th>
+                                    <th style="padding-left:10px;">Status</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($display_rows)): ?>
+                                <tr>
+                                    <td colspan="8" style="text-align:center; padding:30px; color:#555;">No jobs recorded.
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($display_rows as $row):
+                                    $st_class = '';
+                                    $row_status = $row['status'] ?? '';
+                                    if ($row_status == 'Match')
+                                        $st_class = 'st-match';
+                                    if ($row_status == 'Variance')
+                                        $st_class = 'st-var';
+                                    if ($row_status == 'Missing')
+                                        $st_class = 'st-miss';
+                                    if ($row_status == 'Extra')
+                                        $st_class = 'st-extra';
+                                    ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['date']) ?></td>
+                                        <td><?= htmlspecialchars($row['ticket']) ?></td>
+                                        <td><?= htmlspecialchars($row['type']) ?></td>
+                                        <td><?= htmlspecialchars(substr($row['cust'] ?? 'Unknown', 0, 20)) ?></td>
+                                        <td class="num"><?= ($row['pay'] > 0) ? number_format($row['pay'], 2) : '-' ?></td>
+
+                                        <?php if ($comparison_mode): ?>
+                                            <?php
+                                            $scrub_pay = $row['scrub_pay'] ?? 0;
+                                            $diff = $row['diff'] ?? 0;
+                                            ?>
+                                            <td class="num"><?= ($scrub_pay != 0) ? number_format($scrub_pay, 2) : '-' ?>
+                                            </td>
+                                            <td class="num" style="color:<?= $diff >= 0 ? '#10b981' : '#ef4444' ?>;">
+                                                <?= ($diff != 0) ? number_format($diff, 2) : '-' ?>
+                                            </td>
+                                            <td style="padding-left:10px;" class="<?= htmlspecialchars($st_class) ?>">
+                                                <?= htmlspecialchars($row_status) ?>
+                                            </td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
-
-        </div>
     </div>
-
-    <script>
         if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
     </script>
+    </main>
+    </div>
 </body>
 
 </html>

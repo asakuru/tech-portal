@@ -1,152 +1,313 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-/* --- GLOBAL VARIABLES --- */
+/* --- GLOBAL VARIABLES (Lovelace UI) --- */
 :root {
-    /* Light Mode (Frosted Glass) */
-    --bg-body: #f8fafc;
-    --bg-card: rgba(255, 255, 255, 0.9);
-    --bg-input: #f1f5f9;
-    --bg-glass: rgba(255, 255, 255, 0.7);
+    /* Theme: Home Assistant Dark (Default) */
+    --bg-body: #1c1c1c;
+    --bg-card: #262626;
+    --bg-input: #111111;
+    --bg-glass: rgba(38, 38, 38, 0.7);
+    --bg-sidebar: #111111;
 
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
+    --text-main: #e1e1e1;
+    --text-muted: #a0a0a0;
+    --text-secondary: #bdbdbd;
+    --border: #333333;
+    --border-action: rgba(255, 255, 255, 0.1);
 
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --primary-glow: rgba(99, 102, 241, 0.35);
-    --accent: #8b5cf6;
-    --accent-glow: rgba(139, 92, 246, 0.3);
+    --primary: #03a9f4;
+    /* Blue */
+    --primary-hover: #0288d1;
+    --primary-glow: rgba(3, 169, 244, 0.3);
+    --accent: #ff9800;
+    /* Orange/Yellow Alert */
+    --accent-glow: rgba(255, 152, 0, 0.3);
 
-    --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-    --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.8));
-    --gradient-success: linear-gradient(135deg, #10b981, #34d399);
-    --gradient-danger: linear-gradient(135deg, #ef4444, #f87171);
+    --gradient-primary: linear-gradient(135deg, #03a9f4 0%, #0288d1 100%);
+    --gradient-card: linear-gradient(145deg, #262626, #2a2a2a);
+    --gradient-success: linear-gradient(135deg, #4caf50, #81c784);
+    --gradient-danger: linear-gradient(135deg, #f44336, #e57373);
 
-    --nav-bg: rgba(15, 23, 42, 0.92);
-    --nav-text: #f8fafc;
+    --nav-bg: #111111;
+    --nav-text: #ffffff;
 
-    --success-bg: #dcfce7;
-    --success-text: #059669;
-    --danger-bg: #fee2e2;
-    --danger-text: #dc2626;
+    --success-bg: rgba(76, 175, 80, 0.15);
+    --success-text: #81c784;
+    --danger-bg: rgba(244, 67, 54, 0.15);
+    --danger-text: #e57373;
+    --warning-bg: rgba(255, 152, 0, 0.15);
+    --warning-text: #ffb74d;
 
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.4);
     --shadow-glow: 0 0 20px var(--primary-glow);
 
-    --radius: 16px;
-    --radius-sm: 10px;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+
+    /* Grid System */
+    --grid-gap: 12px;
+    --sidebar-width: 64px;
+    --sidebar-expanded: 240px;
 }
 
-/* --- DARK MODE OVERRIDES (Cosmic) --- */
-body.dark-mode {
-    --bg-body: #030712;
-    --bg-card: rgba(15, 23, 42, 0.8);
-    --bg-input: #1e293b;
-    --bg-glass: rgba(15, 23, 42, 0.6);
+/* --- LIGHT MODE (Legacy Support / Optional Switch) --- */
+body.light-mode {
+    --bg-body: #f5f5f5;
+    --bg-card: #ffffff;
+    --bg-input: #eeeeee;
+    --bg-glass: rgba(255, 255, 255, 0.7);
+    --bg-sidebar: #263238;
 
-    --text-main: #f1f5f9;
-    --text-muted: #94a3b8;
-    --border: rgba(71, 85, 105, 0.5);
+    --text-main: #212121;
+    --text-muted: #757575;
+    --border: #e0e0e0;
 
-    --primary: #818cf8;
-    --primary-hover: #a5b4fc;
-    --primary-glow: rgba(129, 140, 248, 0.4);
-    --accent: #a78bfa;
-    --accent-glow: rgba(167, 139, 250, 0.35);
-
-    --gradient-primary: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #c084fc 100%);
-    --gradient-card: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
-
-    --nav-bg: rgba(2, 6, 23, 0.95);
-
-    --success-bg: rgba(6, 78, 59, 0.5);
-    --success-text: #34d399;
-    --danger-bg: rgba(127, 29, 29, 0.5);
-    --danger-text: #fca5a5;
-
-    --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 30px var(--primary-glow);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* --- BASE STYLES --- */
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: #0a0f1a;
+    background-color: var(--bg-body);
     color: var(--text-main);
     margin: 0;
-    padding-top: 70px;
-    transition: background 0.4s ease, color 0.3s ease;
     line-height: 1.6;
     min-height: 100vh;
-    background-image:
-        linear-gradient(to bottom, rgba(10, 15, 26, 0.85), rgba(10, 15, 26, 0.95)),
-        url('bg.png');
-    background-size: cover;
-    background-position: center top;
-    background-attachment: fixed;
+    display: flex;
+    transition: background 0.4s ease, color 0.3s ease;
 }
 
-body.dark-mode {
-    background-image:
-        linear-gradient(to bottom, rgba(3, 7, 18, 0.8), rgba(3, 7, 18, 0.92)),
-        url('bg.png');
+/* Sidebar Layout */
+.app-container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
 }
 
-/* --- NAVBAR (Glass) --- */
-.navbar {
+.main-content {
+    flex: 1;
+    padding: 20px;
+    margin-left: var(--sidebar-width);
+    transition: margin-left 0.3s ease;
+    max-width: 1600px;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding-top: 70px;
+        /* Space for top nav on mobile */
+    }
+}
+
+/* --- LOGO / BRANDING --- */
+.brand-icon {
+    color: var(--primary);
+}
+
+/* --- PERSISTENT SIDEBAR --- */
+.side-drawer {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    height: 60px;
-    background-color: #0a0f1a;
-    background-image: url('header-bg.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    color: var(--nav-text);
+    bottom: 0;
+    width: var(--sidebar-width);
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    z-index: 1000;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-    box-sizing: border-box;
+    padding: 16px 0;
+    z-index: 1001;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 
-.nav-actions {
+.side-drawer:hover {
+    width: var(--sidebar-expanded);
+}
+
+.drawer-link {
+    width: 100%;
+    height: 48px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    padding: 0 20px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+    gap: 20px;
+}
+
+.drawer-link svg {
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
 }
 
-.nav-brand {
+.drawer-link:hover,
+.drawer-link.active {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
+}
+
+.drawer-link.active {
+    border-right: 3px solid var(--primary);
+}
+
+.drawer-label {
+    display: none;
+    /* Only show in expanded or hover? */
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 20px 20px 10px;
+    width: 100%;
+}
+
+.side-drawer:hover .drawer-label {
+    display: block;
+}
+
+/* --- BENTO GRID SYSTEM --- */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-gap: var(--grid-gap);
+    margin-top: 20px;
+}
+
+.bento-grid>.section-header {
+    grid-column: span 12;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 10px 0;
+    color: var(--text-main);
     display: flex;
     align-items: center;
     gap: 8px;
-    font-weight: 800;
-    font-size: 1.2rem;
-    letter-spacing: -0.02em;
-    text-decoration: none;
-    color: var(--nav-text);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
 }
 
-.nav-brand span {
-    background: linear-gradient(135deg, #60a5fa 0%, #a855f7 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+/* --- LOVELACE CARD SYSTEM --- */
+.ha-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s, border-color 0.2s;
+    grid-column: span 4;
+    /* Default 3 cards per row in 12-col */
 }
 
-.nav-brand .brand-icon {
-    stroke: url(#brand-gradient);
-    stroke: #a855f7;
+@media (max-width: 992px) {
+    .ha-card {
+        grid-column: span 6;
+    }
+}
+
+@media (max-width: 600px) {
+    .ha-card {
+        grid-column: span 12;
+    }
+}
+
+.ha-card:hover {
+    box-shadow: var(--shadow);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ha-card-header {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+/* Tile Card */
+.tile-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    grid-column: span 3;
+    /* 4 tiles per row */
+}
+
+.tile-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.tile-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.tile-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.2;
+}
+
+.tile-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Entity Row List */
+.entity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.entity-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.entity-row:last-child {
+    border-bottom: none;
+}
+
+.entity-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--text-secondary);
+    margin-right: 12px;
+}
+
+.entity-name {
+    flex: 1;
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.entity-state {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
 }
 
 .nav-links {

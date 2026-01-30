@@ -81,585 +81,231 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
     <?php include 'head_pwa.php'; ?>
-    <style>
-        .welcome-banner {
-            margin-bottom: 24px;
-        }
-
-        .welcome-banner h2 {
-            margin: 0 0 4px;
-            font-size: 1.5rem;
-        }
-
-        .welcome-banner .date {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 28px;
-        }
-
-        .quick-action {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 16px;
-            background: var(--gradient-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            text-decoration: none;
-            color: var(--text-main);
-            transition: all 0.3s;
-            text-align: center;
-        }
-
-        .quick-action:hover {
-            border-color: var(--primary);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .quick-action .icon {
-            font-size: 1.8rem;
-            margin-bottom: 8px;
-        }
-
-        .quick-action .label {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .summary-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-            text-align: center;
-        }
-
-        .summary-card .title {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .summary-card .value {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .summary-card .sub {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        .summary-card.today {
-            border-left: 4px solid var(--primary);
-        }
-
-        .summary-card.week {
-            border-left: 4px solid var(--success-text);
-        }
-
-        .recent-section h3 {
-            margin: 0 0 16px;
-            font-size: 1rem;
-            color: var(--text-muted);
-        }
-
-        .recent-job {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .recent-job:hover {
-            border-color: var(--primary);
-        }
-
-        .recent-job .info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .recent-job .ticket {
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .recent-job .meta {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        .recent-job .pay {
-            font-weight: 700;
-            color: var(--success-text);
-        }
-
-        .no-jobs {
-            text-align: center;
-            padding: 30px;
-            color: var(--text-muted);
-            background: var(--bg-card);
-            border: 1px dashed var(--border);
-            border-radius: var(--radius);
-        }
-
-        @media (max-width: 500px) {
-            .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-    </style>
 </head>
 
 <body>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
 
-    <?php include 'nav.php'; ?>
+        <main class="main-content">
+            <!-- Glass Header Section -->
+            <div class="welcome-banner">
+                <h2 style="font-weight: 800; letter-spacing: -0.03em;">👋 Hello,
+                    <?= htmlspecialchars(ucfirst($username)) ?></h2>
+                <div class="date" style="font-weight: 500; opacity: 0.8;"><?= $today_formatted ?></div>
+            </div>
 
-    <div class="container">
-
-        <!-- Welcome Banner -->
-        <div class="welcome-banner">
-            <h2>👋 Welcome, <?= htmlspecialchars(ucfirst($username)) ?></h2>
-            <div class="date"><?= $today_formatted ?></div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-            <a href="entry.php" class="quick-action">
-                <div class="icon">📝</div>
-                <div class="label">New Job</div>
-            </a>
-            <a href="smart_entry.php" class="quick-action">
-                <div class="icon">⚡</div>
-                <div class="label">Smart Paste</div>
-            </a>
-            <a href="entry.php?date=<?= $today ?>" class="quick-action">
-                <div class="icon"><?= $is_today_locked ? '🔒' : '📋' ?></div>
-                <div class="label"><?= $is_today_locked ? 'Day Closed' : 'Close Day' ?></div>
-            </a>
-            <a href="dashboard.php" class="quick-action">
-                <div class="icon">📊</div>
-                <div class="label">Analytics</div>
-            </a>
-        </div>
-
-        <!-- Summary Cards -->
-        <div class="summary-grid">
-            <?php
-            include __DIR__ . '/kpi_card.php';
-
-            // Today Card
-            $label = "Today";
-            $value = "$" . number_format($today_total, 2);
-            $class = "positive";
-            $sub = count($today_jobs) . " job" . (count($today_jobs) != 1 ? 's' : '');
-            $onclick = "openTallyModal('day')";
-            $style = "border-left: 4px solid var(--primary);";
-            include __DIR__ . '/kpi_card.php';
-
-            // Week Card
-            $label = "This Week";
-            $value = "$" . number_format($week_total, 2);
-            $class = "";
-            $sub = $week_jobs . " job" . ($week_jobs != 1 ? 's' : '');
-            $onclick = "openTallyModal('week')";
-            $style = "border-left: 4px solid var(--success-text);";
-            include __DIR__ . '/kpi_card.php';
-            ?>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="recent-section">
-            <h3>📋 Recent Activity</h3>
-            <?php if (empty($recent_jobs)): ?>
-                <div class="no-jobs">
-                    No jobs entered yet. <a href="entry.php" style="color: var(--primary);">Add your first job →</a>
+            <div class="bento-grid">
+                <!-- SECTION: QUICK ACTIONS (TOP ROW) -->
+                <div class="section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Quick Actions
                 </div>
-            <?php else: ?>
-                <?php
-                include __DIR__ . '/job_summary_card.php';
-                foreach ($recent_jobs as $job) {
-                    $showDate = true;
-                    include __DIR__ . '/job_summary_card.php';
-                }
-                ?>
-            <?php endif; ?>
-        </div>
 
-        <?php if ($is_admin): ?>
-            <!-- Admin Quick Links -->
-            <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border);">
-                <h3 style="margin: 0 0 16px; font-size: 1rem; color: var(--text-muted);">⚙️ Admin Tools</h3>
-                <div class="quick-actions" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
-                    <a href="admin.php" class="quick-action" style="padding: 14px 12px;">
-                        <div class="icon" style="font-size: 1.4rem;">👥</div>
-                        <div class="label" style="font-size: 0.8rem;">Users</div>
-                    </a>
-                    <a href="financials.php?view=monthly" class="quick-action" style="padding: 14px 12px;">
-                        <div class="icon" style="font-size: 1.4rem;">💰</div>
-                        <div class="label" style="font-size: 0.8rem;">Financials</div>
-                    </a>
-                    <a href="settings.php" class="quick-action" style="padding: 14px 12px;">
-                        <div class="icon" style="font-size: 1.4rem;">⚙️</div>
-                        <div class="label" style="font-size: 0.8rem;">Settings</div>
-                    </a>
-                    <a href="backup.php" class="quick-action" style="padding: 14px 12px;">
-                        <div class="icon" style="font-size: 1.4rem;">💾</div>
-                        <div class="label" style="font-size: 0.8rem;">Backup</div>
-                    </a>
+                <a href="entry.php" class="ha-card tile-card" style="grid-column: span 3; text-decoration: none;">
+                    <div class="tile-icon" style="background: rgba(3, 169, 244, 0.1); color: #03a9f4;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-value">New Job</span>
+                        <span class="tile-label">Manual entry</span>
+                    </div>
+                </a>
+
+                <a href="smart_entry.php" class="ha-card tile-card" style="grid-column: span 3; text-decoration: none;">
+                    <div class="tile-icon" style="background: rgba(255, 152, 0, 0.1); color: #ff9800;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                        </svg>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-value">Smart Paste</span>
+                        <span class="tile-label">From text/clipboard</span>
+                    </div>
+                </a>
+
+                <a href="tools.php" class="ha-card tile-card" style="grid-column: span 3; text-decoration: none;">
+                    <div class="tile-icon" style="background: rgba(156, 39, 176, 0.1); color: #9c27b0;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-value">Search</span>
+                        <span class="tile-label">Find history</span>
+                    </div>
+                </a>
+
+                <a href="entry.php?date=<?= $today ?>" class="ha-card tile-card"
+                    style="grid-column: span 3; text-decoration: none;">
+                    <div class="tile-icon"
+                        style="background: <?= $is_today_locked ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.05)' ?>; color: <?= $is_today_locked ? '#81c784' : 'var(--text-muted)' ?>;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"><?= $is_today_locked ? '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' : '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>' ?></svg>
+                    </div>
+                    <div class="tile-info">
+                        <span class="tile-value"><?= $is_today_locked ? 'Locked' : 'Review' ?></span>
+                        <span class="tile-label">Today's tally</span>
+                    </div>
+                </a>
+
+                <!-- SECTION: STATS (KPIs) -->
+                <div class="section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Performance Summary
+                </div>
+
+                <!-- Today Card -->
+                <div class="ha-card" style="grid-column: span 6; cursor: pointer;" onclick="openTallyModal('day')">
+                    <div class="ha-card-header">TODAY'S EARNINGS</div>
+                    <div style="display:flex; align-items:flex-end; gap:12px;">
+                        <div style="font-size: 3rem; font-weight: 800; color: var(--primary); line-height: 1;">
+                            $<?= number_format($today_total, 2) ?></div>
+                        <div style="font-size: 1.1rem; color: var(--text-muted); padding-bottom: 5px;">/
+                            <?= count($today_jobs) ?> jobs</div>
+                    </div>
+                    <div style="margin-top: 15px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px;">
+                        <div
+                            style="width: min(100%, <?= (count($today_jobs) / 10) * 100 ?>%); height: 100%; background: var(--primary); border-radius: 2px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Week Card -->
+                <div class="ha-card" style="grid-column: span 6; cursor: pointer;" onclick="openTallyModal('week')">
+                    <div class="ha-card-header">THIS WEEK</div>
+                    <div style="display:flex; align-items:flex-end; gap:12px;">
+                        <div style="font-size: 3rem; font-weight: 800; color: var(--success-text); line-height: 1;">
+                            $<?= number_format($week_total, 2) ?></div>
+                        <div style="font-size: 1.1rem; color: var(--text-muted); padding-bottom: 5px;">/
+                            <?= $week_jobs ?> jobs</div>
+                    </div>
+                    <div style="margin-top: 15px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px;">
+                        <div
+                            style="width: min(100%, <?= ($week_jobs / 40) * 100 ?>%); height: 100%; background: var(--success-text); border-radius: 2px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: RECENT ACTIVITY -->
+                <div class="section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Recent Jobs
+                </div>
+
+                <div class="ha-card" style="grid-column: span 12;">
+                    <div class="entity-list">
+                        <?php if (empty($recent_jobs)): ?>
+                            <div style="padding: 20px; text-align: center; color: var(--text-muted);">No recent jobs found.
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($recent_jobs as $job):
+                                $job_pay = calculate_job_pay($job, $rates);
+                                ?>
+                                <a href="edit_job.php?id=<?= $job['id'] ?>" class="entity-row" style="text-decoration: none;">
+                                    <div class="entity-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="9" cy="7" r="4"></circle>
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="entity-name">
+                                        <div style="font-weight: 600; color: var(--text-main);">
+                                            <?= htmlspecialchars($job['ticket_number']) ?></div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                                            <?= htmlspecialchars($job['cust_lname']) ?>, <?= htmlspecialchars($job['city']) ?>
+                                        </div>
+                                    </div>
+                                    <div class="entity-state" style="color: var(--success-text);">
+                                        $<?= number_format($job_pay, 2) ?>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Footer / Secondary Stats -->
+                <div class="ha-card"
+                    style="grid-column: span 12; background: transparent; border: none; box-shadow: none; text-align: center; margin-top: 40px;">
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">
+                        System v2.5 | PWA Enabled | Lovelace UI Engine
+                    </div>
                 </div>
             </div>
-        <?php endif; ?>
-
+        </main>
     </div>
 
     <!-- Tally Breakdown Modal -->
-    <div id="tallyModal"
-        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; overflow-y:auto; padding:20px;"
-        onclick="if(event.target===this) closeTallyModal()">
-        <div
-            style="background:var(--bg-card); max-width:500px; margin:40px auto; border-radius:12px; box-shadow:0 25px 50px rgba(0,0,0,0.25); overflow:hidden;">
-            <div
-                style="background:linear-gradient(135deg, var(--primary), #1e40af); color:white; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="margin:0; font-size:1.1rem;" id="tallyModalTitle">Breakdown</h3>
-                <button onclick="closeTallyModal()"
-                    style="background:rgba(255,255,255,0.2); border:none; color:white; font-size:1.2rem; width:32px; height:32px; border-radius:50%; cursor:pointer;">×</button>
+    <div id="tallyModal" class="modal"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center; padding:20px;">
+        <div class="modal-content"
+            style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); max-width: 600px; width:100%; max-height: 90vh; overflow-y:auto; position:relative;">
+            <button onclick="document.getElementById('tallyModal').style.display='none'"
+                style="position:absolute; top:15px; right:15px; background:transparent; border:none; color:var(--text-muted); cursor:pointer;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div id="tallyModalContent" style="padding: 24px;">
+                <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                    <p>Calculating details...</p>
+                </div>
             </div>
-            <div id="tallyModalContent" style="padding:20px; max-height:70vh; overflow-y:auto;"></div>
         </div>
     </div>
 
     <script>
-        // Breakdown data passed from PHP
-        <?php
-        // Build breakdown data for daily jobs
-        $day_breakdown = [];
-        $day_per_diem = 0;
-        $day_std_pd = 0;
-        $day_ext_pd = 0;
+        async function openTallyModal(range) {
+            const modal = document.getElementById('tallyModal');
+            const content = document.getElementById('tallyModalContent');
+            modal.style.display = 'flex';
+            content.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);"><p>Calculating details...</p></div>';
 
-        if (!empty($today_jobs)) {
-            foreach ($today_jobs as $job) {
-                // We likely need to re-fetch full job data if today_jobs assumes a simple select
-                // But typically index.php select * so it should be fine.
-                // However, entry.php used calculate_job_details.
-                // Let's use today_jobs directly but ensure we have all fields.
-                if (function_exists('calculate_job_details')) {
-                    $items = calculate_job_details($job, $rates);
-                } else {
-                    $items = [];
-                }
-                $day_breakdown[] = [
-                    'ticket' => $job['ticket_number'] ?: 'N/A',
-                    'type' => $job['install_type'],
-                    'total' => (float) $job['pay_amount'],
-                    'items' => $items
-                ];
+            try {
+                const response = await fetch(`get_daily_tally.php?range=${range}&user_id=<?= $user_id ?>`);
+                const html = await response.text();
+                content.innerHTML = html;
+            } catch (e) {
+                content.innerHTML = '<div class="alert danger">Failed to load data.</div>';
             }
         }
 
-        // Calculate day per diem breakdown
-        if (isset($today_pd) && $today_pd > 0) {
-            $day_per_diem = $today_pd;
-            // Check if it includes standard and/or extra
-            if (isset($rate_std) && isset($std_pd_rate) && ($has_work_today || $is_sunday)) {
-                $day_std_pd = $std_pd_rate;
+        window.onclick = function (event) {
+            if (event.target == document.getElementById('tallyModal')) {
+                document.getElementById('tallyModal').style.display = 'none';
             }
-            if (isset($log) && $log && $log['extra_per_diem'] == 1 && isset($rates['extra_pd'])) {
-                $day_ext_pd = (float) $rates['extra_pd'];
-            }
-        }
-
-        // Ensure accurate PD breakdown if logic above was fuzzy
-        // Simple fallback: If today_pd > 0, we credit it. 
-        // We'll trust the $today_pd scalar, but for display we try to split it.
-        if ($day_std_pd + $day_ext_pd != $today_pd) {
-            // Logic mismatch fix: just use today_pd as std if not split
-            if ($day_std_pd == 0 && $day_ext_pd == 0)
-                $day_std_pd = $today_pd;
-        }
-
-        // Build breakdown for weekly jobs - grouped by day
-        $week_by_day = [];
-        $week_per_diem_total = 0;
-
-        // We need to fetch detailed weekly jobs for the modal
-        // index.php only fetched summary count/total.
-        $w_stmt = $db->prepare("SELECT * FROM jobs WHERE user_id = ? AND install_date BETWEEN ? AND ? ORDER BY install_date ASC");
-        $w_stmt->execute([$user_id, $start_of_week, $end_of_week]);
-        $week_jobs_detailed = $w_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $wl_stmt = $db->prepare("SELECT log_date, extra_per_diem FROM daily_logs WHERE user_id = ? AND log_date BETWEEN ? AND ?");
-        $wl_stmt->execute([$user_id, $start_of_week, $end_of_week]);
-        $week_logs_all = $wl_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-
-        if (!empty($week_jobs_detailed)) {
-            foreach ($week_jobs_detailed as $full_job) {
-                $wj_date = $full_job['install_date'];
-                if (!isset($week_by_day[$wj_date])) {
-                    $week_by_day[$wj_date] = [
-                        'date' => $wj_date,
-                        'date_display' => date('D m/d', strtotime($wj_date)),
-                        'jobs' => [],
-                        'jobs_total' => 0,
-                        'std_pd' => 0,
-                        'ext_pd' => 0,
-                        'day_total' => 0
-                    ];
-                }
-
-                if (function_exists('calculate_job_details')) {
-                    $items = calculate_job_details($full_job, $rates);
-                } else {
-                    $items = [];
-                }
-
-                $week_by_day[$wj_date]['jobs'][] = [
-                    'ticket' => $full_job['ticket_number'] ?: 'N/A',
-                    'type' => $full_job['install_type'],
-                    'total' => (float) $full_job['pay_amount'],
-                    'items' => $items
-                ];
-                $week_by_day[$wj_date]['jobs_total'] += (float) $full_job['pay_amount'];
-            }
-        }
-
-        // We also need to add days that have NO jobs but might have Per Diem (e.g. Sunday)
-        // Iterate through all days of week
-        $current_loop_date = $start_of_week;
-        while (strtotime($current_loop_date) <= strtotime($end_of_week)) {
-            $wj_date = $current_loop_date;
-            if (!isset($week_by_day[$wj_date])) {
-                // Only create entry if there's PD to show
-                $is_sun = (date('w', strtotime($wj_date)) == 0);
-                $has_ext = (isset($week_logs_all[$wj_date]) && $week_logs_all[$wj_date] == 1);
-
-                // Note: We don't know if 'has_work' is true for empty job list, obviously false.
-                // But Sunday always gets PD.
-                if ($is_sun || $has_ext) {
-                    $week_by_day[$wj_date] = [
-                        'date' => $wj_date,
-                        'date_display' => date('D m/d', strtotime($wj_date)),
-                        'jobs' => [],
-                        'jobs_total' => 0,
-                        'std_pd' => 0,
-                        'ext_pd' => 0,
-                        'day_total' => 0
-                    ];
-                }
-            }
-            $current_loop_date = date('Y-m-d', strtotime($current_loop_date . ' +1 day'));
-        }
-
-        // Add per diem for each day
-        foreach ($week_by_day as $wdate => &$day_data) {
-            $is_sun = (date('w', strtotime($wdate)) == 0);
-            $has_work = false;
-            foreach ($day_data['jobs'] as $j) {
-                if ($j['type'] !== 'DO' && $j['type'] !== 'ND') {
-                    $has_work = true;
-                    break;
-                }
-            }
-            // Has ND job? That also qualifies for per diem
-            $has_nd = false;
-            foreach ($day_data['jobs'] as $j) {
-                if ($j['type'] === 'ND') {
-                    $has_nd = true;
-                    break;
-                }
-            }
-
-            if ($is_sun || $has_work || $has_nd) {
-                $day_data['std_pd'] = $std_pd_rate ?? 0;
-                $week_per_diem_total += $day_data['std_pd'];
-            }
-
-            // Check for extra per diem from daily log
-            if (isset($week_logs_all[$wdate]) && $week_logs_all[$wdate] == 1) {
-                $day_data['ext_pd'] = (float) ($rates['extra_pd'] ?? 0);
-                $week_per_diem_total += $day_data['ext_pd'];
-            }
-
-            $day_data['day_total'] = $day_data['jobs_total'] + $day_data['std_pd'] + $day_data['ext_pd'];
-        }
-        unset($day_data);
-
-        // Sort by date
-        ksort($week_by_day);
-        $week_by_day = array_values($week_by_day);
-
-        // Lead Pay Logic
-        $lead_pay_amt = 0;
-        if (function_exists('get_lead_pay_amount')) {
-            $lead_pay_amt = get_lead_pay_amount($db);
-        }
-        $has_billable = false;
-        if (function_exists('has_billable_work')) {
-            $has_billable = has_billable_work($db, $user_id, $start_of_week, $end_of_week);
-        }
-        $final_lead_pay = ($has_billable && $lead_pay_amt > 0) ? $lead_pay_amt : 0;
-        ?>
-        var dayBreakdown = <?= json_encode($day_breakdown) ?>;
-        var dayStdPd = <?= json_encode($day_std_pd) ?>;
-        var dayExtPd = <?= json_encode($day_ext_pd) ?>;
-        var dayTotal = <?= json_encode($today_total) ?>;
-        var weekByDay = <?= json_encode($week_by_day) ?>;
-        var weekTotal = <?= json_encode($week_total) ?>;
-        var leadPay = <?= json_encode($final_lead_pay) ?>;
-
-        function openTallyModal(type) {
-            var modal = document.getElementById('tallyModal');
-            var title = document.getElementById('tallyModalTitle');
-            var content = document.getElementById('tallyModalContent');
-
-            title.innerHTML = type === 'day' ? '📅 Day Breakdown' : '📆 Week Breakdown';
-
-            var html = '';
-            var grandJobsTotal = 0;
-            var grandPdTotal = 0;
-
-            if (type === 'day') {
-                // Daily breakdown - simple list of jobs
-                if (dayBreakdown.length === 0) {
-                    html += '<div style="text-align:center; color:var(--text-muted); padding:20px;">No jobs found</div>';
-                } else {
-                    dayBreakdown.forEach(function (job) {
-                        grandJobsTotal += job.total;
-                        html += renderJobCard(job);
-                    });
-                }
-
-                // Per diem section for day
-                var totalPd = dayStdPd + dayExtPd;
-                if (totalPd > 0) {
-                    html += '<div style="background:var(--bg-input); border-radius:8px; padding:12px; margin-bottom:10px; border:1px solid var(--primary); border-left:3px solid var(--primary);">';
-                    html += '<div style="font-size:0.85rem; color:var(--primary); font-weight:bold;">Per Diem</div>';
-                    html += '<div style="font-size:0.8rem; margin-top:5px;">';
-                    if (dayStdPd > 0) html += '<div style="display:flex; justify-content:space-between;"><span>Standard</span><span>$' + dayStdPd.toFixed(2) + '</span></div>';
-                    if (dayExtPd > 0) html += '<div style="display:flex; justify-content:space-between;"><span>Extra PD</span><span>$' + dayExtPd.toFixed(2) + '</span></div>';
-                    html += '</div></div>';
-                    grandPdTotal = totalPd;
-                }
-
-                // Summary
-                html += '<div style="border-top:2px solid var(--border); margin-top:15px; padding-top:15px;">';
-                html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem;"><span>Jobs</span><span>$' + grandJobsTotal.toFixed(2) + '</span></div>';
-                if (grandPdTotal > 0) html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--primary);"><span>Per Diem</span><span>$' + grandPdTotal.toFixed(2) + '</span></div>';
-                html += '<div style="display:flex; justify-content:space-between; padding:8px 0; font-size:1.1rem; font-weight:bold; border-top:1px solid var(--border); margin-top:8px;">';
-                html += '<span>Total</span><span style="color:var(--primary);">$' + dayTotal.toFixed(2) + '</span></div></div>';
-
-            } else {
-                // Weekly breakdown - grouped by day
-                if (weekByDay.length === 0) {
-                    html += '<div style="text-align:center; color:var(--text-muted); padding:20px;">No jobs found</div>';
-                } else {
-                    weekByDay.forEach(function (day) {
-                        html += '<div style="margin-bottom:15px;">';
-                        html += '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:linear-gradient(135deg, var(--primary), #1e40af); color:white; border-radius:8px 8px 0 0; font-weight:bold;">';
-                        html += '<span>' + day.date_display + '</span>';
-                        html += '<span>$' + day.day_total.toFixed(2) + '</span>';
-                        html += '</div>';
-                        html += '<div style="background:var(--bg-input); border:1px solid var(--border); border-top:none; border-radius:0 0 8px 8px; padding:10px;">';
-
-                        // Jobs for this day
-                        day.jobs.forEach(function (job) {
-                            grandJobsTotal += job.total;
-                            html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem;">';
-                            html += '<span><span style="color:var(--primary); font-weight:600;">' + job.ticket + '</span> <span style="color:var(--text-muted); font-size:0.8rem;">(' + job.type + ')</span></span>';
-                            html += '<span style="font-weight:bold;">$' + job.total.toFixed(2) + '</span>';
-                            html += '</div>';
-
-                            // Code breakdown under each job
-                            if (job.items && job.items.length > 0) {
-                                html += '<div style="padding-left:10px; margin-bottom:5px;">';
-                                job.items.forEach(function (item) {
-                                    html += '<div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">';
-                                    html += '<span>' + item.code + ' × ' + item.qty + '</span>';
-                                    html += '<span>$' + item.total.toFixed(2) + '</span></div>';
-                                });
-                                html += '</div>';
-                            }
-                        });
-
-                        // Per diem for this day
-                        var dayPd = day.std_pd + day.ext_pd;
-                        if (dayPd > 0) {
-                            grandPdTotal += dayPd;
-                            html += '<div style="border-top:1px dashed var(--border); margin-top:5px; padding-top:5px;">';
-                            if (day.std_pd > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--primary);"><span>Per Diem</span><span>$' + day.std_pd.toFixed(2) + '</span></div>';
-                            if (day.ext_pd > 0) html += '<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--primary);"><span>Extra PD</span><span>$' + day.ext_pd.toFixed(2) + '</span></div>';
-                            html += '</div>';
-                        }
-
-                        html += '</div></div>';
-                    });
-                }
-
-                // Weekly summary
-                html += '<div style="border-top:2px solid var(--border); margin-top:15px; padding-top:15px;">';
-                html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem;"><span>Jobs Subtotal</span><span>$' + grandJobsTotal.toFixed(2) + '</span></div>';
-                if (grandPdTotal > 0) html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--primary);"><span>Per Diem Total</span><span>$' + grandPdTotal.toFixed(2) + '</span></div>';
-                if (leadPay > 0) html += '<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.9rem; color:var(--text-muted);"><span>Lead Pay</span><span>$' + leadPay.toFixed(2) + '</span></div>';
-                html += '<div style="display:flex; justify-content:space-between; padding:8px 0; font-size:1.1rem; font-weight:bold; border-top:1px solid var(--border); margin-top:8px;">';
-                html += '<span>Week Total</span><span style="color:var(--success-text);">$' + weekTotal.toFixed(2) + '</span></div></div>';
-            }
-
-            content.innerHTML = html;
-            modal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-
-        function renderJobCard(job) {
-            var html = '<div style="background:var(--bg-input); border-radius:8px; padding:12px; margin-bottom:10px; border:1px solid var(--border);">';
-            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">';
-            html += '<div><span style="font-weight:bold; color:var(--primary);">' + job.ticket + '</span>';
-            html += '<div style="font-size:0.8rem; color:var(--text-muted);">' + job.type + '</div></div>';
-            html += '<div style="font-weight:bold; color:var(--success-text);">$' + job.total.toFixed(2) + '</div>';
-            html += '</div>';
-
-            if (job.items && job.items.length > 0) {
-                html += '<div style="font-size:0.8rem; border-top:1px dashed var(--border); padding-top:8px;">';
-                job.items.forEach(function (item) {
-                    html += '<div style="display:flex; justify-content:space-between; padding:2px 0;">';
-                    html += '<span style="color:var(--text-muted);">' + item.code + ' × ' + item.qty + '</span>';
-                    html += '<span>$' + item.total.toFixed(2) + '</span></div>';
-                });
-                html += '</div>';
-            }
-            html += '</div>';
-            return html;
-        }
-
-        function closeTallyModal() {
-            document.getElementById('tallyModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
         }
     </script>
 </body>

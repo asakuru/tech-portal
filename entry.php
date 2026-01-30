@@ -646,21 +646,20 @@ else {
 </head>
 
 <body onload="toggleFields(); initAutoResize();">
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
 
-    <?php include 'nav.php'; ?>
-
-    <div class="container">
-
-        <?php if (!$show_entry_mode): ?>
-            <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:end;">
-                <div>
-                    <h2 style="margin:0;">📅 Month to Date</h2>
-                    <div style="color:var(--text-muted); font-size:0.9rem;"><?= date('F 1') ?> - <?= date('F j, Y') ?></div>
+            <?php if (!$show_entry_mode): ?>
+                <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:end;">
+                    <div>
+                        <h2 style="margin:0;">📅 Month to Date</h2>
+                        <div style="color:var(--text-muted); font-size:0.9rem;"><?= date('F 1') ?> - <?= date('F j, Y') ?></div>
+                    </div>
+                    <div style="text-align:right;"><a href="entry.php?view=entry" class="btn" style="padding:6px 12px;">📝
+                            Manually Enter
+                            Job</a> <a href="financials.php" class="btn" style="padding:6px 12px;">Full Year &rarr;</a></div>
                 </div>
-                <div style="text-align:right;"><a href="entry.php?view=entry" class="btn" style="padding:6px 12px;">📝
-                        Manually Enter
-                        Job</a> <a href="financials.php" class="btn" style="padding:6px 12px;">Full Year &rarr;</a></div>
-            </div>
             <div class="kpi-grid">
                 <?php
                 include __DIR__ . '/kpi_card.php';
@@ -1319,6 +1318,7 @@ else {
 
         if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
     </script>
+        </main>
+    </div>
 </body>
-
 </html>

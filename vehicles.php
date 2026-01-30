@@ -331,273 +331,274 @@ unset($v);
 </head>
 
 <body>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
 
-    <?php include 'nav.php'; ?>
-
-    <div class="container">
-
-        <?php if ($msg): ?>
-            <div class="alert" style="border-left:4px solid var(--success-text); margin-bottom:20px;">
-                <?= htmlspecialchars($msg) ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($error): ?>
-            <div class="alert" style="background:var(--danger-bg); color:var(--danger-text); margin-bottom:20px;">
-                <?= htmlspecialchars($error) ?>
-            </div>
-        <?php endif; ?>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-            <div>
-                <h2 style="margin:0;">🚗 My Vehicles</h2>
-                <p style="color:var(--text-muted); margin:5px 0 0;">Track maintenance, fuel, and total cost of ownership
-                </p>
-            </div>
-            <button class="btn" onclick="toggleAddForm()" id="addBtn">+ Add Vehicle</button>
-        </div>
-
-        <!-- ADD VEHICLE FORM -->
-        <div class="box add-vehicle-form" id="addForm">
-            <h3 style="margin-top:0;">Add New Vehicle</h3>
-            <form method="post">
-                <?= csrf_field() ?>
-
-                <div class="form-section">
-                    <h4>🚙 Basic Info</h4>
-                    <div class="form-grid">
-                        <div>
-                            <label>Year *</label>
-                            <input type="number" name="year" min="1900" max="2030" value="<?= date('Y') ?>" required>
-                        </div>
-                        <div>
-                            <label>Make *</label>
-                            <input type="text" name="make" placeholder="e.g., Toyota" required>
-                        </div>
-                        <div>
-                            <label>Model *</label>
-                            <input type="text" name="model" placeholder="e.g., Tacoma" required>
-                        </div>
-                        <div>
-                            <label>Trim</label>
-                            <input type="text" name="trim" placeholder="e.g., TRD Off-Road">
-                        </div>
-                        <div>
-                            <label>Nickname</label>
-                            <input type="text" name="nickname" placeholder="e.g., Work Truck">
-                        </div>
-                        <div>
-                            <label>Body Style</label>
-                            <select name="body_style">
-                                <option value="">Select...</option>
-                                <option value="Sedan">Sedan</option>
-                                <option value="Coupe">Coupe</option>
-                                <option value="Hatchback">Hatchback</option>
-                                <option value="SUV">SUV</option>
-                                <option value="Crossover">Crossover</option>
-                                <option value="Truck">Truck</option>
-                                <option value="Van">Van</option>
-                                <option value="Wagon">Wagon</option>
-                                <option value="Convertible">Convertible</option>
-                            </select>
-                        </div>
-                    </div>
+            <?php if ($msg): ?>
+                <div class="alert" style="border-left:4px solid var(--success-text); margin-bottom:20px;">
+                    <?= htmlspecialchars($msg) ?>
                 </div>
+            <?php endif; ?>
 
-                <div class="form-section">
-                    <h4>🔧 Technical Specs</h4>
-                    <div class="form-grid">
-                        <div>
-                            <label>VIN</label>
-                            <input type="text" name="vin" maxlength="17" placeholder="17-character VIN">
-                        </div>
-                        <div>
-                            <label>License Plate</label>
-                            <input type="text" name="license_plate" placeholder="ABC-1234">
-                        </div>
-                        <div>
-                            <label>State/Province</label>
-                            <input type="text" name="state_province" placeholder="e.g., NY">
-                        </div>
-                        <div>
-                            <label>Drivetrain</label>
-                            <select name="drivetrain">
-                                <option value="FWD">FWD</option>
-                                <option value="RWD">RWD</option>
-                                <option value="AWD">AWD</option>
-                                <option value="4WD">4WD</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Engine Code</label>
-                            <input type="text" name="engine_code" placeholder="e.g., 1GR-FE">
-                        </div>
-                        <div>
-                            <label>Displacement (L)</label>
-                            <input type="number" name="engine_displacement" step="0.1" placeholder="e.g., 3.5">
-                        </div>
-                        <div>
-                            <label>Cylinders</label>
-                            <input type="number" name="engine_cylinders" min="1" max="16" placeholder="e.g., 6">
-                        </div>
-                        <div>
-                            <label>Transmission</label>
-                            <select name="transmission_type">
-                                <option value="Automatic">Automatic</option>
-                                <option value="Manual">Manual</option>
-                                <option value="CVT">CVT</option>
-                                <option value="DCT">DCT</option>
-                            </select>
-                        </div>
-                    </div>
+            <?php if ($error): ?>
+                <div class="alert" style="background:var(--danger-bg); color:var(--danger-text); margin-bottom:20px;">
+                    <?= htmlspecialchars($error) ?>
                 </div>
+            <?php endif; ?>
 
-                <div class="form-section">
-                    <h4>💵 Purchase & Mileage</h4>
-                    <div class="form-grid">
-                        <div>
-                            <label>Purchase Date</label>
-                            <input type="date" name="purchase_date">
-                        </div>
-                        <div>
-                            <label>Purchase Price</label>
-                            <input type="text" name="purchase_price" class="money-input" placeholder="$0.00">
-                        </div>
-                        <div>
-                            <label>Purchase Mileage</label>
-                            <input type="number" name="purchase_mileage" placeholder="0">
-                        </div>
-                        <div>
-                            <label>Current Mileage</label>
-                            <input type="number" name="current_mileage" placeholder="0">
-                        </div>
-                        <div>
-                            <label>Exterior Color</label>
-                            <input type="text" name="exterior_color" placeholder="e.g., Silver">
-                        </div>
-                        <div>
-                            <label>Paint Code</label>
-                            <input type="text" name="paint_code" placeholder="e.g., 1G3">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h4>🛞 Tire Info</h4>
-                    <div class="form-grid">
-                        <div>
-                            <label>Tire Size</label>
-                            <input type="text" name="oem_tire_size" placeholder="e.g., 265/70R17">
-                        </div>
-                        <div>
-                            <label>Front PSI</label>
-                            <input type="number" name="tire_pressure_front" value="32">
-                        </div>
-                        <div>
-                            <label>Rear PSI</label>
-                            <input type="number" name="tire_pressure_rear" value="32">
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-bottom:20px;">
-                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-                        <input type="checkbox" name="is_primary" value="1">
-                        <span>Set as primary vehicle</span>
-                    </label>
-                </div>
-
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
                 <div>
-                    <label>Notes</label>
-                    <textarea name="notes" rows="2" placeholder="Any additional notes..."></textarea>
+                    <h2 style="margin:0;">🚗 My Vehicles</h2>
+                    <p style="color:var(--text-muted); margin:5px 0 0;">Track maintenance, fuel, and total cost of
+                        ownership
+                    </p>
                 </div>
-
-                <div style="margin-top:20px; display:flex; gap:10px;">
-                    <button type="submit" name="add_vehicle" class="btn">💾 Save Vehicle</button>
-                    <button type="button" class="btn btn-secondary" onclick="toggleAddForm()">Cancel</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- VEHICLE CARDS -->
-        <?php if (empty($vehicles)): ?>
-            <div class="empty-state">
-                <div style="font-size:4rem;">🚗</div>
-                <h3>No Vehicles Yet</h3>
-                <p>Add your first vehicle to start tracking maintenance, fuel economy, and costs.</p>
-                <button class="btn" onclick="toggleAddForm()">+ Add Your First Vehicle</button>
+                <button class="btn" onclick="toggleAddForm()" id="addBtn">+ Add Vehicle</button>
             </div>
-        <?php else: ?>
-            <div class="vehicle-grid">
-                <?php foreach ($vehicles as $v): ?>
-                    <div class="vehicle-card <?= $v['is_primary_vehicle'] ? 'primary' : '' ?>">
-                        <div class="vehicle-header">
+
+            <!-- ADD VEHICLE FORM -->
+            <div class="box add-vehicle-form" id="addForm">
+                <h3 style="margin-top:0;">Add New Vehicle</h3>
+                <form method="post">
+                    <?= csrf_field() ?>
+
+                    <div class="form-section">
+                        <h4>🚙 Basic Info</h4>
+                        <div class="form-grid">
                             <div>
-                                <h3 class="vehicle-title">
-                                    <?= htmlspecialchars($v['year'] . ' ' . $v['make'] . ' ' . $v['model']) ?>
-                                </h3>
-                                <div class="vehicle-subtitle">
-                                    <?= htmlspecialchars($v['trim']) ?>
-                                    <?php if ($v['engine_displacement']): ?>
-                                        • <?= $v['engine_displacement'] ?>L
-                                    <?php endif; ?>
-                                    <?php if ($v['drivetrain']): ?>
-                                        • <?= $v['drivetrain'] ?>
-                                    <?php endif; ?>
-                                </div>
+                                <label>Year *</label>
+                                <input type="number" name="year" min="1900" max="2030" value="<?= date('Y') ?>"
+                                    required>
                             </div>
-                            <?php if ($v['nickname']): ?>
-                                <span class="vehicle-nickname"><?= htmlspecialchars($v['nickname']) ?></span>
-                            <?php endif; ?>
-                        </div>
-
-                        <div class="vehicle-meta">
-                            <?php if ($v['license_plate']): ?>
-                                <span>🪪 <?= htmlspecialchars($v['license_plate']) ?></span>
-                            <?php endif; ?>
-                            <span>📍 <?= number_format(floatval($v['current_mileage'])) ?> mi</span>
-                        </div>
-
-                        <div class="vehicle-stats">
-                            <div class="stat-item">
-                                <div class="stat-value"><?= $v['service_count'] ?></div>
-                                <div class="stat-label">Services</div>
+                            <div>
+                                <label>Make *</label>
+                                <input type="text" name="make" placeholder="e.g., Toyota" required>
                             </div>
-                            <div class="stat-item">
-                                <div class="stat-value">
-                                    <?= floatval($v['avg_mpg']) > 0 ? number_format(floatval($v['avg_mpg']), 1) : '--' ?>
-                                </div>
-                                <div class="stat-label">Avg MPG</div>
+                            <div>
+                                <label>Model *</label>
+                                <input type="text" name="model" placeholder="e.g., Tacoma" required>
                             </div>
-                            <div class="stat-item">
-                                <div class="stat-value">
-                                    $<?= number_format(floatval($v['total_service_cost']) + floatval($v['total_fuel_cost'])) ?>
-                                </div>
-                                <div class="stat-label">Total Cost</div>
+                            <div>
+                                <label>Trim</label>
+                                <input type="text" name="trim" placeholder="e.g., TRD Off-Road">
                             </div>
-                        </div>
-
-                        <?php if ($v['last_service']): ?>
-                            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;">
-                                Last: <?= htmlspecialchars($v['last_service']['service_type']) ?>
-                                (<?= date('M j', strtotime($v['last_service']['service_date'])) ?>)
+                            <div>
+                                <label>Nickname</label>
+                                <input type="text" name="nickname" placeholder="e.g., Work Truck">
                             </div>
-                        <?php endif; ?>
-
-                        <div class="vehicle-actions">
-                            <a href="vehicle_edit.php?id=<?= $v['id'] ?>" class="btn btn-small">✏️ Edit</a>
-                            <a href="vehicle_edit.php?id=<?= $v['id'] ?>&tab=service" class="btn btn-small btn-secondary">🔧
-                                Service</a>
-                            <a href="vehicle_edit.php?id=<?= $v['id'] ?>&tab=fuel" class="btn btn-small btn-secondary">⛽
-                                Fuel</a>
-                            <a href="?delete=<?= $v['id'] ?>"
-                                onclick="return confirm('Delete this vehicle and all its records?')"
-                                class="btn btn-small btn-danger">🗑️</a>
+                            <div>
+                                <label>Body Style</label>
+                                <select name="body_style">
+                                    <option value="">Select...</option>
+                                    <option value="Sedan">Sedan</option>
+                                    <option value="Coupe">Coupe</option>
+                                    <option value="Hatchback">Hatchback</option>
+                                    <option value="SUV">SUV</option>
+                                    <option value="Crossover">Crossover</option>
+                                    <option value="Truck">Truck</option>
+                                    <option value="Van">Van</option>
+                                    <option value="Wagon">Wagon</option>
+                                    <option value="Convertible">Convertible</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                <?php endforeach; ?>
+
+                    <div class="form-section">
+                        <h4>🔧 Technical Specs</h4>
+                        <div class="form-grid">
+                            <div>
+                                <label>VIN</label>
+                                <input type="text" name="vin" maxlength="17" placeholder="17-character VIN">
+                            </div>
+                            <div>
+                                <label>License Plate</label>
+                                <input type="text" name="license_plate" placeholder="ABC-1234">
+                            </div>
+                            <div>
+                                <label>State/Province</label>
+                                <input type="text" name="state_province" placeholder="e.g., NY">
+                            </div>
+                            <div>
+                                <label>Drivetrain</label>
+                                <select name="drivetrain">
+                                    <option value="FWD">FWD</option>
+                                    <option value="RWD">RWD</option>
+                                    <option value="AWD">AWD</option>
+                                    <option value="4WD">4WD</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Engine Code</label>
+                                <input type="text" name="engine_code" placeholder="e.g., 1GR-FE">
+                            </div>
+                            <div>
+                                <label>Displacement (L)</label>
+                                <input type="number" name="engine_displacement" step="0.1" placeholder="e.g., 3.5">
+                            </div>
+                            <div>
+                                <label>Cylinders</label>
+                                <input type="number" name="engine_cylinders" min="1" max="16" placeholder="e.g., 6">
+                            </div>
+                            <div>
+                                <label>Transmission</label>
+                                <select name="transmission_type">
+                                    <option value="Automatic">Automatic</option>
+                                    <option value="Manual">Manual</option>
+                                    <option value="CVT">CVT</option>
+                                    <option value="DCT">DCT</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>💵 Purchase & Mileage</h4>
+                        <div class="form-grid">
+                            <div>
+                                <label>Purchase Date</label>
+                                <input type="date" name="purchase_date">
+                            </div>
+                            <div>
+                                <label>Purchase Price</label>
+                                <input type="text" name="purchase_price" class="money-input" placeholder="$0.00">
+                            </div>
+                            <div>
+                                <label>Purchase Mileage</label>
+                                <input type="number" name="purchase_mileage" placeholder="0">
+                            </div>
+                            <div>
+                                <label>Current Mileage</label>
+                                <input type="number" name="current_mileage" placeholder="0">
+                            </div>
+                            <div>
+                                <label>Exterior Color</label>
+                                <input type="text" name="exterior_color" placeholder="e.g., Silver">
+                            </div>
+                            <div>
+                                <label>Paint Code</label>
+                                <input type="text" name="paint_code" placeholder="e.g., 1G3">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>🛞 Tire Info</h4>
+                        <div class="form-grid">
+                            <div>
+                                <label>Tire Size</label>
+                                <input type="text" name="oem_tire_size" placeholder="e.g., 265/70R17">
+                            </div>
+                            <div>
+                                <label>Front PSI</label>
+                                <input type="number" name="tire_pressure_front" value="32">
+                            </div>
+                            <div>
+                                <label>Rear PSI</label>
+                                <input type="number" name="tire_pressure_rear" value="32">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                            <input type="checkbox" name="is_primary" value="1">
+                            <span>Set as primary vehicle</span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label>Notes</label>
+                        <textarea name="notes" rows="2" placeholder="Any additional notes..."></textarea>
+                    </div>
+
+                    <div style="margin-top:20px; display:flex; gap:10px;">
+                        <button type="submit" name="add_vehicle" class="btn">💾 Save Vehicle</button>
+                        <button type="button" class="btn btn-secondary" onclick="toggleAddForm()">Cancel</button>
+                    </div>
+                </form>
             </div>
-        <?php endif; ?>
+
+            <!-- VEHICLE CARDS -->
+            <?php if (empty($vehicles)): ?>
+                <div class="empty-state">
+                    <div style="font-size:4rem;">🚗</div>
+                    <h3>No Vehicles Yet</h3>
+                    <p>Add your first vehicle to start tracking maintenance, fuel economy, and costs.</p>
+                    <button class="btn" onclick="toggleAddForm()">+ Add Your First Vehicle</button>
+                </div>
+            <?php else: ?>
+                <div class="vehicle-grid">
+                    <?php foreach ($vehicles as $v): ?>
+                        <div class="vehicle-card <?= $v['is_primary_vehicle'] ? 'primary' : '' ?>">
+                            <div class="vehicle-header">
+                                <div>
+                                    <h3 class="vehicle-title">
+                                        <?= htmlspecialchars($v['year'] . ' ' . $v['make'] . ' ' . $v['model']) ?>
+                                    </h3>
+                                    <div class="vehicle-subtitle">
+                                        <?= htmlspecialchars($v['trim']) ?>
+                                        <?php if ($v['engine_displacement']): ?>
+                                            • <?= $v['engine_displacement'] ?>L
+                                        <?php endif; ?>
+                                        <?php if ($v['drivetrain']): ?>
+                                            • <?= $v['drivetrain'] ?>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <?php if ($v['nickname']): ?>
+                                    <span class="vehicle-nickname"><?= htmlspecialchars($v['nickname']) ?></span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="vehicle-meta">
+                                <?php if ($v['license_plate']): ?>
+                                    <span>🪪 <?= htmlspecialchars($v['license_plate']) ?></span>
+                                <?php endif; ?>
+                                <span>📍 <?= number_format(floatval($v['current_mileage'])) ?> mi</span>
+                            </div>
+
+                            <div class="vehicle-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value"><?= $v['service_count'] ?></div>
+                                    <div class="stat-label">Services</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">
+                                        <?= floatval($v['avg_mpg']) > 0 ? number_format(floatval($v['avg_mpg']), 1) : '--' ?>
+                                    </div>
+                                    <div class="stat-label">Avg MPG</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">
+                                        $<?= number_format(floatval($v['total_service_cost']) + floatval($v['total_fuel_cost'])) ?>
+                                    </div>
+                                    <div class="stat-label">Total Cost</div>
+                                </div>
+                            </div>
+
+                            <?php if ($v['last_service']): ?>
+                                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;">
+                                    Last: <?= htmlspecialchars($v['last_service']['service_type']) ?>
+                                    (<?= date('M j', strtotime($v['last_service']['service_date'])) ?>)
+                                </div>
+                            <?php endif; ?>
+
+                            <div class="vehicle-actions">
+                                <a href="vehicle_edit.php?id=<?= $v['id'] ?>" class="btn btn-small">✏️ Edit</a>
+                                <a href="vehicle_edit.php?id=<?= $v['id'] ?>&tab=service" class="btn btn-small btn-secondary">🔧
+                                    Service</a>
+                                <a href="vehicle_edit.php?id=<?= $v['id'] ?>&tab=fuel" class="btn btn-small btn-secondary">⛽
+                                    Fuel</a>
+                                <a href="?delete=<?= $v['id'] ?>"
+                                    onclick="return confirm('Delete this vehicle and all its records?')"
+                                    class="btn btn-small btn-danger">🗑️</a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
 
     </div>
 
@@ -624,6 +625,8 @@ unset($v);
         });
     </script>
 
+    </main>
+    </div>
 </body>
 
 </html>

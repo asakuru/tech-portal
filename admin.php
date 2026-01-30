@@ -444,235 +444,237 @@ function renderRow($job, $install_names, $rates, $index)
 </head>
 
 <body>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
 
-    <?php include 'nav.php'; ?>
-
-    <div class="container">
-
-        <div class="page-header">
-            <div>
-                <h2>📊 <?= $date_title ?></h2>
-                <div class="subtitle">Admin Overview • <?= $job_count ?> jobs logged</div>
-            </div>
-            <form method="get" style="display:flex; gap:10px;">
-                <select name="date" class="selector" onchange="this.form.submit()">
-                    <?php foreach ($available_dates as $d): ?>
-                        <option value="<?= $d ?>" <?= $d === $selected_date ? 'selected' : '' ?>>
-                            <?= date('M j', strtotime($d)) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <select name="view" class="selector" onchange="this.form.submit()">
-                    <option value="daily" <?= $view === 'daily' ? 'selected' : '' ?>>📅 Daily</option>
-                    <option value="weekly" <?= $view === 'weekly' ? 'selected' : '' ?>>📆 Weekly</option>
-                    <option value="monthly" <?= $view === 'monthly' ? 'selected' : '' ?>>🗓️ Monthly</option>
-                </select>
-            </form>
-        </div>
-
-        <div class="box" style="padding: 15px; margin-bottom: 20px;">
-            <input type="text" id="tableSearch" onkeyup="filterTable()" placeholder="Search ticket, name, address..."
-                style="width: 100%; padding: 12px; font-size: 1rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); color: var(--text-main); box-sizing: border-box;">
-        </div>
-
-        <!-- KPI Cards (matching Financials style) -->
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-label">Gross Revenue</div>
-                <div class="kpi-value positive">$<?= number_format($stats['grand_total'], 2) ?></div>
-                <div class="kpi-sub">Work + Per Diem</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Mileage</div>
-                <div class="kpi-value"><?= number_format($total_miles) ?></div>
-                <div class="kpi-sub">Total Miles</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Actual Fuel</div>
-                <div class="kpi-value negative">$<?= number_format($total_fuel, 2) ?></div>
-                <div class="kpi-sub">Real Expense</div>
-            </div>
-            <div class="kpi-card"
-                style="border-color: <?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
-                <div class="kpi-label"
-                    style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">Net Profit
+            <div class="page-header">
+                <div>
+                    <h2>📊 <?= $date_title ?></h2>
+                    <div class="subtitle">Admin Overview • <?= $job_count ?> jobs logged</div>
                 </div>
-                <div class="kpi-value <?= $net_profit >= 0 ? 'positive' : 'negative' ?>">
-                    $<?= number_format($net_profit, 2) ?></div>
-                <div class="kpi-sub">Gross - Fuel</div>
-            </div>
-        </div>
-
-        <!-- Performance Metrics -->
-        <div class="kpi-grid" style="margin-top:15px;">
-            <div class="kpi-card">
-                <div class="kpi-label">Jobs</div>
-                <div class="kpi-value"><?= $job_count ?></div>
-                <div class="kpi-sub">This Period</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Days Worked</div>
-                <div class="kpi-value"><?= $days_worked ?></div>
-                <div class="kpi-sub">With Activity</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Avg/Day</div>
-                <div class="kpi-value">$<?= number_format($avg_daily, 0) ?></div>
-                <div class="kpi-sub">Per Work Day</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Avg MPG</div>
-                <div class="kpi-value" style="color:var(--primary);">
-                    <?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?>
-                </div>
-                <div class="kpi-sub">
-                    <?= $cost_per_mile > 0 ? '$' . number_format($cost_per_mile, 2) . '/mi' : 'No Data' ?>
-                </div>
-            </div>
-        </div>
-
-        <?php if ($view === 'monthly'): ?>
-            <div class="box" style="padding:10px; overflow:hidden;">
-                <div class="admin-cal-grid">
-                    <div class="admin-cal-head">M</div>
-                    <div class="admin-cal-head">T</div>
-                    <div class="admin-cal-head">W</div>
-                    <div class="admin-cal-head">T</div>
-                    <div class="admin-cal-head">F</div>
-                    <div class="admin-cal-head">S</div>
-                    <div class="admin-cal-head">S</div>
-                    <?php
-                    $first_of_month = date('Y-m-01', strtotime($selected_date));
-                    $day_of_week = date('N', strtotime($first_of_month));
-                    $days_in_month = date('t', strtotime($selected_date));
-                    for ($x = 1; $x < $day_of_week; $x++)
-                        echo "<div class='admin-cal-day empty'></div>";
-                    for ($day = 1; $day <= $days_in_month; $day++) {
-                        $info = $calendar_days[$day] ?? ['total' => 0, 'is_off' => false, 'has_work' => false, 'base' => 0];
-                        $badges = "";
-                        if ($info['is_off'])
-                            $badges .= "🚫";
-                        elseif ($info['has_work'])
-                            $badges .= "🔵";
-                        $totalDisplay = $info['total'] > 0 ? "$" . round($info['total']) : "-";
-                        echo "<div class='admin-cal-day'><div style='display:flex; justify-content:space-between;'><span style='font-weight:bold; font-size:0.8rem; color:var(--text-muted);'>$day</span><span>$badges</span></div><div style='text-align:right; font-size:0.8rem; font-weight:bold; color:var(--success-text);'>$totalDisplay</div></div>";
-                    }
-                    ?>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($view === 'daily' && isset($is_closed) && $is_closed): ?>
-            <div style="margin-bottom:20px; text-align:center;">
-                <form method="post"><?= csrf_field() ?><input type="hidden" name="reopen_date"
-                        value="<?= $selected_date ?>">
-                    <button
-                        style="background:#f59e0b; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Reopen
-                        This Day</button>
+                <form method="get" style="display:flex; gap:10px;">
+                    <select name="date" class="selector" onchange="this.form.submit()">
+                        <?php foreach ($available_dates as $d): ?>
+                            <option value="<?= $d ?>" <?= $d === $selected_date ? 'selected' : '' ?>>
+                                <?= date('M j', strtotime($d)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <select name="view" class="selector" onchange="this.form.submit()">
+                        <option value="daily" <?= $view === 'daily' ? 'selected' : '' ?>>📅 Daily</option>
+                        <option value="weekly" <?= $view === 'weekly' ? 'selected' : '' ?>>📆 Weekly</option>
+                        <option value="monthly" <?= $view === 'monthly' ? 'selected' : '' ?>>🗓️ Monthly</option>
+                    </select>
                 </form>
             </div>
-        <?php endif; ?>
 
-        <div class="box" style="padding:0; overflow:hidden;">
-            <div style="overflow-x:auto;">
-                <table id="jobsTable" style="width:100%; border-collapse:collapse;">
-                    <thead>
-                        <tr style="background:var(--bg-input); text-align:left;">
-                            <th style="padding:10px;">Date</th>
-                            <th style="padding:10px;">Job</th>
-                            <th style="padding:10px;">Codes</th>
-                            <th style="padding:10px; text-align:right;">Pay & Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($display_jobs as $index => $job): ?>
-                            <?= renderRow($job, $install_names, $rates, $index) ?>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+            <div class="box" style="padding: 15px; margin-bottom: 20px;">
+                <input type="text" id="tableSearch" onkeyup="filterTable()"
+                    placeholder="Search ticket, name, address..."
+                    style="width: 100%; padding: 12px; font-size: 1rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); color: var(--text-main); box-sizing: border-box;">
             </div>
-            <?php if (empty($display_jobs)): ?>
-                <p style="text-align:center; color:var(--text-muted); padding:20px;">No jobs found.</p><?php endif; ?>
-        </div>
 
-        <div class="box" style="margin-top:30px; border-top: 4px solid var(--primary);">
-            <h3>👥 Account & Users</h3>
-            <?php if (isset($msg)): ?>
-                <div class="alert"><?= $msg ?></div><?php endif; ?>
-
-            <form method="post"
-                style="background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
-                <?= csrf_field() ?>
-                <div style="font-weight:bold; margin-bottom:10px; color:var(--primary);">Change My Password</div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <input type="password" name="current_pass" placeholder="Current Password" required
-                        style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border);">
-                    <input type="password" name="new_pass" placeholder="New Password" required
-                        style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border);">
-                    <button type="submit" name="change_my_password" class="btn btn-small">Update</button>
+            <!-- KPI Cards (matching Financials style) -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Gross Revenue</div>
+                    <div class="kpi-value positive">$<?= number_format($stats['grand_total'], 2) ?></div>
+                    <div class="kpi-sub">Work + Per Diem</div>
                 </div>
-            </form>
-
-            <form method="post"
-                style="background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
-                <?= csrf_field() ?>
-                <div style="font-weight:bold; margin-bottom:10px;">Add New Tech</div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <input type="text" name="new_username" placeholder="Username" required
-                        style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border);">
-                    <input type="password" name="new_password" placeholder="Password" required
-                        style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border);">
-                    <select name="new_role" style="padding:8px; border-radius:4px; border:1px solid var(--border);">
-                        <option value="tech">Tech</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                    <button type="submit" name="create_user" class="btn btn-small"
-                        style="background:var(--success-bg); color:var(--success-text);">Add User</button>
+                <div class="kpi-card">
+                    <div class="kpi-label">Mileage</div>
+                    <div class="kpi-value"><?= number_format($total_miles) ?></div>
+                    <div class="kpi-sub">Total Miles</div>
                 </div>
-            </form>
-
-            <div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">
-                <div class="user-list-row"
-                    style="background:var(--bg-input); font-weight:bold; border-bottom:2px solid var(--border);">
-                    <div>Username</div>
-                    <div>Role</div>
-                    <div>Action</div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Actual Fuel</div>
+                    <div class="kpi-value negative">$<?= number_format($total_fuel, 2) ?></div>
+                    <div class="kpi-sub">Real Expense</div>
                 </div>
+                <div class="kpi-card"
+                    style="border-color: <?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
+                    <div class="kpi-label"
+                        style="color:<?= $net_profit >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">Net Profit
+                    </div>
+                    <div class="kpi-value <?= $net_profit >= 0 ? 'positive' : 'negative' ?>">
+                        $<?= number_format($net_profit, 2) ?></div>
+                    <div class="kpi-sub">Gross - Fuel</div>
+                </div>
+            </div>
 
-                <?php foreach ($users as $u): ?>
-                    <form method="post" class="user-list-row">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="target_id" value="<?= $u['id'] ?>">
+            <!-- Performance Metrics -->
+            <div class="kpi-grid" style="margin-top:15px;">
+                <div class="kpi-card">
+                    <div class="kpi-label">Jobs</div>
+                    <div class="kpi-value"><?= $job_count ?></div>
+                    <div class="kpi-sub">This Period</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Days Worked</div>
+                    <div class="kpi-value"><?= $days_worked ?></div>
+                    <div class="kpi-sub">With Activity</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Avg/Day</div>
+                    <div class="kpi-value">$<?= number_format($avg_daily, 0) ?></div>
+                    <div class="kpi-sub">Per Work Day</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Avg MPG</div>
+                    <div class="kpi-value" style="color:var(--primary);">
+                        <?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?>
+                    </div>
+                    <div class="kpi-sub">
+                        <?= $cost_per_mile > 0 ? '$' . number_format($cost_per_mile, 2) . '/mi' : 'No Data' ?>
+                    </div>
+                </div>
+            </div>
 
-                        <div>
-                            <input type="text" name="edit_username" value="<?= htmlspecialchars($u['username']) ?>" required
-                                style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main);">
-                        </div>
+            <?php if ($view === 'monthly'): ?>
+                <div class="box" style="padding:10px; overflow:hidden;">
+                    <div class="admin-cal-grid">
+                        <div class="admin-cal-head">M</div>
+                        <div class="admin-cal-head">T</div>
+                        <div class="admin-cal-head">W</div>
+                        <div class="admin-cal-head">T</div>
+                        <div class="admin-cal-head">F</div>
+                        <div class="admin-cal-head">S</div>
+                        <div class="admin-cal-head">S</div>
+                        <?php
+                        $first_of_month = date('Y-m-01', strtotime($selected_date));
+                        $day_of_week = date('N', strtotime($first_of_month));
+                        $days_in_month = date('t', strtotime($selected_date));
+                        for ($x = 1; $x < $day_of_week; $x++)
+                            echo "<div class='admin-cal-day empty'></div>";
+                        for ($day = 1; $day <= $days_in_month; $day++) {
+                            $info = $calendar_days[$day] ?? ['total' => 0, 'is_off' => false, 'has_work' => false, 'base' => 0];
+                            $badges = "";
+                            if ($info['is_off'])
+                                $badges .= "🚫";
+                            elseif ($info['has_work'])
+                                $badges .= "🔵";
+                            $totalDisplay = $info['total'] > 0 ? "$" . round($info['total']) : "-";
+                            echo "<div class='admin-cal-day'><div style='display:flex; justify-content:space-between;'><span style='font-weight:bold; font-size:0.8rem; color:var(--text-muted);'>$day</span><span>$badges</span></div><div style='text-align:right; font-size:0.8rem; font-weight:bold; color:var(--success-text);'>$totalDisplay</div></div>";
+                        }
+                        ?>
+                    </div>
+                </div>
+            <?php endif; ?>
 
-                        <div>
-                            <span class="badge"
-                                style="background:<?= $u['role'] == 'admin' ? 'var(--primary)' : 'var(--text-muted)' ?>; color:white; padding:2px 6px; border-radius:4px; font-size:0.8rem;">
-                                <?= strtoupper($u['role']) ?>
-                            </span>
-                        </div>
-
-                        <div style="display:flex; gap:5px; align-items:center;">
-                            <input type="text" name="edit_password" placeholder="New Pass (Optional)"
-                                style="flex:1; padding:5px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main); font-size:0.9rem;">
-
-                            <button type="submit" name="save_user" class="btn btn-small" title="Save Changes">💾</button>
-
-                            <?php if ($u['id'] != ($_SESSION['user_id'] ?? 0)): ?>
-                                <button type="submit" name="delete_user" class="btn btn-small btn-danger"
-                                    onclick="return confirm('Delete user <?= $u['username'] ?>?');"
-                                    title="Delete User">❌</button>
-                            <?php endif; ?>
-                        </div>
+            <?php if ($view === 'daily' && isset($is_closed) && $is_closed): ?>
+                <div style="margin-bottom:20px; text-align:center;">
+                    <form method="post"><?= csrf_field() ?><input type="hidden" name="reopen_date"
+                            value="<?= $selected_date ?>">
+                        <button
+                            style="background:#f59e0b; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Reopen
+                            This Day</button>
                     </form>
-                <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="box" style="padding:0; overflow:hidden;">
+                <div style="overflow-x:auto;">
+                    <table id="jobsTable" style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:var(--bg-input); text-align:left;">
+                                <th style="padding:10px;">Date</th>
+                                <th style="padding:10px;">Job</th>
+                                <th style="padding:10px;">Codes</th>
+                                <th style="padding:10px; text-align:right;">Pay & Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($display_jobs as $index => $job): ?>
+                                <?= renderRow($job, $install_names, $rates, $index) ?>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php if (empty($display_jobs)): ?>
+                    <p style="text-align:center; color:var(--text-muted); padding:20px;">No jobs found.</p><?php endif; ?>
             </div>
 
-        </div>
+            <div class="box" style="margin-top:30px; border-top: 4px solid var(--primary);">
+                <h3>👥 Account & Users</h3>
+                <?php if (isset($msg)): ?>
+                    <div class="alert"><?= $msg ?></div><?php endif; ?>
+
+                <form method="post"
+                    style="background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
+                    <?= csrf_field() ?>
+                    <div style="font-weight:bold; margin-bottom:10px; color:var(--primary);">Change My Password</div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <input type="password" name="current_pass" placeholder="Current Password" required
+                            style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border);">
+                        <input type="password" name="new_pass" placeholder="New Password" required
+                            style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border);">
+                        <button type="submit" name="change_my_password" class="btn btn-small">Update</button>
+                    </div>
+                </form>
+
+                <form method="post"
+                    style="background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border);">
+                    <?= csrf_field() ?>
+                    <div style="font-weight:bold; margin-bottom:10px;">Add New Tech</div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <input type="text" name="new_username" placeholder="Username" required
+                            style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border);">
+                        <input type="password" name="new_password" placeholder="Password" required
+                            style="flex:1; padding:8px; border-radius:4px; border:1px solid var(--border);">
+                        <select name="new_role" style="padding:8px; border-radius:4px; border:1px solid var(--border);">
+                            <option value="tech">Tech</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button type="submit" name="create_user" class="btn btn-small"
+                            style="background:var(--success-bg); color:var(--success-text);">Add User</button>
+                    </div>
+                </form>
+
+                <div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+                    <div class="user-list-row"
+                        style="background:var(--bg-input); font-weight:bold; border-bottom:2px solid var(--border);">
+                        <div>Username</div>
+                        <div>Role</div>
+                        <div>Action</div>
+                    </div>
+
+                    <?php foreach ($users as $u): ?>
+                        <form method="post" class="user-list-row">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="target_id" value="<?= $u['id'] ?>">
+
+                            <div>
+                                <input type="text" name="edit_username" value="<?= htmlspecialchars($u['username']) ?>"
+                                    required
+                                    style="width:100%; padding:5px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main);">
+                            </div>
+
+                            <div>
+                                <span class="badge"
+                                    style="background:<?= $u['role'] == 'admin' ? 'var(--primary)' : 'var(--text-muted)' ?>; color:white; padding:2px 6px; border-radius:4px; font-size:0.8rem;">
+                                    <?= strtoupper($u['role']) ?>
+                                </span>
+                            </div>
+
+                            <div style="display:flex; gap:5px; align-items:center;">
+                                <input type="text" name="edit_password" placeholder="New Pass (Optional)"
+                                    style="flex:1; padding:5px; border:1px solid var(--border); border-radius:4px; background:var(--bg-card); color:var(--text-main); font-size:0.9rem;">
+
+                                <button type="submit" name="save_user" class="btn btn-small"
+                                    title="Save Changes">💾</button>
+
+                                <?php if ($u['id'] != ($_SESSION['user_id'] ?? 0)): ?>
+                                    <button type="submit" name="delete_user" class="btn btn-small btn-danger"
+                                        onclick="return confirm('Delete user <?= $u['username'] ?>?');"
+                                        title="Delete User">❌</button>
+                                <?php endif; ?>
+                            </div>
+                        </form>
+                    <?php endforeach; ?>
+                </div>
+
+        </main>
     </div>
 
     <script>

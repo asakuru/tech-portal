@@ -464,10 +464,9 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
 </head>
 
 <body onload="toggleFields(); initAutoResize();">
-
-    <?php include 'nav.php'; ?>
-
-    <div class="container">
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
 
         <?php if (!$job): ?>
             <div class="box" style="text-align:center; padding:40px;">
@@ -664,9 +663,10 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                 </div>
             </form>
         </div>
-    </div>
+    </main>
+</div>
 
-    <script>if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }</script>
+<script>if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }</script>
 </body>
 
 </html>
