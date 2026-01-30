@@ -235,7 +235,7 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
 <head>
     <title>Edit Job | Tech Portal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="style.css?v=1.3">
+    <link rel="stylesheet" href="style.css?v=1.4">
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -770,10 +770,12 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                     </div>
 
                     <div style="display:flex; gap:16px; margin-top:30px;">
-                        <button type="submit" name="save_draft" class="btn"
-                            style="flex:1; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border);">💾
+                        <button type="submit" name="save_draft" class="btn btn-secondary"
+                            style="flex:1; padding:12px; border-radius:var(--radius);">💾
                             Save Draft</button>
-                        <button type="submit" name="update_job" class="btn" style="flex:2;">💾 Update Job</button>
+                        <button type="submit" name="update_job" class="btn"
+                            style="flex:2; background:var(--primary); color:white; border:none; padding:12px; border-radius:var(--radius);">💾
+                            Update Job</button>
                     </div>
                 </form>
             </div>

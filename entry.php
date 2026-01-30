@@ -414,7 +414,7 @@ else {
 <head>
     <title>Job Entry</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="style.css?v=1.3">
+    <link rel="stylesheet" href="style.css?v=1.4">
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -1148,15 +1148,19 @@ else {
                                         <button type="button" onclick="copyNotes()" class="btn btn-small btn-secondary">Copy
                                             Notes</button>
                                     </div>
+                                    </div>
                                     <div class="grow-wrap"><textarea name="addtl_work" placeholder="Full Notes Preview..."
-                                            readonly style="background:#f3f4f6; color:#555;"></textarea></div>
+                                            readonly style="background:var(--bg-input); color:var(--text-muted); border-color:var(--border);"></textarea></div>
                                 </div>
                             </div>
 
-                            <div style="display:flex; gap:10px; margin-top:20px;">
-                                <button type="submit" name="save_draft" class="btn btn-secondary" style="flex:1;">💾 Save
-                                    Draft</button>
-                                <button type="submit" name="add_job" class="btn" style="flex:2;">➕ Save Job</button>
+                            <div style="display:flex; gap:16px; margin-top:30px;">
+                                <button type="submit" name="save_draft" class="btn btn-secondary" style="flex:1; padding:12px; border-radius:var(--radius);">
+                                    💾 Save Draft
+                                </button>
+                                <button type="submit" name="add_job" class="btn" style="flex:2; background:var(--primary); color:white; border:none; padding:12px; border-radius:var(--radius);">
+                                    ➕ Save Job
+                                </button>
                             </div>
                         </form>
                     </div>

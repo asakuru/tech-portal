@@ -451,4 +451,37 @@ input[type="checkbox"],
 input[type="radio"] {
     width: auto;
     margin-right: 8px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+/* Button Refinements */
+.btn {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    border-color: var(--text-muted);
+    background: var(--bg-hover);
 }
