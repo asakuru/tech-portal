@@ -235,11 +235,11 @@ if ($csv_source) {
     if ($header) {
         foreach ($header as $i => $col) {
             $c = strtolower(trim($col));
-            if ($c === 'unit code' || strpos($c, 'unit code') !== false)
+            if ($c === 'unit code' || strpos($c, 'unit code') !== false || $c === 'code' || $c === 'item')
                 $col_code = $i;
-            if ($c === 'qty' || $c === 'quantity')
+            if ($c === 'qty' || $c === 'quantity' || $c === 'units' || $c === 'count')
                 $col_qty = $i;
-            if (strpos($c, 'sub-total') !== false || strpos($c, 'ext price') !== false || strpos($c, 'pay') !== false)
+            if (strpos($c, 'sub-total') !== false || strpos($c, 'ext price') !== false || strpos($c, 'pay') !== false || strpos($c, 'extended') !== false || strpos($c, 'amount') !== false || strpos($c, 'total') !== false)
                 $col_subtotal = $i;
         }
     }
@@ -258,9 +258,10 @@ if ($csv_source) {
         // Check entire row for "Tech Pay" mention (it's usually at the bottom)
         $row_str = implode(' ', $row);
         if (stripos($row_str, 'Tech Pay') !== false || stripos($row_str, 'triage') !== false) {
-            // Extract the dollar amount from this row
-            if (preg_match('/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/', $row_str, $m)) {
-                $tech_pay_amount = (float) str_replace(',', '', $m[1]);
+            // Extract the dollar amount from this row - handle commas and optional dollar sign
+            if (preg_match('/\$?([0-9,]+(?:\.[0-9]{1,2})?)/', $row_str, $m)) {
+                $raw_val = str_replace(',', '', $m[1]);
+                $tech_pay_amount = (float) $raw_val;
                 if ($tech_pay_amount > 0) {
                     $scrub_codes['LEAD-PAY'] = ['qty' => 1, 'pay' => $tech_pay_amount];
                 }
@@ -293,7 +294,11 @@ if ($csv_source) {
         $pay = 0;
         if ($col_subtotal >= 0 && isset($row[$col_subtotal])) {
             $raw_pay = trim($row[$col_subtotal]);
-            $pay = (float) filter_var($raw_pay, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+            // Remove dollar symbols and commas before converting to float
+            $clean_pay = str_replace(['$', ','], '', $raw_pay);
+            if (preg_match('/^\-?\d+(\.\d+)?$/', $clean_pay)) {
+                $pay = (float) $clean_pay;
+            }
         }
 
         // Only add if qty > 0
@@ -403,8 +408,9 @@ if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
             }
             // If we hit a price (starts with $ or has decimal), that might be pay
             // Usually the last price in the row is the subtotal
-            if (preg_match('/\$?(\d+\.\d{2})/', $part, $m)) {
-                $pay = (float) $m[1];
+            if (preg_match('/\$?([0-9,]+\.[0-9]{2})/', $part, $m)) {
+                $raw_p = str_replace(',', '', $m[1]);
+                $pay = (float) $raw_p;
             }
         }
 
@@ -808,10 +814,18 @@ usort($display_rows, function ($a, $b) {
                         📊 Code Comparison
                     </h3>
                     <div style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:10px; font-size:0.85rem;">
-                        <span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; border:1px solid #fecaca;">🔴 <b>MISSING</b>: Found in your log, not in the scrub.</span>
-                        <span style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; border:1px solid #bbf7d0;">🟢 <b>EXTRA</b>: Found in the scrub, not in your log.</span>
-                        <span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; border:1px solid #fde68a;">🟡 <b>VARIANCE</b>: Quantity or dollar amount discrepancy.</span>
-                        <span style="background:#f3f4f6; color:#10b981; padding:3px 8px; border-radius:4px; border:1px solid #e5e7eb;">✅ <b>MATCH</b>: Everything matches perfectly.</span>
+                        <span
+                            style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; border:1px solid #fecaca;">🔴
+                            <b>MISSING</b>: Found in your log, not in the scrub.</span>
+                        <span
+                            style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; border:1px solid #bbf7d0;">🟢
+                            <b>EXTRA</b>: Found in the scrub, not in your log.</span>
+                        <span
+                            style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; border:1px solid #fde68a;">🟡
+                            <b>VARIANCE</b>: Quantity or dollar amount discrepancy.</span>
+                        <span
+                            style="background:#f3f4f6; color:#10b981; padding:3px 8px; border-radius:4px; border:1px solid #e5e7eb;">✅
+                            <b>MATCH</b>: Everything matches perfectly.</span>
                     </div>
                     <div class="table-wrap">
                         <table class="summary-table" style="margin-bottom:20px;">
@@ -879,27 +893,34 @@ usort($display_rows, function ($a, $b) {
                                     <td style="text-align:center;"><?= $total_scrub_qty ?></td>
                                     <td class="num">$<?= number_format($total_local_amount, 2) ?></td>
                                     <td class="num">$<?= number_format($total_scrub_amount, 2) ?></td>
-                                    <td><?= (abs($total_diff) < 0.01 && $total_local_qty == $total_scrub_qty) ? '✓' : '⚠️' ?></td>
+                                    <td><?= (abs($total_diff) < 0.01 && $total_local_qty == $total_scrub_qty) ? '✓' : '⚠️' ?>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
                     <!-- FINANCIAL SUMMARY CARD -->
-                    <div style="background:var(--bg-input); border-radius:12px; padding:20px; margin-bottom:30px; border:1px solid var(--border);">
-                        <h4 style="margin:0 0 15px 0; color:var(--text-muted); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em;">Reconciliation Summary</h4>
+                    <div
+                        style="background:var(--bg-input); border-radius:12px; padding:20px; margin-bottom:30px; border:1px solid var(--border);">
+                        <h4
+                            style="margin:0 0 15px 0; color:var(--text-muted); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em;">
+                            Reconciliation Summary</h4>
                         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:20px;">
                             <div>
                                 <div style="font-size:0.8rem; color:var(--text-muted);">System Calculated</div>
-                                <div style="font-size:1.4rem; font-weight:800; color:var(--primary);">$<?= number_format($total_local_amount, 2) ?></div>
+                                <div style="font-size:1.4rem; font-weight:800; color:var(--primary);">
+                                    $<?= number_format($total_local_amount, 2) ?></div>
                             </div>
                             <div>
                                 <div style="font-size:0.8rem; color:var(--text-muted);">Scrub Actual Pay</div>
-                                <div style="font-size:1.4rem; font-weight:800; color:var(--text-main);">$<?= number_format($total_scrub_amount, 2) ?></div>
+                                <div style="font-size:1.4rem; font-weight:800; color:var(--text-main);">
+                                    $<?= number_format($total_scrub_amount, 2) ?></div>
                             </div>
                             <div>
                                 <div style="font-size:0.8rem; color:var(--text-muted);">Difference</div>
-                                <div style="font-size:1.4rem; font-weight:800; color:<?= abs($total_diff) < 0.01 ? 'var(--success-text)' : ($total_diff > 0 ? '#ef4444' : '#f59e0b') ?>;">
+                                <div
+                                    style="font-size:1.4rem; font-weight:800; color:<?= abs($total_diff) < 0.01 ? 'var(--success-text)' : ($total_diff > 0 ? '#ef4444' : '#f59e0b') ?>;">
                                     <?= $total_diff > 0 ? '-' : ($total_diff < 0 ? '+' : '') ?>$<?= number_format(abs($total_diff), 2) ?>
                                     <span style="font-size:0.8rem; font-weight:normal; vertical-align:middle;">
                                         <?= abs($total_diff) < 0.01 ? '(Exact Match)' : ($total_diff > 0 ? '(Underpaid)' : '(Overpaid)') ?>
