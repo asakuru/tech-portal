@@ -924,11 +924,13 @@ usort($display_rows, function ($a, $b) {
                 </div>
 
             </div>
+        </main>
     </div>
-    if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
+    <script>
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
     </script>
-    </main>
-    </div>
 </body>
 
 </html>
