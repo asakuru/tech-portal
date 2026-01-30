@@ -486,9 +486,8 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             <?php endif; ?>
 
             <div style="margin-bottom:20px;">
-                <a href="<?= htmlspecialchars(get_return_url('index.php?date=' . $job['install_date'])) ?>" class="btn"
-                    style="background:var(--bg-card); color:var(--text-main); border: 1px solid var(--border);">&larr;
-                    Back</a>
+                <a href="<?= htmlspecialchars(get_return_url('index.php?date=' . $job['install_date'])) ?>"
+                    class="btn btn-secondary" style="padding: 10px 16px; border-radius: var(--radius);">&larr; Back</a>
             </div>
 
             <div class="ha-card">
