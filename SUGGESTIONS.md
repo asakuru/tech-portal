@@ -1,8 +1,8 @@
 # Tech Portal - Feature Suggestions
 
 ## 1. 📦 Inventory / Stock Tracker
-- [ ] Create simple "Inventory" page.
-- [ ] Track standardized items (ONTs, Drop Wire, Jacks, Modems).
+- [x] Create simple "Inventory" page.
+- [x] Track standardized items (ONTs, Drop Wire, Jacks, Modems).
 - [ ] Implement "Low Stock" alerts.
 
 ## 2. 🌦️ Weather Integration
