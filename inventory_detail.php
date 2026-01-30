@@ -63,6 +63,8 @@ if ($cat === 'Jumpers')
     $pattern = 'JUMP-%';
 if ($cat === 'NIDs')
     $pattern = 'NID-%';
+if ($cat === 'Eeros')
+    $pattern = 'EERO-%';
 
 if (empty($pattern)) {
     header("Location: inventory.php");

@@ -139,6 +139,8 @@ foreach ($raw_items as $item) {
         $categorized['Jumpers'][] = $item;
     } elseif (strpos($item['item_key'], 'NID-') === 0) {
         $categorized['NIDs'][] = $item;
+    } elseif (strpos($item['item_key'], 'EERO-') === 0) {
+        // Eeros now grouped
     } else {
         $categorized['Equipment'][] = $item;
     }
@@ -181,7 +183,8 @@ try {
                     $groups = [
                         'NIDs' => ['icon' => '🏠', 'key' => 'NID-'],
                         'Jumpers' => ['icon' => '🔌', 'key' => 'JUMP-'],
-                        'Drop Wire' => ['icon' => '➰', 'key' => 'DROP-']
+                        'Drop Wire' => ['icon' => '➰', 'key' => 'DROP-'],
+                        'Eeros' => ['icon' => '📟', 'key' => 'EERO-']
                     ];
 
                     foreach ($groups as $name => $g):
