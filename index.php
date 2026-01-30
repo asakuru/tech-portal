@@ -81,6 +81,15 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
     <?php include 'head_pwa.php'; ?>
+    <script src="weather.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Pass PHP Home Base coords as fallback
+            const homeLat = <?= $rates['HOME_LAT'] ?? 0 ?>;
+            const homeLng = <?= $rates['HOME_LNG'] ?? 0 ?>;
+            WeatherWidget.init(homeLat, homeLng);
+        });
+    </script>
 </head>
 
 <body>
@@ -90,10 +99,13 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
         <main class="main-content">
             <!-- Glass Header Section -->
             <div class="welcome-banner">
-                <h2 style="font-weight: 800; letter-spacing: -0.03em;">👋 Hello,
-                    <?= htmlspecialchars(ucfirst($username)) ?>
-                </h2>
-                <div class="date" style="font-weight: 500; opacity: 0.8;"><?= $today_formatted ?></div>
+                <div>
+                    <h2 style="font-weight: 800; letter-spacing: -0.03em;">👋 Hello,
+                        <?= htmlspecialchars(ucfirst($username)) ?>
+                    </h2>
+                    <div class="date" style="font-weight: 500; opacity: 0.8;"><?= $today_formatted ?></div>
+                </div>
+                <div id="weather-widget"></div>
             </div>
 
             <div class="bento-grid">
