@@ -534,53 +534,55 @@ usort($display_rows, function ($a, $b) {
         }
 
         .paper-sheet {
-            background: white !important;
-            color: #111 !important;
+            background: var(--bg-card);
+            color: var(--text-main);
             padding: 30px;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow);
             max-width: 1000px;
             margin: 0 auto 40px auto;
-            border-radius: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
         }
 
         .summary-table,
         .sheet-table {
             width: 100%;
             border-collapse: collapse;
-            font-family: 'Arial', sans-serif;
-            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
             white-space: nowrap;
-            background: white !important;
-            color: #111 !important;
+            background: transparent;
+            color: inherit;
         }
 
         .summary-table th,
         .sheet-table th {
             text-align: left;
-            border-bottom: 2px solid #000;
-            padding: 8px 5px;
-            font-weight: 800;
+            border-bottom: 2px solid var(--border);
+            padding: 12px 8px;
+            font-weight: 700;
             text-transform: uppercase;
-            color: #000 !important;
-            background: white !important;
+            color: var(--text-muted);
+            background: var(--bg-input);
+            font-size: 0.8rem;
         }
 
         .summary-table td,
         .sheet-table td {
-            padding: 8px 5px;
-            border-bottom: 1px solid #eee;
-            color: #111 !important;
-            background: white !important;
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border);
+            color: inherit;
+            background: transparent;
         }
 
         .summary-table tr,
         .sheet-table tr {
-            background: white !important;
+            background: transparent;
         }
 
         .summary-table tr:hover td,
         .sheet-table tr:hover td {
-            background: #f7f7f7 !important;
+            background: var(--bg-input);
         }
 
         .table-wrap {

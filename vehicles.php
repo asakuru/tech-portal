@@ -358,7 +358,7 @@ unset($v);
             </div>
 
             <!-- ADD VEHICLE FORM -->
-            <div class="box add-vehicle-form" id="addForm">
+            <div class="ha-card add-vehicle-form" id="addForm">
                 <h3 style="margin-top:0;">Add New Vehicle</h3>
                 <form method="post">
                     <?= csrf_field() ?>

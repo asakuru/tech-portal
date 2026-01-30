@@ -396,7 +396,7 @@ ksort($breakdown_data);
                 ?>
             </div>
 
-            <div class="box" style="padding:0; overflow:hidden; overflow-x:auto;">
+            <div class="ha-card" style="padding:0; overflow:hidden; overflow-x:auto;">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -452,7 +452,7 @@ ksort($breakdown_data);
                     style="margin-top:2rem; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
                     Profit Analysis <span class="badge"
                         style="background:var(--primary); vertical-align:middle; font-size:0.6em;">JOB TYPE</span></h3>
-                <div class="box" style="padding:0; overflow:hidden;">
+                <div class="ha-card" style="padding:0; overflow:hidden;">
                     <table class="data-table">
                         <thead>
                             <tr>

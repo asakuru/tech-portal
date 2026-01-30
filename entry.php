@@ -412,14 +412,101 @@ else {
 <html lang="en">
 
 <head>
-    <title>Tech Portal</title>
+    <title>Job Entry</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css?v=1.1">
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
     <?php include 'head_pwa.php'; ?>
+    <script src="script.js?v=1.1"></script>
+    <script src="enhancements.js"></script>
+    <style>
+        /* Specific Overrides for Entry Page */
+        .date-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
 
+        .date-nav a {
+            text-decoration: none;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            padding: 0 15px;
+            transition: transform 0.2s;
+        }
+
+        .date-nav a:hover {
+            transform: scale(1.1);
+            color: var(--primary);
+        }
+
+        .date-display {
+            text-align: center;
+        }
+
+        .date-display h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--text-main);
+        }
+
+        .date-display span {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .entry-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 900px) {
+            .entry-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Modernized Form Elements */
+        label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text-main);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+    </style>
     <script>
         function autoResize(el) {
             el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px';
@@ -438,7 +525,7 @@ else {
             let isRepairGroup = (t === 'F008');
             let isPhoneOnly = (t === 'F020');
             let isSimpleEntry = (isMissedGroup || isRepairGroup);
-            let hideNotes = false; // Always show notes block for valid jobs (User Request)
+            let hideNotes = false;
 
             document.getElementById('secDetails').style.display = hideAll ? 'none' : 'block';
             document.getElementById('secCustomer').style.display = hideAll ? 'none' : 'block';
@@ -697,7 +784,7 @@ else {
                     include __DIR__ . '/kpi_card.php';
                     ?>
                 </div>
-                <div class="box">
+                <div class="ha-card">
                     <h3 style="margin-top:0;">📋 Recent Activity (All Users)</h3>
                     <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
                         <tr style="text-align:left; color:var(--text-muted); border-bottom:2px solid var(--border);">
@@ -781,7 +868,7 @@ else {
                 </div>
 
                 <?php if (empty($daily_jobs)): ?>
-                    <div class="box" style="text-align:center; padding:20px; color:var(--text-muted); margin-bottom:20px;">
+                    <div class="ha-card" style="text-align:center; padding:20px; color:var(--text-muted); margin-bottom:20px;">
                         <?php if ($is_sunday): ?>
                             📅 <strong>Sunday Policy</strong>: Non-work day. Per diem is automatically awarded.
                         <?php else: ?>
@@ -796,7 +883,7 @@ else {
                     endforeach;
                 endif; ?>
 
-                <div class="box"
+                <div class="ha-card"
                     style="margin-bottom:20px; background:var(--bg-card); border-left:4px solid var(--primary);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <div onclick="toggleTruckLog()" style="cursor:pointer; display:flex; align-items:center; gap:5px;">
@@ -911,14 +998,14 @@ else {
                 </div>
 
                 <?php if ($is_sunday): ?>
-                    <div class="box"
+                    <div class="ha-card"
                         style="background:var(--bg-input); border:1px solid var(--primary); text-align:center; padding:15px; margin-bottom:20px;">
                         <p style="margin:0; font-weight:bold; color:var(--primary);">
                             🚫 Sunday entries are disabled. This is a non-work day.
                         </p>
                     </div>
                 <?php elseif (!$is_day_locked): ?>
-                    <div class="box">
+                    <div class="ha-card">
                         <form method="post">
                             <?= csrf_field() ?>
                             <div class="grid-container">
