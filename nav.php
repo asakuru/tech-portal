@@ -191,7 +191,7 @@ $is_admin = is_admin();
 </aside>
 
 <!-- Mobile Top Bar -->
-<nav class="navbar-mobile" style="display:none;">
+<nav class="navbar-mobile">
     <button class="menu-toggle" onclick="toggleMobileMenu()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">

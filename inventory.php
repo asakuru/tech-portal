@@ -171,52 +171,81 @@ try {
                 <div style="font-size: 0.9rem; opacity: 0.7;">Auto-deducts when you save jobs</div>
             </div>
 
-            <div style="max-width: 1000px; margin: 0 auto;">
-                <?php foreach ($categorized as $cat => $cat_items): ?>
-                    <?php if (count($cat_items) > 0): ?>
-                        <div class="cat-section">
-                            <div class="cat-header"><?= $cat ?></div>
-                            <div class="cat-grid">
-                                <?php foreach ($cat_items as $item):
-                                    $pct = ($item['qty'] / max(1, $item['par_level'])) * 100;
-                                    $status = ($pct < 30) ? 'low' : (($pct > 80) ? 'good' : 'mid');
-                                    ?>
-                                    <div class="inv-item-compact">
+            <div style="max-width: 1000px; margin: 0 auto; padding-bottom: 60px;">
 
-                                        <!-- Left: Info -->
-                                        <div class="inv-info">
-                                            <div class="inv-name-sm"><?= htmlspecialchars($item['item_name']) ?></div>
-                                            <div class="inv-meta-sm">
-                                                <div class="stock-indicator <?= $status ?>"></div>
-                                                <span>Target: <?= htmlspecialchars($item['par_level']) ?></span>
-                                            </div>
-                                        </div>
+                <!-- Consolidated Groups -->
+                <div class="inv-group-grid">
+                    <?php
+                    $groups = [
+                        'NIDs' => ['icon' => '🏠', 'key' => 'NID-'],
+                        'Jumpers' => ['icon' => '🔌', 'key' => 'JUMP-'],
+                        'Drop Wire' => ['icon' => '➰', 'key' => 'DROP-']
+                    ];
 
-                                        <!-- Right: Controls -->
-                                        <div class="inv-controls">
-                                            <form method="POST">
-                                                <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                                <input type="hidden" name="change" value="-1">
-                                                <button class="btn-inv-sm">−</button>
-                                            </form>
+                    foreach ($groups as $name => $g):
+                        $count = 0;
+                        $low_stock = false;
+                        foreach ($raw_items as $item) {
+                            if (strpos($item['item_key'], $g['key']) === 0) {
+                                $count++;
+                                if (($item['qty'] / max(1, $item['par_level'])) < 0.3) {
+                                    $low_stock = true;
+                                }
+                            }
+                        }
+                        if ($count > 0):
+                            ?>
+                            <a href="inventory_detail.php?cat=<?= urlencode($name) ?>" class="inv-group-card">
+                                <div class="inv-group-icon"><?= $g['icon'] ?></div>
+                                <div class="inv-group-name"><?= $name ?></div>
+                                <div class="inv-group-count"><?= $count ?> sizes tracked</div>
+                                <?php if ($low_stock): ?>
+                                    <div class="inv-group-status status-alert">⚠️ Low Stock Inside</div>
+                                <?php else: ?>
+                                    <div class="inv-group-status status-ok">All Normal</div>
+                                <?php endif; ?>
+                            </a>
+                        <?php
+                        endif;
+                    endforeach;
+                    ?>
+                </div>
 
-                                            <div class="inv-qty-sm" data-key="<?= $item['item_key'] ?>">
-                                                <?= number_format($item['qty']) ?>
-                                            </div>
-
-                                            <form method="POST">
-                                                <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                                <input type="hidden" name="change" value="1">
-                                                <button class="btn-inv-sm">+</button>
-                                            </form>
-                                        </div>
-
+                <!-- Individual Equipment -->
+                <?php if (count($categorized['Equipment']) > 0): ?>
+                    <div class="cat-section" style="margin-top: 40px;">
+                        <div class="cat-header">📟 Standard Equipment</div>
+                        <div class="cat-grid">
+                            <?php foreach ($categorized['Equipment'] as $item):
+                                $pct = ($item['qty'] / max(1, $item['par_level'])) * 100;
+                                $status = ($pct < 30) ? 'status-low' : (($pct > 80) ? 'status-good' : 'status-mid');
+                                ?>
+                                <div class="inv-item-compact <?= $status ?>">
+                                    <div class="inv-icon-box">📟</div>
+                                    <div class="inv-info">
+                                        <div class="inv-name-sm"><?= htmlspecialchars($item['item_name']) ?></div>
+                                        <div class="inv-meta-sm"><span>Target:
+                                                <?= htmlspecialchars($item['par_level']) ?></span></div>
                                     </div>
-                                <?php endforeach; ?>
-                            </div>
+                                    <div class="inv-controls">
+                                        <form method="POST">
+                                            <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
+                                            <input type="hidden" name="change" value="-1">
+                                            <button class="btn-inv-sm">−</button>
+                                        </form>
+                                        <div class="inv-qty-sm" data-key="<?= $item['item_key'] ?>">
+                                            <?= number_format($item['qty']) ?></div>
+                                        <form method="POST">
+                                            <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
+                                            <input type="hidden" name="change" value="1">
+                                            <button class="btn-inv-sm">+</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
-                    <?php endif; ?>
-                <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- TRANSACTION LOG -->
