@@ -109,7 +109,7 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                     Quick Actions
                 </div>
 
-                <a href="entry.php" class="ha-card tile-card" style="grid-column: span 3; text-decoration: none;">
+                <a href="entry.php" class="ha-card tile-card" style="text-decoration: none;">
                     <div class="tile-icon" style="background: rgba(3, 169, 244, 0.1); color: #03a9f4;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -123,7 +123,7 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                     </div>
                 </a>
 
-                <a href="smart_entry.php" class="ha-card tile-card" style="grid-column: span 3; text-decoration: none;">
+                <a href="smart_entry.php" class="ha-card tile-card" style="text-decoration: none;">
                     <div class="tile-icon" style="background: rgba(255, 152, 0, 0.1); color: #ff9800;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -136,7 +136,7 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                     </div>
                 </a>
 
-                <a href="tools.php" class="ha-card tile-card" style="grid-column: span 3; text-decoration: none;">
+                <a href="tools.php" class="ha-card tile-card" style="text-decoration: none;">
                     <div class="tile-icon" style="background: rgba(156, 39, 176, 0.1); color: #9c27b0;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -151,7 +151,7 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                 </a>
 
                 <a href="entry.php?date=<?= $today ?>" class="ha-card tile-card"
-                    style="grid-column: span 3; text-decoration: none;">
+                    style="text-decoration: none;">
                     <div class="tile-icon"
                         style="background: <?= $is_today_locked ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.05)' ?>; color: <?= $is_today_locked ? '#81c784' : 'var(--text-muted)' ?>;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -176,10 +176,10 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                 </div>
 
                 <!-- Today Card -->
-                <div class="ha-card" style="grid-column: span 6; cursor: pointer;" onclick="openTallyModal('day')">
+                <div class="ha-card" style="grid-column: span 6;" onclick="openTallyModal('day')">
                     <div class="ha-card-header">TODAY'S EARNINGS</div>
                     <div style="display:flex; align-items:flex-end; gap:12px;">
-                        <div style="font-size: 3rem; font-weight: 800; color: var(--primary); line-height: 1;">
+                        <div class="stat-value" style="color: var(--primary);">
                             $<?= number_format($today_total, 2) ?></div>
                         <div style="font-size: 1.1rem; color: var(--text-muted); padding-bottom: 5px;">/
                             <?= count($today_jobs) ?> jobs
@@ -193,10 +193,10 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                 </div>
 
                 <!-- Week Card -->
-                <div class="ha-card" style="grid-column: span 6; cursor: pointer;" onclick="openTallyModal('week')">
+                <div class="ha-card" style="grid-column: span 6;" onclick="openTallyModal('week')">
                     <div class="ha-card-header">THIS WEEK</div>
                     <div style="display:flex; align-items:flex-end; gap:12px;">
-                        <div style="font-size: 3rem; font-weight: 800; color: var(--success-text); line-height: 1;">
+                        <div class="stat-value" style="color: var(--success-text);">
                             $<?= number_format($week_total, 2) ?></div>
                         <div style="font-size: 1.1rem; color: var(--text-muted); padding-bottom: 5px;">/
                             <?= $week_jobs ?> jobs

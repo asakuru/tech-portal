@@ -137,36 +137,6 @@ $is_admin = is_admin();
     <a href="index.php" class="nav-brand">TECH PORTAL</a>
 </nav>
 
-<style>
-    @media (max-width: 768px) {
-        .side-drawer {
-            transform: translateX(-100%);
-            width: 240px;
-        }
-
-        body.nav-open .side-drawer {
-            transform: translateX(0);
-        }
-
-        .navbar-mobile {
-            display: flex !important;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: var(--nav-bg);
-            align-items: center;
-            padding: 0 16px;
-            z-index: 1000;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .app-container {
-            flex-direction: column;
-        }
-    }
-</style>
 
 <script>
     function toggleMobileMenu() { document.body.classList.toggle('nav-open'); }
