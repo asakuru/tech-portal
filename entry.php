@@ -1041,21 +1041,23 @@ else {
                                     👤 Customer Details
                                 </div>
                                 <div id="secCustomer">
-                                    <div class="grid-container">
-                                        <div><input type="text" name="cust_fname" placeholder="First Name"></div>
-                                        <div><input type="text" name="cust_lname" placeholder="Last Name"></div>
+                                    <div class="bento-grid">
+                                        <div style="grid-column: span 6;"><input type="text" name="cust_fname"
+                                                placeholder="First Name"></div>
+                                        <div style="grid-column: span 6;"><input type="text" name="cust_lname"
+                                                placeholder="Last Name"></div>
+                                        <div style="grid-column: span 12;"><input type="text" name="cust_phone"
+                                                placeholder="Phone"></div>
+                                        <div style="grid-column: span 12;"><input type="text" name="cust_street"
+                                                placeholder="Address"></div>
+                                        <div style="grid-column: span 5;"><input type="text" name="cust_city"
+                                                placeholder="City"></div>
+                                        <div style="grid-column: span 4;"><input type="text" name="cust_state"
+                                                placeholder="State"></div>
+                                        <div style="grid-column: span 3;"><input type="text" name="cust_zip" placeholder="Zip">
+                                        </div>
                                     </div>
-                                    <div style="margin-top:10px;"><input type="text" name="cust_street" placeholder="Address"
-                                            style="width:100%;"></div>
-                                    <div class="grid-container" style="margin-top:10px;">
-                                        <div><input type="text" name="cust_city" placeholder="City"></div>
-                                        <div><input type="text" name="cust_zip" placeholder="Zip"></div>
-                                    </div>
-                                    <div class="grid-container" style="margin-top:10px;">
-                                        <div><input type="text" name="cust_state" placeholder="State"></div>
-                                        <div><input type="text" name="cust_phone" placeholder="Phone"></div>
-                                    </div>
-                                    <hr style="margin:15px 0; border:0; border-top:1px solid var(--border);">
+                                    <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);">
                                 </div>
 
                                 <div id="groupMissed"

@@ -546,16 +546,21 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                                     placeholder="Last Name">
                             </div>
                             <div class="form-group" style="grid-column: span 12;">
+                                <label>Phone</label>
+                                <input type="text" name="cust_phone" value="<?= htmlspecialchars($job['cust_phone']) ?>"
+                                    placeholder="Phone">
+                            </div>
+                            <div class="form-group" style="grid-column: span 12;">
                                 <label>Street Address</label>
                                 <input type="text" name="cust_street"
                                     value="<?= htmlspecialchars($job['cust_street']) ?>" placeholder="Address">
                             </div>
-                            <div class="form-group" style="grid-column: span 4;">
+                            <div class="form-group" style="grid-column: span 5;">
                                 <label>City</label>
                                 <input type="text" name="cust_city" value="<?= htmlspecialchars($job['cust_city']) ?>"
                                     placeholder="City">
                             </div>
-                            <div class="form-group" style="grid-column: span 2;">
+                            <div class="form-group" style="grid-column: span 4;">
                                 <label>State</label>
                                 <input type="text" name="cust_state" value="<?= htmlspecialchars($job['cust_state']) ?>"
                                     placeholder="ST">
@@ -564,11 +569,6 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                                 <label>Zip</label>
                                 <input type="text" name="cust_zip" value="<?= htmlspecialchars($job['cust_zip']) ?>"
                                     placeholder="Zip">
-                            </div>
-                            <div class="form-group" style="grid-column: span 3;">
-                                <label>Phone</label>
-                                <input type="text" name="cust_phone" value="<?= htmlspecialchars($job['cust_phone']) ?>"
-                                    placeholder="Phone">
                             </div>
                         </div>
                     </div>
