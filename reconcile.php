@@ -228,8 +228,9 @@ if ($csv_source) {
     }
 
     // Find column indexes from header
-    $col_code = 0;  // Default to first column
-    $col_qty = 5;   // Default based on example (index 5)
+    $col_code = 0;      // Default to first column
+    $col_qty = 5;       // Default based on example (index 5)
+    $col_subtotal = -1; // To be found
 
     if ($header) {
         foreach ($header as $i => $col) {
@@ -238,6 +239,8 @@ if ($csv_source) {
                 $col_code = $i;
             if ($c === 'qty' || $c === 'quantity')
                 $col_qty = $i;
+            if (strpos($c, 'sub-total') !== false || strpos($c, 'ext price') !== false || strpos($c, 'pay') !== false)
+                $col_subtotal = $i;
         }
     }
 
@@ -259,7 +262,7 @@ if ($csv_source) {
             if (preg_match('/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/', $row_str, $m)) {
                 $tech_pay_amount = (float) str_replace(',', '', $m[1]);
                 if ($tech_pay_amount > 0) {
-                    $scrub_codes['LEAD-PAY'] = 1; // Mark as 1 occurrence
+                    $scrub_codes['LEAD-PAY'] = ['qty' => 1, 'pay' => $tech_pay_amount];
                 }
             }
             continue; // Don't process this row further
@@ -286,9 +289,20 @@ if ($csv_source) {
             $qty = (int) filter_var($row[$col_qty], FILTER_SANITIZE_NUMBER_INT);
         }
 
+        // Get Pay from subtotal column if possible
+        $pay = 0;
+        if ($col_subtotal >= 0 && isset($row[$col_subtotal])) {
+            $raw_pay = trim($row[$col_subtotal]);
+            $pay = (float) filter_var($raw_pay, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        }
+
         // Only add if qty > 0
         if ($qty > 0) {
-            $scrub_codes[$code] = ($scrub_codes[$code] ?? 0) + $qty;
+            if (!isset($scrub_codes[$code])) {
+                $scrub_codes[$code] = ['qty' => 0, 'pay' => 0];
+            }
+            $scrub_codes[$code]['qty'] += $qty;
+            $scrub_codes[$code]['pay'] += $pay;
         }
     }
     fclose($handle);
@@ -339,10 +353,10 @@ if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
         // Check for "Tech Pay" mention (it's usually at the bottom)
         if (stripos($line, 'Tech Pay') !== false || stripos($line, 'triage') !== false) {
             // Extract the dollar amount from this line
-            if (preg_match('/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/', $line, $m)) {
+            if (preg_match('/\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/', $line, $m)) {
                 $tech_pay_amount = (float) str_replace(',', '', $m[1]);
                 if ($tech_pay_amount > 0) {
-                    $scrub_codes['LEAD-PAY'] = 1; // Mark as 1 occurrence
+                    $scrub_codes['LEAD-PAY'] = ['qty' => 1, 'pay' => $tech_pay_amount];
                 }
             }
             continue; // Don't process this line further
@@ -369,23 +383,29 @@ if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
         if (strlen($code) > 25 || !preg_match('/[A-Z]/i', $code) || preg_match('/^\$/', $code))
             continue;
 
-        // Find QTY: it's the first pure integer in the parts (after code and description)
+        // Find QTY and Pay: 
         $qty = 0;
+        $pay = 0;
+        $found_qty = false;
+
         foreach ($parts as $idx => $part) {
             if ($idx == 0)
-                continue; // Skip code
+                continue;
             $part = trim($part);
-            // Skip empty parts
             if (empty($part))
                 continue;
+
             // If it's a pure integer (not a price), that's QTY
-            if (preg_match('/^(\d+)$/', $part, $m)) {
+            if (!$found_qty && preg_match('/^(\d+)$/', $part, $m)) {
                 $qty = (int) $m[1];
-                break;
+                $found_qty = true;
+                continue;
             }
-            // If we hit a price (starts with $), stop looking
-            if (preg_match('/^\$/', $part))
-                break;
+            // If we hit a price (starts with $ or has decimal), that might be pay
+            // Usually the last price in the row is the subtotal
+            if (preg_match('/\$?(\d+\.\d{2})/', $part, $m)) {
+                $pay = (float) $m[1];
+            }
         }
 
         // Normalize code to uppercase
@@ -398,7 +418,11 @@ if (isset($_POST['scrub_text']) && !empty($_POST['scrub_text'])) {
 
         // Only add if qty > 0 (items with qty 0 don't matter)
         if ($qty > 0) {
-            $scrub_codes[$code] = ($scrub_codes[$code] ?? 0) + $qty;
+            if (!isset($scrub_codes[$code])) {
+                $scrub_codes[$code] = ['qty' => 0, 'pay' => 0];
+            }
+            $scrub_codes[$code]['qty'] += $qty;
+            $scrub_codes[$code]['pay'] += $pay;
         }
     }
 }
@@ -415,12 +439,15 @@ if ($comparison_mode) {
     foreach ($normalized_code_tally as $code => $data) {
         $local_qty = $data['count'];
         $local_total = $data['total'];
-        $scrub_qty = $scrub_codes[$code] ?? 0;
+
+        $scrub_data = $scrub_codes[$code] ?? ['qty' => 0, 'pay' => 0];
+        $scrub_qty = $scrub_data['qty'];
+        $scrub_pay = $scrub_data['pay'];
 
         $status = 'match';
         if ($scrub_qty == 0 && $local_qty > 0) {
-            $status = 'missing'; // In DB but NOT in pasted text
-        } elseif ($local_qty != $scrub_qty) {
+            $status = 'missing';
+        } elseif ($local_qty != $scrub_qty || abs($local_total - $scrub_pay) > 0.01) {
             $status = 'variance';
         }
 
@@ -429,6 +456,7 @@ if ($comparison_mode) {
             'local_qty' => $local_qty,
             'local_total' => $local_total,
             'scrub_qty' => $scrub_qty,
+            'scrub_total' => $scrub_pay,
             'status' => $status
         ];
 
@@ -436,14 +464,14 @@ if ($comparison_mode) {
     }
 
     // Remaining scrub codes = EXTRA (in pasted text but NOT in DB)
-    // Only include if qty > 0
-    foreach ($scrub_codes as $code => $qty) {
-        if ($qty > 0) {
+    foreach ($scrub_codes as $code => $data) {
+        if ($data['qty'] > 0) {
             $code_variance[$code] = [
                 'desc' => '(Not in your records)',
                 'local_qty' => 0,
                 'local_total' => 0,
-                'scrub_qty' => $qty,
+                'scrub_qty' => $data['qty'],
+                'scrub_total' => $data['pay'],
                 'status' => 'extra'
             ];
         }
@@ -779,15 +807,11 @@ usort($display_rows, function ($a, $b) {
                         style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000; border-bottom:2px solid #000; padding-bottom:5px;">
                         📊 Code Comparison
                     </h3>
-                    <div style="margin-bottom:15px; font-size:0.85rem;">
-                        <span
-                            style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; margin-right:10px;">🔴
-                            Missing (In DB, Not in Scrub)</span>
-                        <span
-                            style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; margin-right:10px;">🟢
-                            Extra (In Scrub, Not in DB)</span>
-                        <span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px;">🟡 Qty
-                            Variance</span>
+                    <div style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:10px; font-size:0.85rem;">
+                        <span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; border:1px solid #fecaca;">🔴 <b>MISSING</b>: Found in your log, not in the scrub.</span>
+                        <span style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; border:1px solid #bbf7d0;">🟢 <b>EXTRA</b>: Found in the scrub, not in your log.</span>
+                        <span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; border:1px solid #fde68a;">🟡 <b>VARIANCE</b>: Quantity or dollar amount discrepancy.</span>
+                        <span style="background:#f3f4f6; color:#10b981; padding:3px 8px; border-radius:4px; border:1px solid #e5e7eb;">✅ <b>MATCH</b>: Everything matches perfectly.</span>
                     </div>
                     <div class="table-wrap">
                         <table class="summary-table" style="margin-bottom:20px;">
@@ -798,6 +822,7 @@ usort($display_rows, function ($a, $b) {
                                     <th style="text-align:center;">My Qty</th>
                                     <th style="text-align:center;">Scrub Qty</th>
                                     <th class="num">My Total</th>
+                                    <th class="num">Scrub Pay</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -830,6 +855,7 @@ usort($display_rows, function ($a, $b) {
                                         <td style="text-align:center; font-weight:bold;"><?= $v['local_qty'] ?></td>
                                         <td style="text-align:center; font-weight:bold;"><?= $v['scrub_qty'] ?></td>
                                         <td class="num">$<?= number_format($v['local_total'], 2) ?></td>
+                                        <td class="num">$<?= number_format($v['scrub_total'], 2) ?></td>
                                         <td style="<?= $status_color ?>"><?= $status_text ?></td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -838,21 +864,49 @@ usort($display_rows, function ($a, $b) {
                                 $total_local_qty = 0;
                                 $total_scrub_qty = 0;
                                 $total_local_amount = 0;
+                                $total_scrub_amount = 0;
                                 foreach ($code_variance as $v) {
                                     $total_local_qty += $v['local_qty'];
                                     $total_scrub_qty += $v['scrub_qty'];
                                     $total_local_amount += $v['local_total'];
+                                    $total_scrub_amount += $v['scrub_total'];
                                 }
+                                $total_diff = $total_local_amount - $total_scrub_amount;
                                 ?>
                                 <tr style="border-top:2px solid #000; font-weight:bold; background:#f0f0f0;">
                                     <td colspan="2" style="text-align:right;">TOTALS:</td>
                                     <td style="text-align:center;"><?= $total_local_qty ?></td>
                                     <td style="text-align:center;"><?= $total_scrub_qty ?></td>
                                     <td class="num">$<?= number_format($total_local_amount, 2) ?></td>
-                                    <td><?= ($total_local_qty == $total_scrub_qty) ? '✓' : '⚠️' ?></td>
+                                    <td class="num">$<?= number_format($total_scrub_amount, 2) ?></td>
+                                    <td><?= (abs($total_diff) < 0.01 && $total_local_qty == $total_scrub_qty) ? '✓' : '⚠️' ?></td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- FINANCIAL SUMMARY CARD -->
+                    <div style="background:var(--bg-input); border-radius:12px; padding:20px; margin-bottom:30px; border:1px solid var(--border);">
+                        <h4 style="margin:0 0 15px 0; color:var(--text-muted); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em;">Reconciliation Summary</h4>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:20px;">
+                            <div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">System Calculated</div>
+                                <div style="font-size:1.4rem; font-weight:800; color:var(--primary);">$<?= number_format($total_local_amount, 2) ?></div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">Scrub Actual Pay</div>
+                                <div style="font-size:1.4rem; font-weight:800; color:var(--text-main);">$<?= number_format($total_scrub_amount, 2) ?></div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">Difference</div>
+                                <div style="font-size:1.4rem; font-weight:800; color:<?= abs($total_diff) < 0.01 ? 'var(--success-text)' : ($total_diff > 0 ? '#ef4444' : '#f59e0b') ?>;">
+                                    <?= $total_diff > 0 ? '-' : ($total_diff < 0 ? '+' : '') ?>$<?= number_format(abs($total_diff), 2) ?>
+                                    <span style="font-size:0.8rem; font-weight:normal; vertical-align:middle;">
+                                        <?= abs($total_diff) < 0.01 ? '(Exact Match)' : ($total_diff > 0 ? '(Underpaid)' : '(Overpaid)') ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <a href="?" class="btn" style="margin-bottom:20px; display:inline-block;">← Clear Comparison</a>
                 <?php endif; ?>
