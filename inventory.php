@@ -32,17 +32,41 @@ try {
     $defaults = [
         'ONT' => ['name' => 'ONTs', 'par' => 10, 'unit' => 'pcs'],
         'EERO' => ['name' => 'Eeros (Routers)', 'par' => 5, 'unit' => 'pcs'],
-        'NID' => ['name' => 'NIDs', 'par' => 5, 'unit' => 'pcs'],
         'JACK' => ['name' => 'Jacks (Wall)', 'par' => 20, 'unit' => 'pcs'],
-        'DROP' => ['name' => 'Drop Wire', 'par' => 1000, 'unit' => 'ft'],
-        'CONDUIT' => ['name' => 'Conduit', 'par' => 100, 'unit' => 'ft'],
-        'JUMPER' => ['name' => 'Soft Jumpers', 'par' => 10, 'unit' => 'pcs']
+
+        // NIDs
+        'NID-SM' => ['name' => 'NID (Small)', 'par' => 5, 'unit' => 'pcs'],
+        'NID-MD' => ['name' => 'NID (Medium)', 'par' => 5, 'unit' => 'pcs'],
+        'NID-LG' => ['name' => 'NID (Large)', 'par' => 5, 'unit' => 'pcs'],
+
+        // Soft Jumpers
+        'JUMP-25' => ['name' => 'Jumper 25\'', 'par' => 5, 'unit' => 'pcs'],
+        'JUMP-50' => ['name' => 'Jumper 50\'', 'par' => 5, 'unit' => 'pcs'],
+        'JUMP-100' => ['name' => 'Jumper 100\'', 'par' => 5, 'unit' => 'pcs'],
+
+        // Drops (Precise Lengths)
+        'DROP-100' => ['name' => 'Drop 100\'', 'par' => 2, 'unit' => 'pcs'],
+        'DROP-120' => ['name' => 'Drop 120\'', 'par' => 2, 'unit' => 'pcs'],
+        'DROP-125' => ['name' => 'Drop 125\'', 'par' => 2, 'unit' => 'pcs'],
+        'DROP-150' => ['name' => 'Drop 150\'', 'par' => 2, 'unit' => 'pcs'],
+        'DROP-200' => ['name' => 'Drop 200\'', 'par' => 2, 'unit' => 'pcs'],
+        'DROP-250' => ['name' => 'Drop 250\'', 'par' => 2, 'unit' => 'pcs'],
+        'DROP-300' => ['name' => 'Drop 300\'', 'par' => 2, 'unit' => 'pcs'],
+        'DROP-350' => ['name' => 'Drop 350\'', 'par' => 1, 'unit' => 'pcs'],
+        'DROP-400' => ['name' => 'Drop 400\'', 'par' => 1, 'unit' => 'pcs'],
+        'DROP-500' => ['name' => 'Drop 500\'', 'par' => 1, 'unit' => 'pcs'],
+        'DROP-600' => ['name' => 'Drop 600\'', 'par' => 1, 'unit' => 'pcs'],
+        'DROP-700' => ['name' => 'Drop 700\'', 'par' => 1, 'unit' => 'pcs'],
+        'DROP-1000' => ['name' => 'Drop 1000\'', 'par' => 1, 'unit' => 'pcs'],
     ];
 
     foreach ($defaults as $key => $def) {
         $stmt = $db->prepare("INSERT OR IGNORE INTO inventory (user_id, item_key, item_name, qty, par_level, unit) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$user_id, $key, $def['name'], $def['par'], $def['par'], $def['unit']]);
     }
+
+    // Cleanup old generic items if they exist?
+    // $db->exec("DELETE FROM inventory WHERE item_key IN ('DROP', 'JUMPER', 'NID')");
 
 } catch (Exception $e) {
     die("DB Init Error: " . $e->getMessage());

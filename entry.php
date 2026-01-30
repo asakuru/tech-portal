@@ -1134,7 +1134,15 @@ else {
                                     </div>
 
                                     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                        <label><input type="checkbox" name="nid_installed" value="Yes"> NID</label>
+                                        <div style="width:100px;">
+                                            <select name="nid_installed"
+                                                style="width:100%; padding:8px; border-radius:var(--radius); border:1px solid var(--border); background:var(--bg-input); color:var(--text-main);">
+                                                <option value="No">No NID</option>
+                                                <option value="Small">Small NID</option>
+                                                <option value="Medium">Med NID</option>
+                                                <option value="Large">Large NID</option>
+                                            </select>
+                                        </div>
                                         <label><input type="checkbox" name="copper_removed" value="Yes"> Copper Rem</label>
                                         <label><input type="checkbox" name="exterior_sealed" value="Yes"> Sealed</label>
                                         <label><input type="checkbox" name="unbreakable_wifi" value="Yes"> Unbreakable</label>
