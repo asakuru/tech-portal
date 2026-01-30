@@ -366,109 +366,110 @@ $month_labels = [
 
 <body>
 
-    <?php include 'nav.php'; ?>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
 
-    <div class="container">
+        <main class="main-content">
 
-        <div class="analytics-header">
-            <h2>📊 Analytics</h2>
-        </div>
+            <div class="analytics-header">
+                <h2>📊 Analytics</h2>
+            </div>
 
-        <!-- KPI Cards -->
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-label">Avg / Day</div>
-                <div class="kpi-value">$<?= number_format($this_month['avg_day'], 0) ?></div>
-                <div class="kpi-change <?= $avg_day_change >= 0 ? 'positive' : 'negative' ?>">
-                    <?= $avg_day_change >= 0 ? '↑' : '↓' ?> <?= abs($avg_day_change) ?>% vs last month
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Avg / Day</div>
+                    <div class="kpi-value">$<?= number_format($this_month['avg_day'], 0) ?></div>
+                    <div class="kpi-change <?= $avg_day_change >= 0 ? 'positive' : 'negative' ?>">
+                        <?= $avg_day_change >= 0 ? '↑' : '↓' ?> <?= abs($avg_day_change) ?>% vs last month
+                    </div>
                 </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Jobs / Day</div>
-                <div class="kpi-value"><?= number_format($jobs_per_day, 1) ?></div>
-                <div class="kpi-change <?= $jpd_change >= 0 ? 'positive' : 'negative' ?>">
-                    <?= $jpd_change >= 0 ? '↑' : '↓' ?> <?= abs($jpd_change) ?>%
+                <div class="kpi-card">
+                    <div class="kpi-label">Jobs / Day</div>
+                    <div class="kpi-value"><?= number_format($jobs_per_day, 1) ?></div>
+                    <div class="kpi-change <?= $jpd_change >= 0 ? 'positive' : 'negative' ?>">
+                        <?= $jpd_change >= 0 ? '↑' : '↓' ?> <?= abs($jpd_change) ?>%
+                    </div>
                 </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Cost / Mile</div>
-                <div class="kpi-value">$<?= number_format($cost_per_mile, 2) ?></div>
-                <div class="kpi-change <?= $cpm_change <= 0 ? 'positive' : 'negative' ?>">
-                    <?= $cpm_change <= 0 ? '↓' : '↑' ?> <?= abs($cpm_change) ?>%
+                <div class="kpi-card">
+                    <div class="kpi-label">Cost / Mile</div>
+                    <div class="kpi-value">$<?= number_format($cost_per_mile, 2) ?></div>
+                    <div class="kpi-change <?= $cpm_change <= 0 ? 'positive' : 'negative' ?>">
+                        <?= $cpm_change <= 0 ? '↓' : '↑' ?> <?= abs($cpm_change) ?>%
+                    </div>
                 </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">This Month</div>
-                <div class="kpi-value positive">$<?= number_format($this_month['gross'], 0) ?></div>
-                <div class="kpi-sub"><?= $this_month['jobs'] ?> jobs, <?= $this_month['days'] ?> days</div>
-            </div>
-        </div>
-
-        <!-- Charts Row -->
-        <div class="chart-grid">
-            <!-- Earnings Trend -->
-            <div class="chart-card">
-                <div class="chart-title">📈 Earnings Trend (12 Weeks)</div>
-                <div class="chart-container">
-                    <canvas id="earningsChart"></canvas>
+                <div class="kpi-card">
+                    <div class="kpi-label">This Month</div>
+                    <div class="kpi-value positive">$<?= number_format($this_month['gross'], 0) ?></div>
+                    <div class="kpi-sub"><?= $this_month['jobs'] ?> jobs, <?= $this_month['days'] ?> days</div>
                 </div>
             </div>
 
-            <!-- Job Type Breakdown -->
-            <div class="chart-card">
-                <div class="chart-title">🎯 Job Type Breakdown</div>
+            <!-- Charts Row -->
+            <div class="chart-grid">
+                <!-- Earnings Trend -->
+                <div class="chart-card">
+                    <div class="chart-title">📈 Earnings Trend (12 Weeks)</div>
+                    <div class="chart-container">
+                        <canvas id="earningsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Job Type Breakdown -->
+                <div class="chart-card">
+                    <div class="chart-title">🎯 Job Type Breakdown</div>
+                    <div class="chart-container-small">
+                        <canvas id="jobTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Month Comparison -->
+            <div class="chart-card" style="margin-bottom: 24px;">
+                <div class="chart-title">📊 Month Comparison</div>
                 <div class="chart-container-small">
-                    <canvas id="jobTypeChart"></canvas>
+                    <canvas id="monthChart"></canvas>
                 </div>
             </div>
-        </div>
 
-        <!-- Month Comparison -->
-        <div class="chart-card" style="margin-bottom: 24px;">
-            <div class="chart-title">📊 Month Comparison</div>
-            <div class="chart-container-small">
-                <canvas id="monthChart"></canvas>
-            </div>
-        </div>
+            <!-- Best Days & Weeks -->
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <div class="insight-title">🏆 Best Days</div>
+                    <ul class="insight-list">
+                        <?php foreach ($best_days as $idx => $day): ?>
+                            <li>
+                                <span>
+                                    <span class="insight-rank"><?= $idx + 1 ?></span>
+                                    <?= date('M j, Y', strtotime($day['install_date'])) ?>
+                                </span>
+                                <span class="insight-amount">$<?= number_format($day['total'], 2) ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                        <?php if (empty($best_days)): ?>
+                            <li style="color: var(--text-muted); justify-content: center;">No data yet</li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
 
-        <!-- Best Days & Weeks -->
-        <div class="insights-grid">
-            <div class="insight-card">
-                <div class="insight-title">🏆 Best Days</div>
-                <ul class="insight-list">
-                    <?php foreach ($best_days as $idx => $day): ?>
-                        <li>
-                            <span>
-                                <span class="insight-rank"><?= $idx + 1 ?></span>
-                                <?= date('M j, Y', strtotime($day['install_date'])) ?>
-                            </span>
-                            <span class="insight-amount">$<?= number_format($day['total'], 2) ?></span>
-                        </li>
-                    <?php endforeach; ?>
-                    <?php if (empty($best_days)): ?>
-                        <li style="color: var(--text-muted); justify-content: center;">No data yet</li>
-                    <?php endif; ?>
-                </ul>
+                <div class="insight-card">
+                    <div class="insight-title">🚀 Best Weeks</div>
+                    <ul class="insight-list">
+                        <?php foreach ($best_weeks as $idx => $week): ?>
+                            <li>
+                                <span>
+                                    <span class="insight-rank"><?= $idx + 1 ?></span>
+                                    Week of <?= date('M j', strtotime($week['week_start'])) ?>
+                                </span>
+                                <span class="insight-amount">$<?= number_format($week['total'], 2) ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                        <?php if (empty($best_weeks)): ?>
+                            <li style="color: var(--text-muted); justify-content: center;">No data yet</li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
             </div>
-
-            <div class="insight-card">
-                <div class="insight-title">🚀 Best Weeks</div>
-                <ul class="insight-list">
-                    <?php foreach ($best_weeks as $idx => $week): ?>
-                        <li>
-                            <span>
-                                <span class="insight-rank"><?= $idx + 1 ?></span>
-                                Week of <?= date('M j', strtotime($week['week_start'])) ?>
-                            </span>
-                            <span class="insight-amount">$<?= number_format($week['total'], 2) ?></span>
-                        </li>
-                    <?php endforeach; ?>
-                    <?php if (empty($best_weeks)): ?>
-                        <li style="color: var(--text-muted); justify-content: center;">No data yet</li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </div>
 
     </div>
 
@@ -584,6 +585,8 @@ $month_labels = [
         });
     </script>
 
+    </main>
+    </div>
 </body>
 
 </html>
