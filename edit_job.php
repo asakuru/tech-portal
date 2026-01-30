@@ -469,7 +469,8 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             <div class="welcome-banner">
                 <h2 style="font-weight: 800; letter-spacing: -0.03em;">✏️ Edit Job</h2>
                 <div class="date" style="font-weight: 500; opacity: 0.8;">
-                    <?= date('l, F j, Y', strtotime($job['install_date'])) ?></div>
+                    <?= date('l, F j, Y', strtotime($job['install_date'])) ?>
+                </div>
             </div>
 
             <?php if (!$job): ?>
@@ -530,7 +531,9 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                     </div>
 
                     <div id="secCustomer" class="spacer" style="margin-top:25px;">
-                        <hr>
+                        <div class="section-header">
+                            👤 Customer Details
+                        </div>
                         <div class="bento-grid">
                             <div class="form-group" style="grid-column: span 6;">
                                 <label>Customer First Name</label>
@@ -571,7 +574,9 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                     </div>
 
                     <div style="margin-top:25px;">
-                        <hr>
+                        <div class="section-header">
+                            📋 Job Report
+                        </div>
                         <div id="groupMissed"
                             style="display:none; background:rgba(255,152,0,0.05); padding:20px; border-radius:var(--radius); border:1px solid rgba(255,152,0,0.1); margin-bottom:20px;">
                             <h5
@@ -626,6 +631,9 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                             </div>
                         </div>
 
+                        <div class="section-header">
+                            🔌 Technical Specs
+                        </div>
                         <div id="groupTechStandard">
                             <div class="bento-grid">
                                 <div class="form-group" style="grid-column: span 6;">

@@ -1036,8 +1036,10 @@ else {
                                 </select>
                             </div>
 
-                            <div id="secDetails" style="margin-top:15px;">
-                                <hr style="margin:15px 0; border:0; border-top:1px solid var(--border);">
+                            <div id="secDetails" style="margin-top:25px;">
+                                <div class="section-header">
+                                    👤 Customer Details
+                                </div>
                                 <div id="secCustomer">
                                     <div class="grid-container">
                                         <div><input type="text" name="cust_fname" placeholder="First Name"></div>
@@ -1057,8 +1059,10 @@ else {
                                 </div>
 
                                 <div id="groupMissed"
-                                    style="display:none; background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:15px;">
-                                    <h5 style="margin:0 0 10px; color:var(--text-muted);">Outcome Report</h5>
+                                    style="display:none; background:var(--bg-input); padding:20px; border-radius:12px; margin-bottom:20px; border:1px solid var(--border);">
+                                    <h5
+                                        style="margin:0 0 15px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">
+                                        🚫 Outcome Report</h5>
                                     <div class="grow-wrap spacer"><textarea name="why_missed"
                                             placeholder="Why Missed?"></textarea>
                                     </div>
@@ -1069,8 +1073,10 @@ else {
                                 </div>
 
                                 <div id="groupRepair"
-                                    style="display:none; background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:15px;">
-                                    <h5 style="margin:0 0 10px; color:var(--text-muted);">Repair Log</h5>
+                                    style="display:none; background:var(--bg-input); padding:20px; border-radius:12px; margin-bottom:20px; border:1px solid var(--border);">
+                                    <h5
+                                        style="margin:0 0 15px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">
+                                        🔧 Repair Log</h5>
                                     <div class="grow-wrap spacer"><textarea name="complaint"
                                             placeholder="Customer Complaint"></textarea></div>
                                     <div class="grow-wrap spacer"><textarea name="resolution"
