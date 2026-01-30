@@ -76,7 +76,7 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
 <head>
     <title>Tech Portal - Home</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.1">
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -150,8 +150,7 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                     </div>
                 </a>
 
-                <a href="entry.php?date=<?= $today ?>" class="ha-card tile-card"
-                    style="text-decoration: none;">
+                <a href="entry.php?date=<?= $today ?>" class="ha-card tile-card" style="text-decoration: none;">
                     <div class="tile-icon"
                         style="background: <?= $is_today_locked ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.05)' ?>; color: <?= $is_today_locked ? '#81c784' : 'var(--text-muted)' ?>;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"

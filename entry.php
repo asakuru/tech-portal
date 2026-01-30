@@ -414,7 +414,7 @@ else {
 <head>
     <title>Tech Portal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.1">
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -654,407 +654,419 @@ else {
                 <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:end;">
                     <div>
                         <h2 style="margin:0;">📅 Month to Date</h2>
-                        <div style="color:var(--text-muted); font-size:0.9rem;"><?= date('F 1') ?> - <?= date('F j, Y') ?></div>
+                        <div style="color:var(--text-muted); font-size:0.9rem;"><?= date('F 1') ?> - <?= date('F j, Y') ?>
+                        </div>
                     </div>
                     <div style="text-align:right;"><a href="entry.php?view=entry" class="btn" style="padding:6px 12px;">📝
                             Manually Enter
-                            Job</a> <a href="financials.php" class="btn" style="padding:6px 12px;">Full Year &rarr;</a></div>
-                </div>
-            <div class="kpi-grid">
-                <?php
-                include __DIR__ . '/kpi_card.php';
-                $label = "Gross Revenue";
-                $value = "$" . number_format($gross_revenue, 2);
-                $class = "positive";
-                $sub = "PD: $" . number_format($total_per_diem ?? 0) . " | Work: $" . number_format($gross_revenue - ($total_per_diem ?? 0));
-                include __DIR__ . '/kpi_card.php';
-
-                $label = "Mileage Deduction";
-                $value = "$" . number_format($mileage_deduction, 2);
-                $class = "";
-                $sub = number_format($total_miles) . " Miles";
-                include __DIR__ . '/kpi_card.php';
-
-                $label = "Actual Fuel";
-                $value = "$" . number_format($total_fuel_cost, 2);
-                $class = "negative";
-                $sub = "Real Expense";
-                include __DIR__ . '/kpi_card.php';
-
-                $label = "Net Taxable";
-                $value = "$" . number_format($net_income, 2);
-                $class = "";
-                $sub = "Rev - Mileage";
-                include __DIR__ . '/kpi_card.php';
-
-                $label = "Est. Tax Due";
-                $value = "$" . number_format($net_income > 0 ? $net_income * 0.25 : 0, 2);
-                $class = "";
-                $sub = "25% Rate";
-                $style = "border-color: var(--primary);";
-                include __DIR__ . '/kpi_card.php';
-                ?>
-            </div>
-            <div class="box">
-                <h3 style="margin-top:0;">📋 Recent Activity (All Users)</h3>
-                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
-                    <tr style="text-align:left; color:var(--text-muted); border-bottom:2px solid var(--border);">
-                        <th style="padding:8px;">Date</th>
-                        <th>Tech</th>
-                        <th>Ticket</th>
-                        <th style="text-align:right;">Pay</th>
-                        <th></th>
-                    </tr>
-                    <?php $recent = array_slice($admin_jobs, 0, 8);
-                    foreach ($recent as $j):
-                        $tech_name = $user_map[$j['user_id']] ?? 'Unknown'; ?>
-                        <tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:10px 8px;"><?= date('m/d', strtotime($j['install_date'])) ?></td>
-                            <td style="padding:10px 8px;"><span class="tech-badge"><?= htmlspecialchars($tech_name) ?></span>
-                            </td>
-                            <td onclick="window.location='edit_job.php?id=<?= $j['id'] ?>'"
-                                style="padding:10px 8px; cursor:pointer; font-weight:bold; color:var(--primary);">
-                                <?= $j['ticket_number'] ?>
-                            </td>
-                            <td style="padding:10px 8px; text-align:right; font-weight:bold;">
-                                $<?= number_format($j['pay_amount'], 2) ?></td>
-                            <td style="padding:10px 8px; text-align:right;">
-                                <a href="entry.php?delete=<?= $j['id'] ?>&date=<?= $selected_date ?>"
-                                    onclick="if(!confirm('Delete Job?')) return false;" class="btn btn-small btn-danger">🗑️</a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </table>
-            </div>
-
-        <?php else: ?>
-            <?php if ($is_admin): ?>
-                <div style="margin-bottom:15px;"><a href="<?= htmlspecialchars(get_return_url('index.php')) ?>"
-                        class="btn">&larr; Back to Dashboard</a></div>
-            <?php endif; ?>
-            <?php if ($msg): ?>
-                <div class="alert" style="border-left:4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>
-            <?php if ($error): ?>
-                <div class="alert" style="background:var(--danger-bg); color:var(--danger-text);"><?= $error ?></div>
-            <?php endif; ?>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <a href="entry.php?date=<?= date('Y-m-d', strtotime($selected_date . ' -1 day')) . '&view=' . (isset($_GET['view']) ? $_GET['view'] : 'entry') ?>"
-                    class="btn btn-small btn-secondary">◀</a>
-                <div style="text-align:center;">
-                    <h3 style="margin:0;"><?= date('D, M j', strtotime($selected_date)) ?></h3>
-                    <form action="entry.php" method="get" style="margin-top:2px;">
-                        <?php if (isset($_GET['view'])): ?><input type="hidden" name="view"
-                                value="<?= htmlspecialchars($_GET['view']) ?>"><?php endif; ?>
-                        <input type="date" name="date" value="<?= $selected_date ?>" onchange="this.form.submit()"
-                            style="border:1px solid var(--border); background:var(--bg-input); color:var(--text-main); padding:2px 6px; border-radius:4px; font-size:0.9rem; cursor:pointer;"
-                            title="Jump to Date">
-                    </form>
-                </div>
-                <a href="entry.php?date=<?= date('Y-m-d', strtotime($selected_date . ' +1 day')) . '&view=' . (isset($_GET['view']) ? $_GET['view'] : 'entry') ?>"
-                    class="btn btn-small btn-secondary">▶</a>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                <?php
-                include __DIR__ . '/kpi_card.php';
-                $label = "Day Total";
-                $value = "$" . number_format($daily_total, 2);
-                $class = "positive";
-                $sub = "🔍 View Details";
-                $onclick = "openTallyModal('day')";
-                $style = "padding:10px; border-color:var(--border);";
-                include __DIR__ . '/kpi_card.php';
-
-                $label = "Week Total";
-                $value = "$" . number_format($weekly_grand_total, 2);
-                $class = "positive";
-                $sub = "🔍 View Details";
-                $onclick = "openTallyModal('week')";
-                $style = "padding:10px; border-color:var(--border);";
-                include __DIR__ . '/kpi_card.php';
-                ?>
-            </div>
-
-            <?php if (empty($daily_jobs)): ?>
-                <div class="box" style="text-align:center; padding:20px; color:var(--text-muted); margin-bottom:20px;">
-                    <?php if ($is_sunday): ?>
-                        📅 <strong>Sunday Policy</strong>: Non-work day. Per diem is automatically awarded.
-                    <?php else: ?>
-                        No jobs entered for today.
-                    <?php endif; ?>
-                </div>
-            <?php else:
-                include __DIR__ . '/job_summary_card.php';
-                foreach ($daily_jobs as $job):
-                    $actions = '<a href="entry.php?date=' . $selected_date . '&delete=' . $job['id'] . '&view=entry" onclick="if(!confirm(\'Delete this job?\')) return false;" class="btn btn-small btn-danger">🗑️ Delete</a>';
-                    include __DIR__ . '/job_summary_card.php';
-                endforeach;
-            endif; ?>
-
-            <div class="box" style="margin-bottom:20px; background:var(--bg-card); border-left:4px solid var(--primary);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div onclick="toggleTruckLog()" style="cursor:pointer; display:flex; align-items:center; gap:5px;">
-                        <span id="truckLogIcon">▶</span>
-                        <h4 style="margin:0; font-size:0.9rem;">🚛 Daily Truck Log</h4>
+                            Job</a> <a href="financials.php" class="btn" style="padding:6px 12px;">Full Year &rarr;</a>
                     </div>
-                    <form method="post" style="margin:0;"><?= csrf_field() ?><?php if ($is_day_locked): ?>
-                            <button type="submit" name="toggle_lock" value="unlock" class="btn btn-small btn-secondary">🔓
-                                Unlock</button>
-                        <?php else: ?>
-                            <?php if ($is_sunday): ?>
-                                <span class="badge badge-danger">🔒 SYSTEM LOCKED</span>
-                            <?php else: ?>
-                                <button type="submit" name="toggle_lock" value="lock" class="btn btn-small btn-danger">🔒
-                                    Lock</button>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    </form>
+                </div>
+                <div class="kpi-grid">
+                    <?php
+                    include __DIR__ . '/kpi_card.php';
+                    $label = "Gross Revenue";
+                    $value = "$" . number_format($gross_revenue, 2);
+                    $class = "positive";
+                    $sub = "PD: $" . number_format($total_per_diem ?? 0) . " | Work: $" . number_format($gross_revenue - ($total_per_diem ?? 0));
+                    include __DIR__ . '/kpi_card.php';
+
+                    $label = "Mileage Deduction";
+                    $value = "$" . number_format($mileage_deduction, 2);
+                    $class = "";
+                    $sub = number_format($total_miles) . " Miles";
+                    include __DIR__ . '/kpi_card.php';
+
+                    $label = "Actual Fuel";
+                    $value = "$" . number_format($total_fuel_cost, 2);
+                    $class = "negative";
+                    $sub = "Real Expense";
+                    include __DIR__ . '/kpi_card.php';
+
+                    $label = "Net Taxable";
+                    $value = "$" . number_format($net_income, 2);
+                    $class = "";
+                    $sub = "Rev - Mileage";
+                    include __DIR__ . '/kpi_card.php';
+
+                    $label = "Est. Tax Due";
+                    $value = "$" . number_format($net_income > 0 ? $net_income * 0.25 : 0, 2);
+                    $class = "";
+                    $sub = "25% Rate";
+                    $style = "border-color: var(--primary);";
+                    include __DIR__ . '/kpi_card.php';
+                    ?>
+                </div>
+                <div class="box">
+                    <h3 style="margin-top:0;">📋 Recent Activity (All Users)</h3>
+                    <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                        <tr style="text-align:left; color:var(--text-muted); border-bottom:2px solid var(--border);">
+                            <th style="padding:8px;">Date</th>
+                            <th>Tech</th>
+                            <th>Ticket</th>
+                            <th style="text-align:right;">Pay</th>
+                            <th></th>
+                        </tr>
+                        <?php $recent = array_slice($admin_jobs, 0, 8);
+                        foreach ($recent as $j):
+                            $tech_name = $user_map[$j['user_id']] ?? 'Unknown'; ?>
+                            <tr style="border-bottom:1px solid var(--border);">
+                                <td style="padding:10px 8px;"><?= date('m/d', strtotime($j['install_date'])) ?></td>
+                                <td style="padding:10px 8px;"><span
+                                        class="tech-badge"><?= htmlspecialchars($tech_name) ?></span>
+                                </td>
+                                <td onclick="window.location='edit_job.php?id=<?= $j['id'] ?>'"
+                                    style="padding:10px 8px; cursor:pointer; font-weight:bold; color:var(--primary);">
+                                    <?= $j['ticket_number'] ?>
+                                </td>
+                                <td style="padding:10px 8px; text-align:right; font-weight:bold;">
+                                    $<?= number_format($j['pay_amount'], 2) ?></td>
+                                <td style="padding:10px 8px; text-align:right;">
+                                    <a href="entry.php?delete=<?= $j['id'] ?>&date=<?= $selected_date ?>"
+                                        onclick="if(!confirm('Delete Job?')) return false;"
+                                        class="btn btn-small btn-danger">🗑️</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
                 </div>
 
-                <div id="truckLogContent" style="display:none;">
-                    <?php if ($is_day_locked && (!$is_sunday || $day_log['odometer'] > 0)): ?>
-                        <?php
-                        $l_mpg = "N/A";
-                        if ($day_log['mileage'] > 0 && $day_log['gallons'] > 0) {
-                            $l_mpg = number_format($day_log['mileage'] / $day_log['gallons'], 2) . " MPG";
-                        }
-                        ?>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left;">
-                            <div>
-                                <div style="font-size:0.75rem; color:var(--text-muted);">Odometer</div>
-                                <div style="font-weight:bold;"><?= $day_log['odometer'] ?></div>
-                            </div>
-                            <div>
-                                <div style="font-size:0.75rem; color:var(--text-muted);">Miles</div>
-                                <div style="font-weight:bold;"><?= $day_log['mileage'] ?></div>
-                            </div>
-                            <div>
-                                <div style="font-size:0.75rem; color:var(--text-muted);">Gallons</div>
-                                <div style="font-weight:bold;"><?= $day_log['gallons'] ?></div>
-                            </div>
-                            <div>
-                                <div style="font-size:0.75rem; color:var(--text-muted);">Fuel Cost</div>
-                                <div style="font-weight:bold;">$<?= $day_log['fuel_cost'] ?></div>
-                            </div>
-                            <div
-                                style="grid-column: span 2; border-top:1px solid var(--border); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
-                                <div>
-                                    <div style="font-size:0.75rem; color:var(--text-muted);">Performance</div>
-                                    <div style="font-weight:bold; color:var(--success-text);"><?= $l_mpg ?></div>
-                                </div>
-                                <?php if ($day_log['extra_per_diem']): ?><span
-                                        style="background:var(--success-text); color:#fff; padding:2px 6px; border-radius:4px; font-size:0.7rem;">EXTRA
-                                        PD</span><?php endif; ?>
-                            </div>
+            <?php else: ?>
+                <?php if ($is_admin): ?>
+                    <div style="margin-bottom:15px;"><a href="<?= htmlspecialchars(get_return_url('index.php')) ?>"
+                            class="btn">&larr; Back to Dashboard</a></div>
+                <?php endif; ?>
+                <?php if ($msg): ?>
+                    <div class="alert" style="border-left:4px solid var(--success-text);"><?= $msg ?></div><?php endif; ?>
+                <?php if ($error): ?>
+                    <div class="alert" style="background:var(--danger-bg); color:var(--danger-text);"><?= $error ?></div>
+                <?php endif; ?>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <a href="entry.php?date=<?= date('Y-m-d', strtotime($selected_date . ' -1 day')) . '&view=' . (isset($_GET['view']) ? $_GET['view'] : 'entry') ?>"
+                        class="btn btn-small btn-secondary">◀</a>
+                    <div style="text-align:center;">
+                        <h3 style="margin:0;"><?= date('D, M j', strtotime($selected_date)) ?></h3>
+                        <form action="entry.php" method="get" style="margin-top:2px;">
+                            <?php if (isset($_GET['view'])): ?><input type="hidden" name="view"
+                                    value="<?= htmlspecialchars($_GET['view']) ?>"><?php endif; ?>
+                            <input type="date" name="date" value="<?= $selected_date ?>" onchange="this.form.submit()"
+                                style="border:1px solid var(--border); background:var(--bg-input); color:var(--text-main); padding:2px 6px; border-radius:4px; font-size:0.9rem; cursor:pointer;"
+                                title="Jump to Date">
+                        </form>
+                    </div>
+                    <a href="entry.php?date=<?= date('Y-m-d', strtotime($selected_date . ' +1 day')) . '&view=' . (isset($_GET['view']) ? $_GET['view'] : 'entry') ?>"
+                        class="btn btn-small btn-secondary">▶</a>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <?php
+                    include __DIR__ . '/kpi_card.php';
+                    $label = "Day Total";
+                    $value = "$" . number_format($daily_total, 2);
+                    $class = "positive";
+                    $sub = "🔍 View Details";
+                    $onclick = "openTallyModal('day')";
+                    $style = "padding:10px; border-color:var(--border);";
+                    include __DIR__ . '/kpi_card.php';
+
+                    $label = "Week Total";
+                    $value = "$" . number_format($weekly_grand_total, 2);
+                    $class = "positive";
+                    $sub = "🔍 View Details";
+                    $onclick = "openTallyModal('week')";
+                    $style = "padding:10px; border-color:var(--border);";
+                    include __DIR__ . '/kpi_card.php';
+                    ?>
+                </div>
+
+                <?php if (empty($daily_jobs)): ?>
+                    <div class="box" style="text-align:center; padding:20px; color:var(--text-muted); margin-bottom:20px;">
+                        <?php if ($is_sunday): ?>
+                            📅 <strong>Sunday Policy</strong>: Non-work day. Per diem is automatically awarded.
+                        <?php else: ?>
+                            No jobs entered for today.
+                        <?php endif; ?>
+                    </div>
+                <?php else:
+                    include __DIR__ . '/job_summary_card.php';
+                    foreach ($daily_jobs as $job):
+                        $actions = '<a href="entry.php?date=' . $selected_date . '&delete=' . $job['id'] . '&view=entry" onclick="if(!confirm(\'Delete this job?\')) return false;" class="btn btn-small btn-danger">🗑️ Delete</a>';
+                        include __DIR__ . '/job_summary_card.php';
+                    endforeach;
+                endif; ?>
+
+                <div class="box"
+                    style="margin-bottom:20px; background:var(--bg-card); border-left:4px solid var(--primary);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div onclick="toggleTruckLog()" style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                            <span id="truckLogIcon">▶</span>
+                            <h4 style="margin:0; font-size:0.9rem;">🚛 Daily Truck Log</h4>
                         </div>
+                        <form method="post" style="margin:0;"><?= csrf_field() ?><?php if ($is_day_locked): ?>
+                                <button type="submit" name="toggle_lock" value="unlock" class="btn btn-small btn-secondary">🔓
+                                    Unlock</button>
+                            <?php else: ?>
+                                <?php if ($is_sunday): ?>
+                                    <span class="badge badge-danger">🔒 SYSTEM LOCKED</span>
+                                <?php else: ?>
+                                    <button type="submit" name="toggle_lock" value="lock" class="btn btn-small btn-danger">🔒
+                                        Lock</button>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </form>
+                    </div>
 
-                    <?php else: ?>
-                        <form method="post" style="display:flex; flex-direction:column; gap:10px;">
-                            <?= csrf_field() ?>
-                            <div style="display:flex; gap:10px;">
-                                <div style="flex:1;">
-                                    <label style="font-size:0.75rem;">Odometer</label>
-                                    <input type="number" name="odometer" value="<?= htmlspecialchars($day_log['odometer']) ?>"
-                                        data-prev-odo="<?= $last_odo ?>" oninput="updateMiles()"
-                                        style="padding:6px; width:100%;">
+                    <div id="truckLogContent" style="display:none;">
+                        <?php if ($is_day_locked && (!$is_sunday || $day_log['odometer'] > 0)): ?>
+                            <?php
+                            $l_mpg = "N/A";
+                            if ($day_log['mileage'] > 0 && $day_log['gallons'] > 0) {
+                                $l_mpg = number_format($day_log['mileage'] / $day_log['gallons'], 2) . " MPG";
+                            }
+                            ?>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left;">
+                                <div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">Odometer</div>
+                                    <div style="font-weight:bold;"><?= $day_log['odometer'] ?></div>
                                 </div>
-                                <div style="flex:1;">
-                                    <label style="font-size:0.75rem;">Miles</label>
-                                    <input type="number" id="truck_miles" name="mileage"
-                                        value="<?= htmlspecialchars($day_log['mileage']) ?>" oninput="calculateMPG()"
-                                        style="padding:6px; width:100%;">
+                                <div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">Miles</div>
+                                    <div style="font-weight:bold;"><?= $day_log['mileage'] ?></div>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">Gallons</div>
+                                    <div style="font-weight:bold;"><?= $day_log['gallons'] ?></div>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">Fuel Cost</div>
+                                    <div style="font-weight:bold;">$<?= $day_log['fuel_cost'] ?></div>
+                                </div>
+                                <div
+                                    style="grid-column: span 2; border-top:1px solid var(--border); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                                    <div>
+                                        <div style="font-size:0.75rem; color:var(--text-muted);">Performance</div>
+                                        <div style="font-weight:bold; color:var(--success-text);"><?= $l_mpg ?></div>
+                                    </div>
+                                    <?php if ($day_log['extra_per_diem']): ?><span
+                                            style="background:var(--success-text); color:#fff; padding:2px 6px; border-radius:4px; font-size:0.7rem;">EXTRA
+                                            PD</span><?php endif; ?>
                                 </div>
                             </div>
 
-                            <div style="display:flex; gap:10px;">
-                                <div style="flex:1;">
-                                    <label style="font-size:0.75rem;">Gallons</label>
-                                    <input type="number" step="0.001" id="truck_gallons" name="gallons"
-                                        value="<?= htmlspecialchars($day_log['gallons']) ?>" oninput="calculateMPG()"
-                                        style="padding:6px; width:100%;">
-                                </div>
-                                <div style="flex:1;">
-                                    <label style="font-size:0.75rem;">Fuel $</label>
-                                    <input type="number" step="0.01" name="fuel_cost"
-                                        value="<?= htmlspecialchars($day_log['fuel_cost']) ?>" style="padding:6px; width:100%;">
-                                </div>
-                            </div>
-
-                            <div style="display:flex; gap:10px; align-items:end;">
-                                <div style="flex:1;">
-                                    <label style="font-size:0.75rem;">Calculated MPG</label>
-                                    <div id="mpg_wrapper"
-                                        style="border:1px solid var(--border); border-radius:4px; padding:6px; background:var(--bg-input); text-align:center;">
-                                        <span id="mpg_result" style="font-weight:bold; color:var(--text-muted);">--.--
-                                            MPG</span>
+                        <?php else: ?>
+                            <form method="post" style="display:flex; flex-direction:column; gap:10px;">
+                                <?= csrf_field() ?>
+                                <div style="display:flex; gap:10px;">
+                                    <div style="flex:1;">
+                                        <label style="font-size:0.75rem;">Odometer</label>
+                                        <input type="number" name="odometer"
+                                            value="<?= htmlspecialchars($day_log['odometer']) ?>"
+                                            data-prev-odo="<?= $last_odo ?>" oninput="updateMiles()"
+                                            style="padding:6px; width:100%;">
+                                    </div>
+                                    <div style="flex:1;">
+                                        <label style="font-size:0.75rem;">Miles</label>
+                                        <input type="number" id="truck_miles" name="mileage"
+                                            value="<?= htmlspecialchars($day_log['mileage']) ?>" oninput="calculateMPG()"
+                                            style="padding:6px; width:100%;">
                                     </div>
                                 </div>
-                                <div style="flex:1; display:flex; justify-content:space-between; align-items:center;">
-                                    <label style="color:var(--success-text); font-weight:bold; font-size:0.8rem;">
-                                        <input type="checkbox" name="extra_pd" value="1" <?= ($day_log['extra_per_diem'] == 1) ? 'checked' : '' ?>> Extra PD
-                                    </label>
-                                    <button type="submit" name="save_truck_log" class="btn btn-small">💾 Save</button>
+
+                                <div style="display:flex; gap:10px;">
+                                    <div style="flex:1;">
+                                        <label style="font-size:0.75rem;">Gallons</label>
+                                        <input type="number" step="0.001" id="truck_gallons" name="gallons"
+                                            value="<?= htmlspecialchars($day_log['gallons']) ?>" oninput="calculateMPG()"
+                                            style="padding:6px; width:100%;">
+                                    </div>
+                                    <div style="flex:1;">
+                                        <label style="font-size:0.75rem;">Fuel $</label>
+                                        <input type="number" step="0.01" name="fuel_cost"
+                                            value="<?= htmlspecialchars($day_log['fuel_cost']) ?>"
+                                            style="padding:6px; width:100%;">
+                                    </div>
                                 </div>
+
+                                <div style="display:flex; gap:10px; align-items:end;">
+                                    <div style="flex:1;">
+                                        <label style="font-size:0.75rem;">Calculated MPG</label>
+                                        <div id="mpg_wrapper"
+                                            style="border:1px solid var(--border); border-radius:4px; padding:6px; background:var(--bg-input); text-align:center;">
+                                            <span id="mpg_result" style="font-weight:bold; color:var(--text-muted);">--.--
+                                                MPG</span>
+                                        </div>
+                                    </div>
+                                    <div style="flex:1; display:flex; justify-content:space-between; align-items:center;">
+                                        <label style="color:var(--success-text); font-weight:bold; font-size:0.8rem;">
+                                            <input type="checkbox" name="extra_pd" value="1" <?= ($day_log['extra_per_diem'] == 1) ? 'checked' : '' ?>> Extra PD
+                                        </label>
+                                        <button type="submit" name="save_truck_log" class="btn btn-small">💾 Save</button>
+                                    </div>
+                                </div>
+                            </form>
+                            <script>calculateMPG();</script>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php if ($is_sunday): ?>
+                    <div class="box"
+                        style="background:var(--bg-input); border:1px solid var(--primary); text-align:center; padding:15px; margin-bottom:20px;">
+                        <p style="margin:0; font-weight:bold; color:var(--primary);">
+                            🚫 Sunday entries are disabled. This is a non-work day.
+                        </p>
+                    </div>
+                <?php elseif (!$is_day_locked): ?>
+                    <div class="box">
+                        <form method="post">
+                            <?= csrf_field() ?>
+                            <div class="grid-container">
+                                <div><label>Date</label><input type="date" name="install_date" value="<?= $selected_date ?>"
+                                        required>
+                                </div>
+                                <div id="secTicket"><label>Ticket #</label><input type="text" name="ticket_number"></div>
+                            </div>
+                            <div class="full-width" style="margin-top:10px;">
+                                <label>Job Code</label>
+                                <select name="install_type" id="install_type" onchange="toggleFields()" required
+                                    style="width:100%; padding:10px;">
+                                    <option value="" disabled selected>Select Code...</option>
+                                    <?php if (!empty($job_codes_list)):
+                                        foreach ($job_codes_list as $jc): ?>
+                                            <option value="<?= htmlspecialchars($jc['rate_key']) ?>">
+                                                <?= htmlspecialchars($jc['rate_key']) ?> - <?= htmlspecialchars($jc['description']) ?>
+                                            </option><?php endforeach; else: ?>
+                                        <option value="I-6600">I-6600 - Install</option>
+                                        <option value="R-6600">R-6600 - Repair</option>
+                                        <option value="TC">TC - Trouble Call</option>
+                                        <option value="F008">F008 - Trouble Call</option>
+                                        <option value="F009">F009 - Refer to Maint</option>
+                                        <option value="F011">F011 - Trip Charge</option><?php endif; ?>
+                                    <!-- Always include DO and ND -->
+                                    <option value="ND">ND - Non Dispatch</option>
+                                    <option value="DO">DO - Day Off</option>
+                                </select>
+                            </div>
+
+                            <div id="secDetails" style="margin-top:15px;">
+                                <hr style="margin:15px 0; border:0; border-top:1px solid var(--border);">
+                                <div id="secCustomer">
+                                    <div class="grid-container">
+                                        <div><input type="text" name="cust_fname" placeholder="First Name"></div>
+                                        <div><input type="text" name="cust_lname" placeholder="Last Name"></div>
+                                    </div>
+                                    <div style="margin-top:10px;"><input type="text" name="cust_street" placeholder="Address"
+                                            style="width:100%;"></div>
+                                    <div class="grid-container" style="margin-top:10px;">
+                                        <div><input type="text" name="cust_city" placeholder="City"></div>
+                                        <div><input type="text" name="cust_zip" placeholder="Zip"></div>
+                                    </div>
+                                    <div class="grid-container" style="margin-top:10px;">
+                                        <div><input type="text" name="cust_state" placeholder="State"></div>
+                                        <div><input type="text" name="cust_phone" placeholder="Phone"></div>
+                                    </div>
+                                    <hr style="margin:15px 0; border:0; border-top:1px solid var(--border);">
+                                </div>
+
+                                <div id="groupMissed"
+                                    style="display:none; background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:15px;">
+                                    <h5 style="margin:0 0 10px; color:var(--text-muted);">Outcome Report</h5>
+                                    <div class="grow-wrap spacer"><textarea name="why_missed"
+                                            placeholder="Why Missed?"></textarea>
+                                    </div>
+                                    <div class="grow-wrap spacer"><textarea name="supervisor"
+                                            placeholder="Supervisor Contacted"></textarea></div>
+                                    <div class="grow-wrap"><textarea name="outcome" placeholder="Final Outcome"></textarea>
+                                    </div>
+                                </div>
+
+                                <div id="groupRepair"
+                                    style="display:none; background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:15px;">
+                                    <h5 style="margin:0 0 10px; color:var(--text-muted);">Repair Log</h5>
+                                    <div class="grow-wrap spacer"><textarea name="complaint"
+                                            placeholder="Customer Complaint"></textarea></div>
+                                    <div class="grow-wrap spacer"><textarea name="resolution"
+                                            placeholder="Resolution Steps"></textarea></div>
+                                    <div class="grow-wrap spacer"><textarea name="equip_replaced"
+                                            placeholder="Equipment Replaced"></textarea></div>
+                                    <div class="grow-wrap"><textarea name="service_restored"
+                                            placeholder="Service Restored?"></textarea></div>
+                                </div>
+
+                                <div id="groupTechStandard">
+                                    <div id="subTechSpecs">
+                                        <div class="grid-container spacer">
+                                            <div><input type="text" name="ont_serial" placeholder="ONT Serial"></div>
+                                            <div><input type="text" name="eeros_serial" placeholder="Router Serial"></div>
+                                        </div>
+                                        <div class="grid-container spacer">
+                                            <div><input type="text" name="wifi_name" placeholder="WiFi SSID"></div>
+                                            <div><input type="text" name="wifi_pass" placeholder="WiFi Password"></div>
+                                        </div>
+                                        <div class="grid-container spacer">
+                                            <div><input type="number" step="0.01" name="tici_hub"
+                                                    placeholder="Light @ Hub (e.g. -13.50)" onchange="forceNegative(this)">
+                                            </div>
+                                            <div><input type="number" step="0.01" name="tici_ont"
+                                                    placeholder="Light @ ONT (e.g. -16.20)" onchange="forceNegative(this)">
+                                            </div>
+                                        </div>
+                                        <div class="grid-container spacer">
+                                            <div><input type="number" name="spans" placeholder="Spans"></div>
+                                            <div><input type="number" name="conduit_ft" placeholder="Conduit (Ft)"></div>
+                                        </div>
+                                        <div class="grid-container spacer">
+                                            <div><input type="number" name="jacks_installed" placeholder="Jacks"></div>
+                                            <div><input type="number" name="drop_length" placeholder="Drop (Ft)"></div>
+                                        </div>
+                                        <div class="grid-container spacer">
+                                            <div><input type="number" name="soft_jumper" placeholder="Soft Jumper (Ft)"></div>
+                                            <div><input type="text" name="cat6_lines" placeholder="Cat6 Lines"></div>
+                                        </div>
+                                        <div class="grow-wrap spacer">
+                                            <label>Path Notes</label>
+                                            <textarea name="path_notes" placeholder="Path details..."></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                        <label><input type="checkbox" name="nid_installed" value="Yes"> NID</label>
+                                        <label><input type="checkbox" name="copper_removed" value="Yes"> Copper Rem</label>
+                                        <label><input type="checkbox" name="exterior_sealed" value="Yes"> Sealed</label>
+                                        <label><input type="checkbox" name="unbreakable_wifi" value="Yes"> Unbreakable</label>
+                                        <label><input type="checkbox" name="whole_home_wifi" value="Yes"> Whole Home</label>
+                                        <label><input type="checkbox" name="cust_education" value="Yes"> Cust Ed</label>
+                                        <label><input type="checkbox" name="phone_test" value="Yes"> Phone Test</label>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top:10px;" id="groupNotes">
+                                    <div style="margin-bottom:10px;">
+                                        <label style="font-weight:bold; color:var(--text-muted);">Additional Notes
+                                            (Misc)</label>
+                                        <div class="grow-wrap"><textarea id="misc_notes" name="misc_notes"
+                                                placeholder="Dog in yard, moved couch, etc..."></textarea></div>
+                                    </div>
+                                    <div style="margin-bottom:5px; text-align:right;">
+                                        <button type="button" onclick="copyNotes()" class="btn btn-small btn-secondary">Copy
+                                            Notes</button>
+                                    </div>
+                                    <div class="grow-wrap"><textarea name="addtl_work" placeholder="Full Notes Preview..."
+                                            readonly style="background:#f3f4f6; color:#555;"></textarea></div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:10px; margin-top:20px;">
+                                <button type="submit" name="save_draft" class="btn btn-secondary" style="flex:1;">💾 Save
+                                    Draft</button>
+                                <button type="submit" name="add_job" class="btn" style="flex:2;">➕ Save Job</button>
                             </div>
                         </form>
-                        <script>calculateMPG();</script>
-                    <?php endif; ?>
-                </div>
-            </div>
+                    </div>
+                <?php endif; ?>
 
-            <?php if ($is_sunday): ?>
-                <div class="box"
-                    style="background:var(--bg-input); border:1px solid var(--primary); text-align:center; padding:15px; margin-bottom:20px;">
-                    <p style="margin:0; font-weight:bold; color:var(--primary);">
-                        🚫 Sunday entries are disabled. This is a non-work day.
-                    </p>
-                </div>
-            <?php elseif (!$is_day_locked): ?>
-                <div class="box">
-                    <form method="post">
-                        <?= csrf_field() ?>
-                        <div class="grid-container">
-                            <div><label>Date</label><input type="date" name="install_date" value="<?= $selected_date ?>"
-                                    required>
-                            </div>
-                            <div id="secTicket"><label>Ticket #</label><input type="text" name="ticket_number"></div>
-                        </div>
-                        <div class="full-width" style="margin-top:10px;">
-                            <label>Job Code</label>
-                            <select name="install_type" id="install_type" onchange="toggleFields()" required
-                                style="width:100%; padding:10px;">
-                                <option value="" disabled selected>Select Code...</option>
-                                <?php if (!empty($job_codes_list)):
-                                    foreach ($job_codes_list as $jc): ?>
-                                        <option value="<?= htmlspecialchars($jc['rate_key']) ?>">
-                                            <?= htmlspecialchars($jc['rate_key']) ?> - <?= htmlspecialchars($jc['description']) ?>
-                                        </option><?php endforeach; else: ?>
-                                    <option value="I-6600">I-6600 - Install</option>
-                                    <option value="R-6600">R-6600 - Repair</option>
-                                    <option value="TC">TC - Trouble Call</option>
-                                    <option value="F008">F008 - Trouble Call</option>
-                                    <option value="F009">F009 - Refer to Maint</option>
-                                    <option value="F011">F011 - Trip Charge</option><?php endif; ?>
-                                <!-- Always include DO and ND -->
-                                <option value="ND">ND - Non Dispatch</option>
-                                <option value="DO">DO - Day Off</option>
-                            </select>
-                        </div>
-
-                        <div id="secDetails" style="margin-top:15px;">
-                            <hr style="margin:15px 0; border:0; border-top:1px solid var(--border);">
-                            <div id="secCustomer">
-                                <div class="grid-container">
-                                    <div><input type="text" name="cust_fname" placeholder="First Name"></div>
-                                    <div><input type="text" name="cust_lname" placeholder="Last Name"></div>
-                                </div>
-                                <div style="margin-top:10px;"><input type="text" name="cust_street" placeholder="Address"
-                                        style="width:100%;"></div>
-                                <div class="grid-container" style="margin-top:10px;">
-                                    <div><input type="text" name="cust_city" placeholder="City"></div>
-                                    <div><input type="text" name="cust_zip" placeholder="Zip"></div>
-                                </div>
-                                <div class="grid-container" style="margin-top:10px;">
-                                    <div><input type="text" name="cust_state" placeholder="State"></div>
-                                    <div><input type="text" name="cust_phone" placeholder="Phone"></div>
-                                </div>
-                                <hr style="margin:15px 0; border:0; border-top:1px solid var(--border);">
-                            </div>
-
-                            <div id="groupMissed"
-                                style="display:none; background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:15px;">
-                                <h5 style="margin:0 0 10px; color:var(--text-muted);">Outcome Report</h5>
-                                <div class="grow-wrap spacer"><textarea name="why_missed" placeholder="Why Missed?"></textarea>
-                                </div>
-                                <div class="grow-wrap spacer"><textarea name="supervisor"
-                                        placeholder="Supervisor Contacted"></textarea></div>
-                                <div class="grow-wrap"><textarea name="outcome" placeholder="Final Outcome"></textarea></div>
-                            </div>
-
-                            <div id="groupRepair"
-                                style="display:none; background:var(--bg-input); padding:15px; border-radius:8px; margin-bottom:15px;">
-                                <h5 style="margin:0 0 10px; color:var(--text-muted);">Repair Log</h5>
-                                <div class="grow-wrap spacer"><textarea name="complaint"
-                                        placeholder="Customer Complaint"></textarea></div>
-                                <div class="grow-wrap spacer"><textarea name="resolution"
-                                        placeholder="Resolution Steps"></textarea></div>
-                                <div class="grow-wrap spacer"><textarea name="equip_replaced"
-                                        placeholder="Equipment Replaced"></textarea></div>
-                                <div class="grow-wrap"><textarea name="service_restored"
-                                        placeholder="Service Restored?"></textarea></div>
-                            </div>
-
-                            <div id="groupTechStandard">
-                                <div id="subTechSpecs">
-                                    <div class="grid-container spacer">
-                                        <div><input type="text" name="ont_serial" placeholder="ONT Serial"></div>
-                                        <div><input type="text" name="eeros_serial" placeholder="Router Serial"></div>
-                                    </div>
-                                    <div class="grid-container spacer">
-                                        <div><input type="text" name="wifi_name" placeholder="WiFi SSID"></div>
-                                        <div><input type="text" name="wifi_pass" placeholder="WiFi Password"></div>
-                                    </div>
-                                    <div class="grid-container spacer">
-                                        <div><input type="number" step="0.01" name="tici_hub"
-                                                placeholder="Light @ Hub (e.g. -13.50)" onchange="forceNegative(this)"></div>
-                                        <div><input type="number" step="0.01" name="tici_ont"
-                                                placeholder="Light @ ONT (e.g. -16.20)" onchange="forceNegative(this)"></div>
-                                    </div>
-                                    <div class="grid-container spacer">
-                                        <div><input type="number" name="spans" placeholder="Spans"></div>
-                                        <div><input type="number" name="conduit_ft" placeholder="Conduit (Ft)"></div>
-                                    </div>
-                                    <div class="grid-container spacer">
-                                        <div><input type="number" name="jacks_installed" placeholder="Jacks"></div>
-                                        <div><input type="number" name="drop_length" placeholder="Drop (Ft)"></div>
-                                    </div>
-                                    <div class="grid-container spacer">
-                                        <div><input type="number" name="soft_jumper" placeholder="Soft Jumper (Ft)"></div>
-                                        <div><input type="text" name="cat6_lines" placeholder="Cat6 Lines"></div>
-                                    </div>
-                                    <div class="grow-wrap spacer">
-                                        <label>Path Notes</label>
-                                        <textarea name="path_notes" placeholder="Path details..."></textarea>
-                                    </div>
-                                </div>
-
-                                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                    <label><input type="checkbox" name="nid_installed" value="Yes"> NID</label>
-                                    <label><input type="checkbox" name="copper_removed" value="Yes"> Copper Rem</label>
-                                    <label><input type="checkbox" name="exterior_sealed" value="Yes"> Sealed</label>
-                                    <label><input type="checkbox" name="unbreakable_wifi" value="Yes"> Unbreakable</label>
-                                    <label><input type="checkbox" name="whole_home_wifi" value="Yes"> Whole Home</label>
-                                    <label><input type="checkbox" name="cust_education" value="Yes"> Cust Ed</label>
-                                    <label><input type="checkbox" name="phone_test" value="Yes"> Phone Test</label>
-                                </div>
-                            </div>
-
-                            <div style="margin-top:10px;" id="groupNotes">
-                                <div style="margin-bottom:10px;">
-                                    <label style="font-weight:bold; color:var(--text-muted);">Additional Notes (Misc)</label>
-                                    <div class="grow-wrap"><textarea id="misc_notes" name="misc_notes"
-                                            placeholder="Dog in yard, moved couch, etc..."></textarea></div>
-                                </div>
-                                <div style="margin-bottom:5px; text-align:right;">
-                                    <button type="button" onclick="copyNotes()" class="btn btn-small btn-secondary">Copy
-                                        Notes</button>
-                                </div>
-                                <div class="grow-wrap"><textarea name="addtl_work" placeholder="Full Notes Preview..." readonly
-                                        style="background:#f3f4f6; color:#555;"></textarea></div>
-                            </div>
-                        </div>
-
-                        <div style="display:flex; gap:10px; margin-top:20px;">
-                            <button type="submit" name="save_draft" class="btn btn-secondary" style="flex:1;">💾 Save
-                                Draft</button>
-                            <button type="submit" name="add_job" class="btn" style="flex:2;">➕ Save Job</button>
-                        </div>
-                    </form>
-                </div>
             <?php endif; ?>
-
-        <?php endif; ?>
 
     </div>
     <!-- Tally Breakdown Modal -->
@@ -1318,7 +1330,8 @@ else {
 
         if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
     </script>
-        </main>
+    </main>
     </div>
 </body>
+
 </html>

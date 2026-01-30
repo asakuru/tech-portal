@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tech-portal-v1';
+const CACHE_NAME = 'tech-portal-v2';
 const ASSETS = [
     'style.css',
     'script.js',

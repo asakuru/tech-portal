@@ -469,7 +469,7 @@ usort($display_rows, function ($a, $b) {
 <head>
     <title>Reconcile</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.1">
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -622,7 +622,8 @@ usort($display_rows, function ($a, $b) {
                         <div style="font-weight:bold; font-size:1.1rem;">Week <?= htmlspecialchars($week) ?></div>
                         <div style="color:var(--text-muted); font-size:0.85rem;">
                             <?= htmlspecialchars($week_label_start) ?>
-                            - <?= htmlspecialchars($week_label_end) ?></div>
+                            - <?= htmlspecialchars($week_label_end) ?>
+                        </div>
                     </div>
                     <a href="<?= htmlspecialchars($next_link) ?>">&raquo;</a>
                 </div>
@@ -924,7 +925,7 @@ usort($display_rows, function ($a, $b) {
 
             </div>
     </div>
-        if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
+    if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
     </script>
     </main>
     </div>
