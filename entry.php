@@ -1091,33 +1091,34 @@ else {
 
                                 <div id="groupTechStandard">
                                     <div id="subTechSpecs">
-                                        <div class="grid-container spacer">
-                                            <div><input type="text" name="ont_serial" placeholder="ONT Serial"></div>
-                                            <div><input type="text" name="eeros_serial" placeholder="Router Serial"></div>
-                                        </div>
-                                        <div class="grid-container spacer">
-                                            <div><input type="text" name="wifi_name" placeholder="WiFi SSID"></div>
-                                            <div><input type="text" name="wifi_pass" placeholder="WiFi Password"></div>
-                                        </div>
-                                        <div class="grid-container spacer">
-                                            <div><input type="number" step="0.01" name="tici_hub"
-                                                    placeholder="Light @ Hub (e.g. -13.50)" onchange="forceNegative(this)">
-                                            </div>
-                                            <div><input type="number" step="0.01" name="tici_ont"
-                                                    placeholder="Light @ ONT (e.g. -16.20)" onchange="forceNegative(this)">
-                                            </div>
-                                        </div>
-                                        <div class="grid-container spacer">
-                                            <div><input type="number" name="spans" placeholder="Spans"></div>
-                                            <div><input type="number" name="conduit_ft" placeholder="Conduit (Ft)"></div>
-                                        </div>
-                                        <div class="grid-container spacer">
-                                            <div><input type="number" name="jacks_installed" placeholder="Jacks"></div>
-                                            <div><input type="number" name="drop_length" placeholder="Drop (Ft)"></div>
-                                        </div>
-                                        <div class="grid-container spacer">
-                                            <div><input type="number" name="soft_jumper" placeholder="Soft Jumper (Ft)"></div>
-                                            <div><input type="text" name="cat6_lines" placeholder="Cat6 Lines"></div>
+                                        <div class="bento-grid spacer">
+                                            <div style="grid-column: span 6;"><input type="text" name="ont_serial"
+                                                    placeholder="ONT Serial"></div>
+                                            <div style="grid-column: span 6;"><input type="text" name="eeros_serial"
+                                                    placeholder="Router Serial"></div>
+
+                                            <div style="grid-column: span 6;"><input type="text" name="wifi_name"
+                                                    placeholder="WiFi SSID"></div>
+                                            <div style="grid-column: span 6;"><input type="text" name="wifi_pass"
+                                                    placeholder="WiFi Password"></div>
+
+                                            <div style="grid-column: span 3;"><input type="number" step="0.01" name="tici_hub"
+                                                    placeholder="Hub (db)" onchange="forceNegative(this)"></div>
+                                            <div style="grid-column: span 3;"><input type="number" step="0.01" name="tici_ont"
+                                                    placeholder="ONT (db)" onchange="forceNegative(this)"></div>
+                                            <div style="grid-column: span 2;"><input type="number" name="drop_length"
+                                                    placeholder="Drop (Ft)"></div>
+                                            <div style="grid-column: span 2;"><input type="number" name="spans"
+                                                    placeholder="Spans"></div>
+                                            <div style="grid-column: span 2;"><input type="number" name="jacks_installed"
+                                                    placeholder="Jacks"></div>
+
+                                            <div style="grid-column: span 3;"><input type="number" name="conduit_ft"
+                                                    placeholder="Conduit (Ft)"></div>
+                                            <div style="grid-column: span 3;"><input type="number" name="soft_jumper"
+                                                    placeholder="Soft Jumper (Ft)"></div>
+                                            <div style="grid-column: span 6;"><input type="text" name="cat6_lines"
+                                                    placeholder="Cat6 Lines"></div>
                                         </div>
                                         <div class="grow-wrap spacer">
                                             <label>Path Notes</label>

@@ -656,37 +656,42 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                                     <input type="text" name="wifi_pass"
                                         value="<?= htmlspecialchars($job['wifi_pass']) ?>" placeholder="Pass">
                                 </div>
-                                <div class="form-group" style="grid-column: span 6;">
-                                    <label>Light @ Hub (db)</label>
+                                <!-- Row 3: Lights, Drop, Spans, Jacks (12 cols) -->
+                                <div class="form-group" style="grid-column: span 3;">
+                                    <label>Hub (db)</label>
                                     <input type="number" step="0.01" name="tici_hub"
-                                        value="<?= htmlspecialchars($parsed['hub_val']) ?>"
-                                        onchange="forceNegative(this)">
-                                </div>
-                                <div class="form-group" style="grid-column: span 6;">
-                                    <label>Light @ ONT (db)</label>
-                                    <input type="number" step="0.01" name="tici_ont"
-                                        value="<?= htmlspecialchars($parsed['ont_val']) ?>"
+                                        value="<?= htmlspecialchars($parsed['hub_val']) ?>" placeholder="-X.XX"
                                         onchange="forceNegative(this)">
                                 </div>
                                 <div class="form-group" style="grid-column: span 3;">
-                                    <label>Spans</label>
-                                    <input type="number" name="spans" value="<?= $job['spans'] ?>">
+                                    <label>ONT (db)</label>
+                                    <input type="number" step="0.01" name="tici_ont"
+                                        value="<?= htmlspecialchars($parsed['ont_val']) ?>" placeholder="-X.XX"
+                                        onchange="forceNegative(this)">
                                 </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Drop</label>
+                                    <input type="number" name="drop_length" value="<?= $job['drop_length'] ?>"
+                                        placeholder="Ft">
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Spans</label>
+                                    <input type="number" name="spans" value="<?= $job['spans'] ?>" placeholder="#">
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Jacks</label>
+                                    <input type="number" name="jacks_installed" value="<?= $job['jacks_installed'] ?>"
+                                        placeholder="#">
+                                </div>
+                                <!-- Row 4: Conduit, Soft Jumper, Cat6 -->
                                 <div class="form-group" style="grid-column: span 3;">
                                     <label>Conduit (Ft)</label>
                                     <input type="number" name="conduit_ft" value="<?= $job['conduit_ft'] ?>">
                                 </div>
                                 <div class="form-group" style="grid-column: span 3;">
-                                    <label>Jacks</label>
-                                    <input type="number" name="jacks_installed" value="<?= $job['jacks_installed'] ?>">
-                                </div>
-                                <div class="form-group" style="grid-column: span 3;">
-                                    <label>Drop (Ft)</label>
-                                    <input type="number" name="drop_length" value="<?= $job['drop_length'] ?>">
-                                </div>
-                                <div class="form-group" style="grid-column: span 6;">
-                                    <label>Soft Jumper (Ft)</label>
-                                    <input type="number" name="soft_jumper" value="<?= $job['soft_jumper'] ?>">
+                                    <label>Soft Jumper</label>
+                                    <input type="number" name="soft_jumper" value="<?= $job['soft_jumper'] ?>"
+                                        placeholder="Ft">
                                 </div>
                                 <div class="form-group" style="grid-column: span 6;">
                                     <label>Cat6 Lines</label>
