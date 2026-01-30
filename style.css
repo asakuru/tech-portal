@@ -221,10 +221,13 @@ svg {
 
 /* Tiles (Action Cards) */
 .tile-card {
+    grid-column: span 3;
     display: flex;
     align-items: center;
     gap: 16px;
     padding: 16px;
+    min-width: 0;
+    /* Prevent text from pushing card width */
 }
 
 .tile-icon {
@@ -245,17 +248,25 @@ svg {
 .tile-info {
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .tile-value {
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .tile-label {
     font-size: 0.75rem;
     color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Entity Lists */
