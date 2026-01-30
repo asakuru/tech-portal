@@ -88,9 +88,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // --- FETCH DATA ---
 $items = [];
-$stmt = $db->prepare("SELECT * FROM inventory WHERE user_id = ?");
+$stmt = $db->prepare("SELECT * FROM inventory WHERE user_id = ? ORDER BY item_key ASC");
 $stmt->execute([$user_id]);
-$items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$raw_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Categorize
+$categorized = [
+    'Equipment' => [],
+    'NIDs' => [],
+    'Jumpers' => [],
+    'Drop Wire' => []
+];
+
+foreach ($raw_items as $item) {
+    if (strpos($item['item_key'], 'DROP-') === 0) {
+        $categorized['Drop Wire'][] = $item;
+    } elseif (strpos($item['item_key'], 'JUMP-') === 0) {
+        $categorized['Jumpers'][] = $item;
+    } elseif (strpos($item['item_key'], 'NID-') === 0) {
+        $categorized['NIDs'][] = $item;
+    } else {
+        $categorized['Equipment'][] = $item;
+    }
+}
 
 ?>
 <!DOCTYPE html>
@@ -163,6 +183,7 @@ $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-weight: 800;
             color: var(--text-main);
             margin: 10px 0;
+            cursor: pointer;
         }
 
         .inv-actions {
@@ -185,6 +206,19 @@ $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .btn-inv:active {
             transform: scale(0.95);
         }
+
+        .cat-header {
+            grid-column: span 12;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 20px;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
     </style>
 </head>
 
@@ -198,49 +232,54 @@ $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
             <div class="bento-grid">
-                <?php foreach ($items as $item):
-                    $pct = ($item['qty'] / $item['par_level']) * 100;
-                    $status = ($pct < 30) ? 'low' : (($pct > 80) ? 'good' : 'mid');
-                    ?>
-                    <div class="inv-card" style="grid-column: span 3;">
-                        <!-- Adjusted for 4 columns on large screens? Default 3 is 25% if 12 col -->
+                <?php foreach ($categorized as $cat => $cat_items): ?>
+                    <?php if (count($cat_items) > 0): ?>
+                        <div class="cat-header"><?= $cat ?></div>
+                        <?php foreach ($cat_items as $item):
+                            $pct = ($item['qty'] / max(1, $item['par_level'])) * 100;
+                            $status = ($pct < 30) ? 'low' : (($pct > 80) ? 'good' : 'mid');
+                            ?>
+                            <div class="inv-card"
+                                style="grid-column: span 12; @media(min-width: 768px) { grid-column: span 6; } @media(min-width: 1024px) { grid-column: span 4; }">
+                                <!-- Replaced inline grid-span with media query equivalent via style/class later? For now, forcing span 4 (approx 3 per row on desktop) -->
+                                <!-- Actually, inline media queries don't work. Let's use a class. -->
 
-                        <div class="inv-header">
-                            <div>
-                                <div class="inv-name">
-                                    <?= htmlspecialchars($item['item_name']) ?>
+                                <div class="inv-header">
+                                    <div>
+                                        <div class="inv-name">
+                                            <?= htmlspecialchars($item['item_name']) ?>
+                                        </div>
+                                        <div class="inv-unit">Target:
+                                            <?= htmlspecialchars($item['par_level']) ?>
+                                            <?= htmlspecialchars($item['unit']) ?>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="inv-unit">Target:
-                                    <?= htmlspecialchars($item['par_level']) ?>
-                                    <?= htmlspecialchars($item['unit']) ?>
+
+                                <div class="inv-qty" data-key="<?= $item['item_key'] ?>">
+                                    <?= number_format($item['qty']) ?>
+                                </div>
+
+                                <div class="stock-level">
+                                    <div class="stock-fill <?= $status ?>" style="width: <?= min(100, $pct) ?>%"></div>
+                                </div>
+
+                                <div class="inv-actions" style="margin-top: 15px;">
+                                    <form method="POST" style="flex:1;">
+                                        <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
+                                        <input type="hidden" name="change" value="-1">
+                                        <button class="btn-inv">-</button>
+                                    </form>
+                                    <form method="POST" style="flex:1;">
+                                        <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
+                                        <input type="hidden" name="change" value="1">
+                                        <button class="btn-inv">+</button>
+                                    </form>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="inv-qty">
-                            <?= number_format($item['qty']) ?>
-                        </div>
-
-                        <div class="stock-level">
-                            <div class="stock-fill <?= $status ?>" style="width: <?= min(100, $pct) ?>%"></div>
-                        </div>
-
-                        <div class="inv-actions" style="margin-top: 15px;">
-                            <form method="POST" style="flex:1;">
-                                <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                <input type="hidden" name="change" value="-1">
-                                <button class="btn-inv">-</button>
-                            </form>
-                            <form method="POST" style="flex:1;">
-                                <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                <input type="hidden" name="change" value="1">
-                                <button class="btn-inv">+</button>
-                            </form>
-                        </div>
-                    </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 <?php endforeach; ?>
-
-                <!-- Restock All shortcut? -->
             </div>
 
             <div
