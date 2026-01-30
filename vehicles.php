@@ -164,6 +164,7 @@ unset($v);
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
+    <?php include 'head_pwa.php'; ?>
     <style>
         .vehicle-grid {
             display: grid;
@@ -607,15 +608,15 @@ unset($v);
             form.classList.toggle('active');
             btn.style.display = form.classList.contains('active') ? 'none' : 'inline-block';
         }
-        
+
         // Auto-format money inputs on blur
-        document.querySelectorAll('.money-input').forEach(function(input) {
-            input.addEventListener('blur', function() {
+        document.querySelectorAll('.money-input').forEach(function (input) {
+            input.addEventListener('blur', function () {
                 let val = this.value.replace(/[^0-9.]/g, '');
                 let num = parseFloat(val) || 0;
                 this.value = '$' + num.toFixed(2);
             });
-            input.addEventListener('focus', function() {
+            input.addEventListener('focus', function () {
                 let val = this.value.replace(/[^0-9.]/g, '');
                 this.value = val;
                 this.select();

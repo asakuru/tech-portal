@@ -281,6 +281,7 @@ function renderRow($job, $install_names, $rates, $index)
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
+    <?php include 'head_pwa.php'; ?>
     <style>
         .controls-row {
             display: flex;
@@ -376,9 +377,14 @@ function renderRow($job, $install_names, $rates, $index)
             color: var(--text-muted);
             margin-top: 5px;
         }
-        
-        .positive { color: var(--success-text); }
-        .negative { color: var(--danger-text); }
+
+        .positive {
+            color: var(--success-text);
+        }
+
+        .negative {
+            color: var(--danger-text);
+        }
 
         .admin-cal-grid {
             display: grid;
@@ -517,9 +523,11 @@ function renderRow($job, $install_names, $rates, $index)
             <div class="kpi-card">
                 <div class="kpi-label">Avg MPG</div>
                 <div class="kpi-value" style="color:var(--primary);">
-                    <?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?></div>
+                    <?= $avg_mpg > 0 ? number_format($avg_mpg, 1) : '--' ?>
+                </div>
                 <div class="kpi-sub">
-                    <?= $cost_per_mile > 0 ? '$' . number_format($cost_per_mile, 2) . '/mi' : 'No Data' ?></div>
+                    <?= $cost_per_mile > 0 ? '$' . number_format($cost_per_mile, 2) . '/mi' : 'No Data' ?>
+                </div>
             </div>
         </div>
 

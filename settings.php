@@ -72,6 +72,7 @@ $rates_list = $db->query("SELECT * FROM rate_card ORDER BY rate_key ASC")->fetch
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
+    <?php include 'head_pwa.php'; ?>
     <style>
         .rate-grid {
             display: grid;

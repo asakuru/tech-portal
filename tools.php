@@ -29,14 +29,14 @@ if (isset($_GET['q'])) {
         $search_str = "%$term%";
         $params = [];
         $clauses = [];
-        
+
         // Detect Driver for Compatibility (SQLite uses ||, MySQL uses CONCAT)
         $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
         $is_sqlite = ($driver === 'sqlite');
-        
+
         // Helper to add clause
         $bind_idx = 0;
-        $addClause = function($col) use (&$clauses, &$params, &$bind_idx, $search_str) {
+        $addClause = function ($col) use (&$clauses, &$params, &$bind_idx, $search_str) {
             $bind_idx++;
             $key = ":t$bind_idx";
             $clauses[] = "$col LIKE $key";
@@ -46,17 +46,17 @@ if (isset($_GET['q'])) {
         $addClause("ticket_number");
         $addClause("cust_fname");
         $addClause("cust_lname");
-        
+
         // Full Name Check (Driver Aware)
         $bind_idx++;
         $key = ":t$bind_idx";
-        $concat_sql = $is_sqlite 
-            ? "(COALESCE(cust_fname,'') || ' ' || COALESCE(cust_lname,''))" 
+        $concat_sql = $is_sqlite
+            ? "(COALESCE(cust_fname,'') || ' ' || COALESCE(cust_lname,''))"
             : "CONCAT(COALESCE(cust_fname,''), ' ', COALESCE(cust_lname,''))";
-            
+
         $clauses[] = "$concat_sql LIKE $key";
         $params[$key] = $search_str;
-        
+
         // Legacy Fields (Only check if NOT SQLite, assuming Prod/MySQL has them, or remove entirely if unused)
         if (!$is_sqlite) {
             $addClause("cust_name");
@@ -81,7 +81,7 @@ if (isset($_GET['q'])) {
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) { 
+        } catch (Exception $e) {
             // Reveal error for debugging
             echo "<div class='alert' style='background:var(--danger-bg); color:var(--danger-text);'>Search Error: " . htmlspecialchars($e->getMessage()) . "</div>";
         }
@@ -99,6 +99,7 @@ if (isset($_GET['q'])) {
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
+    <?php include 'head_pwa.php'; ?>
     <style>
         .search-box {
             background: var(--bg-card);

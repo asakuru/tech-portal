@@ -1,3 +1,23 @@
+// --- PWA SERVICE WORKER REGISTRATION ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('SW Registered'))
+            .catch(err => console.log('SW Register Error', err));
+    });
+}
+
+// --- NAVIGATION TOGGLES ---
+function toggleMenu() {
+    document.querySelector('.side-drawer').classList.toggle('active');
+    document.querySelector('.overlay').classList.toggle('active');
+}
+
+function toggleGlobalSearch() {
+    const container = document.getElementById('global-search-container');
+    container.classList.toggle('active');
+}
+
 /**
  * Opens the modal with rich details
  * @param {string} dateStr - e.g. "Monday, October 25th"
@@ -15,7 +35,7 @@ function openDay(dateStr, items, totalAmt) {
     // 2. Build the Content
     if (items.length > 0) {
         let html = '<ul class="job-list">';
-        
+
         items.forEach(item => {
             html += `
                 <li style="display:flex; justify-content:space-between; align-items:center;">
@@ -31,7 +51,7 @@ function openDay(dateStr, items, totalAmt) {
         });
 
         html += '</ul>';
-        
+
         // Footer with Grand Total
         html += `
             <div style="margin-top:15px; padding-top:15px; border-top:2px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
@@ -64,7 +84,7 @@ function closeModal() {
 /**
  * Close on click outside
  */
-window.onclick = function(event) {
+window.onclick = function (event) {
     const modal = document.getElementById("summaryModal");
     if (event.target == modal) {
         modal.style.display = "none";

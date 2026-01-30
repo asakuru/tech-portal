@@ -232,6 +232,7 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <link rel="shortcut icon" href="favicon.ico?v=2">
     <link rel="apple-touch-icon" href="favicon.png">
+    <?php include 'head_pwa.php'; ?>
     <style>
         /* Make textareas look like inputs but growable */
         .grow-wrap {
