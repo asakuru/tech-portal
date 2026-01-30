@@ -91,7 +91,8 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
             <!-- Glass Header Section -->
             <div class="welcome-banner">
                 <h2 style="font-weight: 800; letter-spacing: -0.03em;">👋 Hello,
-                    <?= htmlspecialchars(ucfirst($username)) ?></h2>
+                    <?= htmlspecialchars(ucfirst($username)) ?>
+                </h2>
                 <div class="date" style="font-weight: 500; opacity: 0.8;"><?= $today_formatted ?></div>
             </div>
 
@@ -181,7 +182,8 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                         <div style="font-size: 3rem; font-weight: 800; color: var(--primary); line-height: 1;">
                             $<?= number_format($today_total, 2) ?></div>
                         <div style="font-size: 1.1rem; color: var(--text-muted); padding-bottom: 5px;">/
-                            <?= count($today_jobs) ?> jobs</div>
+                            <?= count($today_jobs) ?> jobs
+                        </div>
                     </div>
                     <div style="margin-top: 15px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px;">
                         <div
@@ -197,7 +199,8 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                         <div style="font-size: 3rem; font-weight: 800; color: var(--success-text); line-height: 1;">
                             $<?= number_format($week_total, 2) ?></div>
                         <div style="font-size: 1.1rem; color: var(--text-muted); padding-bottom: 5px;">/
-                            <?= $week_jobs ?> jobs</div>
+                            <?= $week_jobs ?> jobs
+                        </div>
                     </div>
                     <div style="margin-top: 15px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px;">
                         <div
@@ -240,9 +243,11 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                                     </div>
                                     <div class="entity-name">
                                         <div style="font-weight: 600; color: var(--text-main);">
-                                            <?= htmlspecialchars($job['ticket_number']) ?></div>
+                                            <?= htmlspecialchars($job['ticket_number']) ?>
+                                        </div>
                                         <div style="font-size: 0.8rem; color: var(--text-muted);">
-                                            <?= htmlspecialchars($job['cust_lname']) ?>, <?= htmlspecialchars($job['city']) ?>
+                                            <?= htmlspecialchars($job['cust_lname']) ?>,
+                                            <?= htmlspecialchars($job['cust_city']) ?>
                                         </div>
                                     </div>
                                     <div class="entity-state" style="color: var(--success-text);">
