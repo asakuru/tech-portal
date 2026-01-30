@@ -217,6 +217,12 @@ if (isset($_POST['add_job']) || isset($_POST['save_draft'])) {
             ':test' => isset($_POST['phone_test']) ? 'Yes' : 'No'
         ]);
 
+        // --- INVENTORY AUTO-DEDUCT (PHP Fallback) ---
+        // Mirroring functionality from api_sync.php
+        if (!$is_draft) {
+            deduct_inventory($db, $user_id, $_POST);
+        }
+
         if ($is_draft) {
             $new_id = $db->lastInsertId();
             header("Location: edit_job.php?id=" . $new_id);
