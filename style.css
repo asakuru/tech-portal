@@ -586,11 +586,12 @@ input[type="radio"] {
     border-color: var(--text-muted);
     background: var(--bg-hover);
 }
+
 /* --- INVENTORY CONSOLIDATION STYLES --- */
 .inv-group-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
     margin-top: 20px;
 }
 
@@ -598,7 +599,7 @@ input[type="radio"] {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 24px;
+    padding: 16px 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -609,6 +610,7 @@ input[type="radio"] {
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    min-height: 140px;
 }
 
 .inv-group-card:hover {
@@ -618,26 +620,27 @@ input[type="radio"] {
 }
 
 .inv-group-icon {
-    font-size: 3rem;
-    margin-bottom: 16px;
-}
-
-.inv-group-name {
-    font-size: 1.2rem;
-    font-weight: 800;
+    font-size: 2rem;
     margin-bottom: 8px;
 }
 
+.inv-group-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
 .inv-group-count {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
 }
 
 .inv-group-status {
-    margin-top: 12px;
-    font-size: 0.8rem;
+    margin-top: 10px;
+    font-size: 0.7rem;
     font-weight: 700;
-    padding: 4px 12px;
+    padding: 2px 8px;
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.05);
 }
@@ -761,4 +764,3 @@ input[type="radio"] {
     border-radius: 20px;
     box-shadow: 0 0 10px var(--primary-glow);
 }
-
