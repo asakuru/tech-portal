@@ -335,162 +335,165 @@ ksort($breakdown_data);
 </head>
 
 <body>
-    <?php include 'nav.php'; ?>
-    <div class="container">
-        <div class="header-controls">
-            <h2>📊 Financials
-                <?= $is_admin ? '<span class="badge" style="background:var(--primary); font-size:0.6em; vertical-align:middle; padding:2px 6px; border-radius:4px; margin-left:8px;">ADMIN</span>' : '' ?>
-            </h2>
-            <div class="view-tabs">
-                <a href="?view=weekly" class="view-tab <?= $view === 'weekly' ? 'active' : '' ?>">Weekly</a>
-                <a href="?view=monthly" class="view-tab <?= $view === 'monthly' ? 'active' : '' ?>">Monthly</a>
-                <a href="?view=yearly" class="view-tab <?= $view === 'yearly' ? 'active' : '' ?>">Yearly</a>
+    <div class="app-container">
+        <?php include 'nav.php'; ?>
+        <main class="main-content">
+            <div class="header-controls">
+                <h2>📊 Financials
+                    <?= $is_admin ? '<span class="badge" style="background:var(--primary); font-size:0.6em; vertical-align:middle; padding:2px 6px; border-radius:4px; margin-left:8px;">ADMIN</span>' : '' ?>
+                </h2>
+                <div class="view-tabs">
+                    <a href="?view=weekly" class="view-tab <?= $view === 'weekly' ? 'active' : '' ?>">Weekly</a>
+                    <a href="?view=monthly" class="view-tab <?= $view === 'monthly' ? 'active' : '' ?>">Monthly</a>
+                    <a href="?view=yearly" class="view-tab <?= $view === 'yearly' ? 'active' : '' ?>">Yearly</a>
+                </div>
             </div>
-        </div>
 
-        <div class="period-nav">
-            <a href="<?= htmlspecialchars($prev_link) ?>">&laquo;</a>
-            <div class="period-label"><?= htmlspecialchars($period_label) ?></div>
-            <a href="<?= htmlspecialchars($next_link) ?>">&raquo;</a>
-        </div>
-
-        <div class="info-bar">
-            <div><strong>Total Miles:</strong> <?= number_format($total_miles) ?></div>
-            <div><strong>IRS Rate:</strong> $<?= number_format($mileage_rate, 3) ?>/mi</div>
-            <div><strong>Tax Rate:</strong> <?= $tax_percent * 100 ?>%</div>
-            <div><a href="settings.php" style="color:var(--primary); text-decoration:none;">Change Rates &rarr;</a>
+            <div class="period-nav">
+                <a href="<?= htmlspecialchars($prev_link) ?>">&laquo;</a>
+                <div class="period-label"><?= htmlspecialchars($period_label) ?></div>
+                <a href="<?= htmlspecialchars($next_link) ?>">&raquo;</a>
             </div>
-        </div>
 
-        <div class="kpi-grid">
-            <?php
-            include __DIR__ . '/kpi_card.php';
-            $label = "Gross Revenue";
-            $value = "$" . number_format($job_revenue, 2);
-            $class = "positive";
-            $sub = "PD: $" . number_format($total_per_diem) . " | Lead: $" . number_format($total_lead_pay);
-            $style = "";
-            include __DIR__ . '/kpi_card.php';
-            $label = "Mileage Deduction";
-            $value = "$" . number_format($mileage_deduction, 2);
-            $class = "";
-            $sub = number_format($total_miles) . " Miles";
-            include __DIR__ . '/kpi_card.php';
-            $label = "Actual Fuel";
-            $value = "$" . number_format($total_fuel, 2);
-            $class = "negative";
-            $sub = "Real Expense";
-            include __DIR__ . '/kpi_card.php';
-            $label = "Net Taxable";
-            $value = "$" . number_format($net_taxable_income, 2);
-            $class = "";
-            $sub = "Rev - Mileage";
-            include __DIR__ . '/kpi_card.php';
-            $label = "Est. Tax Due";
-            $value = "$" . number_format($estimated_tax_due, 2);
-            $class = "";
-            $sub = ($tax_percent * 100) . "% Rate";
-            $style = "border-color: var(--primary);";
-            include __DIR__ . '/kpi_card.php';
-            ?>
-        </div>
+            <div class="info-bar">
+                <div><strong>Total Miles:</strong> <?= number_format($total_miles) ?></div>
+                <div><strong>IRS Rate:</strong> $<?= number_format($mileage_rate, 3) ?>/mi</div>
+                <div><strong>Tax Rate:</strong> <?= $tax_percent * 100 ?>%</div>
+                <div><a href="settings.php" style="color:var(--primary); text-decoration:none;">Change Rates &rarr;</a>
+                </div>
+            </div>
 
-        <div class="box" style="padding:0; overflow:hidden; overflow-x:auto;">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th><?= $view === 'weekly' ? 'Day' : ($view === 'monthly' ? 'Week' : 'Month') ?></th>
-                        <th style="text-align:right;">Work</th>
-                        <th style="text-align:right;">Per Diem</th>
-                        <th style="text-align:right;">Gross</th>
-                        <th style="text-align:right;">Miles</th>
-                        <th style="text-align:right;">Fuel</th>
-                        <th style="text-align:right;">Deduction</th>
-                        <th style="text-align:right;">Net</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    $has_data = false;
-                    foreach ($breakdown_data as $b_data):
-                        $b_lead = $b_data['lead'] ?? 0;
-                        $b_gross = $b_data['work'] + $b_data['pd'] + $b_lead;
-                        $b_ded = $b_data['miles'] * $mileage_rate;
-                        $b_net = $b_gross - $b_ded;
-                        if ($view !== 'weekly' && $b_gross == 0 && $b_data['miles'] == 0 && $b_data['fuel'] == 0)
-                            continue;
-                        $has_data = true;
-                        ?>
-                        <tr>
-                            <td style="font-weight:bold;"><?= htmlspecialchars($b_data['label']) ?></td>
-                            <td style="text-align:right;">$<?= number_format($b_data['work'], 2) ?></td>
-                            <td style="text-align:right; color:var(--primary);">
-                                $<?= number_format($b_data['pd'] + $b_lead, 2) ?></td>
-                            <td style="text-align:right; color:var(--success-text); font-weight:bold;">
-                                $<?= number_format($b_gross, 2) ?></td>
-                            <td style="text-align:right;"><?= number_format($b_data['miles']) ?></td>
-                            <td style="text-align:right; color:var(--danger-text);">
-                                $<?= number_format($b_data['fuel'], 2) ?></td>
-                            <td style="text-align:right;">$<?= number_format($b_ded, 2) ?></td>
-                            <td style="text-align:right; font-weight:bold;">$<?= number_format($b_net, 2) ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    <?php if (!$has_data): ?>
-                        <tr>
-                            <td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">No data for
-                                this period.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+            <div class="kpi-grid">
+                <?php
+                include __DIR__ . '/kpi_card.php';
+                $label = "Gross Revenue";
+                $value = "$" . number_format($job_revenue, 2);
+                $class = "positive";
+                $sub = "PD: $" . number_format($total_per_diem) . " | Lead: $" . number_format($total_lead_pay);
+                $style = "";
+                include __DIR__ . '/kpi_card.php';
+                $label = "Mileage Deduction";
+                $value = "$" . number_format($mileage_deduction, 2);
+                $class = "";
+                $sub = number_format($total_miles) . " Miles";
+                include __DIR__ . '/kpi_card.php';
+                $label = "Actual Fuel";
+                $value = "$" . number_format($total_fuel, 2);
+                $class = "negative";
+                $sub = "Real Expense";
+                include __DIR__ . '/kpi_card.php';
+                $label = "Net Taxable";
+                $value = "$" . number_format($net_taxable_income, 2);
+                $class = "";
+                $sub = "Rev - Mileage";
+                include __DIR__ . '/kpi_card.php';
+                $label = "Est. Tax Due";
+                $value = "$" . number_format($estimated_tax_due, 2);
+                $class = "";
+                $sub = ($tax_percent * 100) . "% Rate";
+                $style = "border-color: var(--primary);";
+                include __DIR__ . '/kpi_card.php';
+                ?>
+            </div>
 
-        <?php if (!empty($job_type_stats)): ?>
-            <h3
-                style="margin-top:2rem; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
-                Profit Analysis <span class="badge"
-                    style="background:var(--primary); vertical-align:middle; font-size:0.6em;">JOB TYPE</span></h3>
-            <div class="box" style="padding:0; overflow:hidden;">
+            <div class="box" style="padding:0; overflow:hidden; overflow-x:auto;">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Job Type</th>
-                            <th style="text-align:right;">Count</th>
-                            <th style="text-align:right;">Total Revenue</th>
-                            <th style="text-align:right;">Avg. Revenue</th>
-                            <th>Share</th>
+                            <th><?= $view === 'weekly' ? 'Day' : ($view === 'monthly' ? 'Week' : 'Month') ?></th>
+                            <th style="text-align:right;">Work</th>
+                            <th style="text-align:right;">Per Diem</th>
+                            <th style="text-align:right;">Gross</th>
+                            <th style="text-align:right;">Miles</th>
+                            <th style="text-align:right;">Fuel</th>
+                            <th style="text-align:right;">Deduction</th>
+                            <th style="text-align:right;">Net</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php
-                        uasort($job_type_stats, function ($a, $b) {
-                            return $b['revenue'] <=> $a['revenue'];
-                        });
-                        $max_rev = 0;
-                        foreach ($job_type_stats as $stat)
-                            $max_rev = max($max_rev, $stat['revenue']);
-                        foreach ($job_type_stats as $type => $stats):
-                            $avg = $stats['revenue'] / $stats['count'];
-                            $percent = ($max_rev > 0) ? ($stats['revenue'] / $max_rev) * 100 : 0;
+                        $has_data = false;
+                        foreach ($breakdown_data as $b_data):
+                            $b_lead = $b_data['lead'] ?? 0;
+                            $b_gross = $b_data['work'] + $b_data['pd'] + $b_lead;
+                            $b_ded = $b_data['miles'] * $mileage_rate;
+                            $b_net = $b_gross - $b_ded;
+                            if ($view !== 'weekly' && $b_gross == 0 && $b_data['miles'] == 0 && $b_data['fuel'] == 0)
+                                continue;
+                            $has_data = true;
                             ?>
                             <tr>
-                                <td style="font-weight:bold;"><?= htmlspecialchars($type) ?></td>
-                                <td style="text-align:right;"><?= number_format($stats['count']) ?></td>
+                                <td style="font-weight:bold;"><?= htmlspecialchars($b_data['label']) ?></td>
+                                <td style="text-align:right;">$<?= number_format($b_data['work'], 2) ?></td>
+                                <td style="text-align:right; color:var(--primary);">
+                                    $<?= number_format($b_data['pd'] + $b_lead, 2) ?></td>
                                 <td style="text-align:right; color:var(--success-text); font-weight:bold;">
-                                    $<?= number_format($stats['revenue'], 2) ?></td>
-                                <td style="text-align:right;">$<?= number_format($avg, 2) ?></td>
-                                <td style="width:150px; padding-right:20px;">
-                                    <div
-                                        style="background:var(--bg-secondary); height:8px; border-radius:4px; overflow:hidden; width:100%;">
-                                        <div style="background:var(--primary); height:100%; width:<?= $percent ?>%;"></div>
-                                    </div>
-                                </td>
+                                    $<?= number_format($b_gross, 2) ?></td>
+                                <td style="text-align:right;"><?= number_format($b_data['miles']) ?></td>
+                                <td style="text-align:right; color:var(--danger-text);">
+                                    $<?= number_format($b_data['fuel'], 2) ?></td>
+                                <td style="text-align:right;">$<?= number_format($b_ded, 2) ?></td>
+                                <td style="text-align:right; font-weight:bold;">$<?= number_format($b_net, 2) ?></td>
                             </tr>
                         <?php endforeach; ?>
+                        <?php if (!$has_data): ?>
+                            <tr>
+                                <td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">No data
+                                    for
+                                    this period.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
-        <?php endif; ?>
+
+            <?php if (!empty($job_type_stats)): ?>
+                <h3
+                    style="margin-top:2rem; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+                    Profit Analysis <span class="badge"
+                        style="background:var(--primary); vertical-align:middle; font-size:0.6em;">JOB TYPE</span></h3>
+                <div class="box" style="padding:0; overflow:hidden;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Job Type</th>
+                                <th style="text-align:right;">Count</th>
+                                <th style="text-align:right;">Total Revenue</th>
+                                <th style="text-align:right;">Avg. Revenue</th>
+                                <th>Share</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            uasort($job_type_stats, function ($a, $b) {
+                                return $b['revenue'] <=> $a['revenue'];
+                            });
+                            $max_rev = 0;
+                            foreach ($job_type_stats as $stat)
+                                $max_rev = max($max_rev, $stat['revenue']);
+                            foreach ($job_type_stats as $type => $stats):
+                                $avg = $stats['revenue'] / $stats['count'];
+                                $percent = ($max_rev > 0) ? ($stats['revenue'] / $max_rev) * 100 : 0;
+                                ?>
+                                <tr>
+                                    <td style="font-weight:bold;"><?= htmlspecialchars($type) ?></td>
+                                    <td style="text-align:right;"><?= number_format($stats['count']) ?></td>
+                                    <td style="text-align:right; color:var(--success-text); font-weight:bold;">
+                                        $<?= number_format($stats['revenue'], 2) ?></td>
+                                    <td style="text-align:right;">$<?= number_format($avg, 2) ?></td>
+                                    <td style="width:150px; padding-right:20px;">
+                                        <div
+                                            style="background:var(--bg-secondary); height:8px; border-radius:4px; overflow:hidden; width:100%;">
+                                            <div style="background:var(--primary); height:100%; width:<?= $percent ?>%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </main>
     </div>
     <script>if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }</script>
 </body>

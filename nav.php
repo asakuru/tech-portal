@@ -41,6 +41,15 @@ $is_admin = is_admin();
             <span>Job Entry</span>
         </a>
 
+        <a href="tools.php" class="drawer-link <?= ($current_page == 'tools.php') ? 'active' : ''; ?>" title="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Job Search</span>
+        </a>
+
         <a href="geo.php" class="drawer-link <?= ($current_page == 'geo.php') ? 'active' : ''; ?>" title="Map">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round">
@@ -60,6 +69,27 @@ $is_admin = is_admin();
                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
             </svg>
             <span>Financials</span>
+        </a>
+
+        <a href="reconcile.php" class="drawer-link <?= ($current_page == 'reconcile.php') ? 'active' : ''; ?>"
+            title="Scrub">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            <span>Scrub Report</span>
+        </a>
+
+        <a href="reports.php" class="drawer-link <?= ($current_page == 'reports.php') ? 'active' : ''; ?>"
+            title="Reports">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span>Custom Reports</span>
         </a>
 
         <a href="vehicles.php"
@@ -98,6 +128,16 @@ $is_admin = is_admin();
                     </path>
                 </svg>
                 <span>Rates</span>
+            </a>
+            <a href="backup.php" class="drawer-link <?= ($current_page == 'backup.php') ? 'active' : ''; ?>"
+                title="Backups">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M21 8v13H3V8"></path>
+                    <path d="M1 3h22v5H1z"></path>
+                    <path d="M10 12h4"></path>
+                </svg>
+                <span>Backups</span>
             </a>
         <?php endif; ?>
     </div>
