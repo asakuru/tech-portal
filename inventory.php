@@ -28,6 +28,16 @@ try {
         UNIQUE(user_id, item_key)
     )");
 
+    $db->exec("CREATE TABLE IF NOT EXISTS inventory_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        item_key TEXT NOT NULL,
+        change_amount REAL NOT NULL,
+        new_qty REAL NOT NULL,
+        reason TEXT,
+        log_date DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
     // Seed Defaults
     $defaults = [
         'ONT' => ['name' => 'ONTs', 'par' => 10, 'unit' => 'pcs'],
@@ -65,9 +75,6 @@ try {
         $stmt->execute([$user_id, $key, $def['name'], $def['par'], $def['par'], $def['unit']]);
     }
 
-    // Cleanup old generic items if they exist?
-    // $db->exec("DELETE FROM inventory WHERE item_key IN ('DROP', 'JUMPER', 'NID')");
-
 } catch (Exception $e) {
     die("DB Init Error: " . $e->getMessage());
 }
@@ -75,12 +82,35 @@ try {
 // --- HANDLE POST (ADJUST STOCK) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $key = $_POST['item_key'];
-    $change = (float) $_POST['change']; // +1, -1, etc.
 
-    // allow setting exact value or specific add/subtract?
-    // simple increment for now
-    $stmt = $db->prepare("UPDATE inventory SET qty = MAX(0, qty + ?) WHERE user_id = ? AND item_key = ?");
-    $stmt->execute([$change, $user_id, $key]);
+    // Get current qty first
+    $stmt = $db->prepare("SELECT qty FROM inventory WHERE user_id = ? AND item_key = ?");
+    $stmt->execute([$user_id, $key]);
+    $curr = $stmt->fetchColumn();
+
+    $new_qty = $curr;
+    $change = 0;
+
+    if (isset($_POST['set_qty'])) {
+        // Direct Set
+        $new_qty = (float) $_POST['set_qty'];
+        $change = $new_qty - $curr;
+        $reason = "Manual Update";
+    } elseif (isset($_POST['change'])) {
+        // Increment/Decrement
+        $change = (float) $_POST['change'];
+        $new_qty = max(0, $curr + $change);
+        $reason = "Quick Adjust";
+    }
+
+    if ($change != 0) {
+        $stmt = $db->prepare("UPDATE inventory SET qty = ? WHERE user_id = ? AND item_key = ?");
+        $stmt->execute([$new_qty, $user_id, $key]);
+
+        // Log it
+        $stmt = $db->prepare("INSERT INTO inventory_logs (user_id, item_key, change_amount, new_qty, reason) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$user_id, $key, $change, $new_qty, $reason]);
+    }
 
     header("Location: inventory.php");
     exit;
@@ -112,6 +142,14 @@ foreach ($raw_items as $item) {
     }
 }
 
+// --- FETCH LOGS ---
+$logs = [];
+try {
+    $stmt = $db->prepare("SELECT * FROM inventory_logs WHERE user_id = ? ORDER BY log_date DESC LIMIT 20");
+    $stmt->execute([$user_id]);
+    $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -122,104 +160,6 @@ foreach ($raw_items as $item) {
     <link rel="stylesheet" href="style.css?v=1.1">
     <link rel="icon" type="image/png" href="favicon.png?v=2">
     <?php include 'head_pwa.php'; ?>
-    <style>
-        .inv-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Progress Bar for Stock Level */
-        .stock-level {
-            height: 6px;
-            background: var(--bg-input);
-            border-radius: 3px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-
-        .stock-fill {
-            height: 100%;
-            background: var(--primary);
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        .stock-fill.low {
-            background: var(--danger-text);
-        }
-
-        .stock-fill.good {
-            background: var(--success-text);
-        }
-
-        .inv-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .inv-name {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--text-main);
-        }
-
-        .inv-unit {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        .inv-qty {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: var(--text-main);
-            margin: 10px 0;
-            cursor: pointer;
-        }
-
-        .inv-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-inv {
-            flex: 1;
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: var(--bg-body);
-            color: var(--text-main);
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.1s;
-        }
-
-        .btn-inv:active {
-            transform: scale(0.95);
-        }
-
-        .cat-header {
-            grid-column: span 12;
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-top: 20px;
-            margin-bottom: 5px;
-            color: var(--text-muted);
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-    </style>
 </head>
 
 <body>
@@ -231,69 +171,123 @@ foreach ($raw_items as $item) {
                 <div style="font-size: 0.9rem; opacity: 0.7;">Auto-deducts when you save jobs</div>
             </div>
 
-            <div class="bento-grid">
+            <div style="max-width: 1000px; margin: 0 auto;">
                 <?php foreach ($categorized as $cat => $cat_items): ?>
                     <?php if (count($cat_items) > 0): ?>
-                        <div class="cat-header"><?= $cat ?></div>
-                        <?php foreach ($cat_items as $item):
-                            $pct = ($item['qty'] / max(1, $item['par_level'])) * 100;
-                            $status = ($pct < 30) ? 'low' : (($pct > 80) ? 'good' : 'mid');
-                            ?>
-                            <div class="inv-card"
-                                style="grid-column: span 12; @media(min-width: 768px) { grid-column: span 6; } @media(min-width: 1024px) { grid-column: span 4; }">
-                                <!-- Replaced inline grid-span with media query equivalent via style/class later? For now, forcing span 4 (approx 3 per row on desktop) -->
-                                <!-- Actually, inline media queries don't work. Let's use a class. -->
+                        <div class="cat-section">
+                            <div class="cat-header"><?= $cat ?></div>
+                            <div class="cat-grid">
+                                <?php foreach ($cat_items as $item):
+                                    $pct = ($item['qty'] / max(1, $item['par_level'])) * 100;
+                                    $status = ($pct < 30) ? 'low' : (($pct > 80) ? 'good' : 'mid');
+                                    ?>
+                                    <div class="inv-item-compact">
 
-                                <div class="inv-header">
-                                    <div>
-                                        <div class="inv-name">
-                                            <?= htmlspecialchars($item['item_name']) ?>
+                                        <!-- Left: Info -->
+                                        <div class="inv-info">
+                                            <div class="inv-name-sm"><?= htmlspecialchars($item['item_name']) ?></div>
+                                            <div class="inv-meta-sm">
+                                                <div class="stock-indicator <?= $status ?>"></div>
+                                                <span>Target: <?= htmlspecialchars($item['par_level']) ?></span>
+                                            </div>
                                         </div>
-                                        <div class="inv-unit">Target:
-                                            <?= htmlspecialchars($item['par_level']) ?>
-                                            <?= htmlspecialchars($item['unit']) ?>
+
+                                        <!-- Right: Controls -->
+                                        <div class="inv-controls">
+                                            <form method="POST">
+                                                <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
+                                                <input type="hidden" name="change" value="-1">
+                                                <button class="btn-inv-sm">−</button>
+                                            </form>
+
+                                            <div class="inv-qty-sm" data-key="<?= $item['item_key'] ?>">
+                                                <?= number_format($item['qty']) ?>
+                                            </div>
+
+                                            <form method="POST">
+                                                <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
+                                                <input type="hidden" name="change" value="1">
+                                                <button class="btn-inv-sm">+</button>
+                                            </form>
                                         </div>
+
                                     </div>
-                                </div>
-
-                                <div class="inv-qty" data-key="<?= $item['item_key'] ?>">
-                                    <?= number_format($item['qty']) ?>
-                                </div>
-
-                                <div class="stock-level">
-                                    <div class="stock-fill <?= $status ?>" style="width: <?= min(100, $pct) ?>%"></div>
-                                </div>
-
-                                <div class="inv-actions" style="margin-top: 15px;">
-                                    <form method="POST" style="flex:1;">
-                                        <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                        <input type="hidden" name="change" value="-1">
-                                        <button class="btn-inv">-</button>
-                                    </form>
-                                    <form method="POST" style="flex:1;">
-                                        <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                        <input type="hidden" name="change" value="1">
-                                        <button class="btn-inv">+</button>
-                                    </form>
-                                </div>
+                                <?php endforeach; ?>
                             </div>
-                        <?php endforeach; ?>
+                        </div>
                     <?php endif; ?>
                 <?php endforeach; ?>
             </div>
 
+            <!-- TRANSACTION LOG -->
+            <h3 style="margin-top:40px; margin-bottom:15px; font-weight:800;">📜 History</h3>
+            <div
+                style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <thead>
+                        <tr style="background:var(--bg-input); color:var(--text-muted); text-align:left;">
+                            <th style="padding:10px;">Time</th>
+                            <th style="padding:10px;">Item</th>
+                            <th style="padding:10px;">Change</th>
+                            <th style="padding:10px;">Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($logs)): ?>
+                            <tr>
+                                <td colspan="4" style="padding:20px; text-align:center; color:var(--text-muted);">No
+                                    activity recorded yet.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($logs as $l): ?>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <td style="padding:10px;"><?= date('M j, g:i a', strtotime($l['log_date'])) ?></td>
+                                    <td style="padding:10px; font-weight:bold;"><?= htmlspecialchars($l['item_key']) ?></td>
+                                    <td
+                                        style="padding:10px; color: <?= $l['change_amount'] < 0 ? 'var(--danger-text)' : 'var(--success-text)' ?>;">
+                                        <?= $l['change_amount'] > 0 ? '+' : '' ?>        <?= $l['change_amount'] ?>
+                                    </td>
+                                    <td style="padding:10px; color:var(--text-muted);"><?= htmlspecialchars($l['reason']) ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
             <div
                 style="margin-top: 40px; padding: 20px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);">
-                <h3>💡 Smart Tracking Active</h3>
-                <p style="color: var(--text-muted);">
-                    When you enter a job with an <strong>ONT Serial</strong>, <strong>Jacks</strong>, or <strong>Drop
-                        Length</strong>,
-                    the system will automatically deduct from these totals.
+                <h3>💡 How to Update</h3>
+                <p style="color: var(--text-muted); margin-bottom:15px;">
+                    Use the <strong>+ / -</strong> buttons for quick changes. To set an exact number (e.g. after a
+                    restock), click the number.
                 </p>
-                <button class="btn btn-secondary" onclick="alert('Coming Soon: Edit Par Levels')">Settings</button>
             </div>
         </main>
     </div>
+
+    <script>
+        // Simple prompt for direct edit (can be enhanced to modal later)
+        document.querySelectorAll('.inv-qty-sm').forEach(el => {
+            el.style.cursor = 'pointer';
+            el.title = "Click to set exact quantity";
+            el.onclick = function () {
+                const key = this.dataset.key;
+                const current = this.innerText;
+                const newVal = prompt("Set exact quantity for " + key + ":", current);
+                if (newVal !== null && !isNaN(newVal)) {
+                    // Create hidden form to submit property
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.innerHTML = `<input type="hidden" name="item_key" value="${key}">
+                                      <input type="hidden" name="set_qty" value="${newVal}">`;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            };
+        });
+    </script>
 </body>
 
 </html>
