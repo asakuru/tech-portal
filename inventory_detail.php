@@ -158,12 +158,8 @@ if ($cat == 'NIDs')
                             </div>
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                <button type="button" class="btn btn-secondary"
-                                    style="background: var(--danger-text); color: white; border: none;"
-                                    onclick="adjustBy(-1)">-1 Quick</button>
-                                <button type="button" class="btn btn-secondary"
-                                    style="background: var(--success-text); color: white; border: none;"
-                                    onclick="adjustBy(1)">+1 Quick</button>
+                                <button type="button" class="btn btn-danger" onclick="adjustBy(-1)">-1 Quick</button>
+                                <button type="button" class="btn btn-success" onclick="adjustBy(1)">+1 Quick</button>
                             </div>
                         </div>
                         <div class="modal-footer">

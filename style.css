@@ -541,10 +541,31 @@ svg {
     right: 0;
     height: 60px;
     background: var(--bg-sidebar);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     border-bottom: 1px solid var(--border);
     align-items: center;
     padding: 0 16px;
     z-index: 1000;
+}
+
+.menu-toggle {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
 }
 
 .nav-brand {
@@ -658,6 +679,28 @@ input[type="radio"] {
 .btn-secondary:hover {
     border-color: var(--text-muted);
     background: var(--bg-hover);
+}
+
+.btn-danger {
+    background: rgba(255, 82, 82, 0.1);
+    color: #ff5252;
+    border: 1px solid rgba(255, 82, 82, 0.2);
+}
+
+.btn-danger:hover {
+    background: rgba(255, 82, 82, 0.2);
+    border-color: #ff5252;
+}
+
+.btn-success {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.btn-success:hover {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: #4caf50;
 }
 
 /* --- INVENTORY CONSOLIDATION STYLES --- */

@@ -945,7 +945,7 @@ try {
                                 </div>
                                 <a href="?id=<?= $vehicle_id ?>&tab=service&delete_service=<?= $s['id'] ?>"
                                     onclick="return confirm('Delete this service?')"
-                                    style="font-size:0.8rem; color:var(--danger-text);">Delete</a>
+                                    class="btn btn-danger" style="font-size:0.7rem; padding: 4px 8px;">Delete</a>
                             </div>
                         </div>
                         <?php if ($s['description']): ?>

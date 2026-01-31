@@ -505,8 +505,7 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
                         </div>
                         <?php if ($is_admin || $job['user_id'] == $user_id): ?>
                             <button type="submit" name="delete_job" onclick="return confirm('Really delete this job?')"
-                                class="btn"
-                                style="background:rgba(229, 115, 115, 0.1); color:var(--danger-text); border:1px solid rgba(229, 115, 115, 0.2); font-size:0.85rem; padding: 6px 12px;">
+                                class="btn btn-danger" style="font-size:0.85rem; padding: 6px 12px;">
                                 🗑️ Delete
                             </button>
                         <?php endif; ?>
