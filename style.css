@@ -317,29 +317,44 @@ svg {
 }
 
 /* Stats Cards */
+/* Standard Dashboard Cards (Glassmorphic) */
 .ha-card {
     background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     padding: 20px;
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
     overflow: hidden;
+    position: relative;
+}
+
+.ha-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
+    pointer-events: none;
 }
 
 .ha-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     box-shadow: var(--shadow);
     border-color: var(--primary);
 }
 
 .ha-card-header {
-    font-size: 0.8rem;
-    font-weight: 700;
+    font-size: 0.75rem;
+    font-weight: 800;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-bottom: 12px;
-    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    letter-spacing: 0.08em;
 }
 
 /* Tiles (Action Cards) */
@@ -350,17 +365,18 @@ svg {
     gap: 16px;
     padding: 16px;
     min-width: 0;
-    /* Prevent text from pushing card width */
+    text-decoration: none;
 }
 
 .tile-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .tile-icon svg {
@@ -372,24 +388,81 @@ svg {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    overflow: hidden;
 }
 
 .tile-value {
-    font-weight: 700;
-    font-size: 1rem;
+    font-weight: 800;
+    font-size: 1.05rem;
     color: var(--text-main);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
 .tile-label {
     font-size: 0.75rem;
     color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+
+/* KPI / Metrics Cards */
+.kpi-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    text-align: center;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.kpi-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.kpi-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.kpi-value {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: var(--text-main);
+    line-height: 1;
+}
+
+.kpi-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+.kpi-change {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 8px;
+    display: inline-block;
+    align-self: center;
+}
+
+.kpi-change.positive {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success-text);
+}
+
+.kpi-change.negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-text);
 }
 
 /* Entity Lists */

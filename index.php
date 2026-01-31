@@ -189,12 +189,10 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                 <!-- Today Card -->
                 <div class="ha-card" style="grid-column: span 6;" onclick="openTallyModal('day')">
                     <div class="ha-card-header">TODAY'S EARNINGS</div>
-                    <div style="display:flex; align-items:flex-end; gap:12px;">
-                        <div class="stat-value" style="color: var(--primary);">
+                    <div style="display:flex; align-items:baseline; gap:12px;">
+                        <div class="kpi-value" style="color: var(--primary);">
                             $<?= number_format($today_total, 2) ?></div>
-                        <div style="font-size: 1.1rem; color: var(--text-muted); padding-bottom: 5px;">/
-                            <?= count($today_jobs) ?> jobs
-                        </div>
+                        <div class="kpi-sub" style="margin-top:0;">/ <?= count($today_jobs) ?> jobs</div>
                     </div>
                     <div style="margin-top: 15px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px;">
                         <div
@@ -206,12 +204,10 @@ $is_today_locked = ($day_log && $day_log['is_locked'] == 1);
                 <!-- Week Card -->
                 <div class="ha-card" style="grid-column: span 6;" onclick="openTallyModal('week')">
                     <div class="ha-card-header">THIS WEEK</div>
-                    <div style="display:flex; align-items:flex-end; gap:12px;">
-                        <div class="stat-value" style="color: var(--success-text);">
+                    <div style="display:flex; align-items:baseline; gap:12px;">
+                        <div class="kpi-value" style="color: var(--success-text);">
                             $<?= number_format($week_total, 2) ?></div>
-                        <div style="font-size: 1.1rem; color: var(--text-muted); padding-bottom: 5px;">/
-                            <?= $week_jobs ?> jobs
-                        </div>
+                        <div class="kpi-sub" style="margin-top:0;">/ <?= $week_jobs ?> jobs</div>
                     </div>
                     <div style="margin-top: 15px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px;">
                         <div

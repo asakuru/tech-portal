@@ -230,32 +230,9 @@ $month_labels = [
 
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 16px;
             margin-bottom: 28px;
-        }
-
-        .kpi-card {
-            position: relative;
-        }
-
-        .kpi-change {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 6px;
-            display: inline-block;
-        }
-
-        .kpi-change.positive {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--success-text);
-        }
-
-        .kpi-change.negative {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--danger-text);
         }
 
         .chart-grid {
@@ -263,23 +240,6 @@ $month_labels = [
             grid-template-columns: 2fr 1fr;
             gap: 20px;
             margin-bottom: 24px;
-        }
-
-        .chart-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-            box-shadow: var(--shadow);
-        }
-
-        .chart-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 16px;
         }
 
         .chart-container {
@@ -296,24 +256,19 @@ $month_labels = [
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
-        }
-
-        .insight-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
+            margin-bottom: 40px;
         }
 
         .insight-title {
-            font-size: 0.85rem;
-            font-weight: 700;
+            font-size: 0.8rem;
+            font-weight: 800;
             color: var(--text-muted);
             text-transform: uppercase;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
+            letter-spacing: 0.05em;
         }
 
         .insight-list {
@@ -325,7 +280,7 @@ $month_labels = [
         .insight-list li {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: 12px 0;
             border-bottom: 1px solid var(--border);
         }
 
@@ -336,9 +291,9 @@ $month_labels = [
         .insight-rank {
             width: 24px;
             height: 24px;
-            background: var(--gradient-primary);
+            background: var(--primary);
             color: white;
-            border-radius: 50%;
+            border-radius: 6px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -355,10 +310,6 @@ $month_labels = [
         @media (max-width: 768px) {
             .chart-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .chart-container {
-                height: 220px;
             }
         }
     </style>
@@ -408,16 +359,16 @@ $month_labels = [
             <!-- Charts Row -->
             <div class="chart-grid">
                 <!-- Earnings Trend -->
-                <div class="chart-card">
-                    <div class="chart-title">📈 Earnings Trend (12 Weeks)</div>
+                <div class="ha-card">
+                    <div class="ha-card-header">📈 Earnings Trend (12 Weeks)</div>
                     <div class="chart-container">
                         <canvas id="earningsChart"></canvas>
                     </div>
                 </div>
 
                 <!-- Job Type Breakdown -->
-                <div class="chart-card">
-                    <div class="chart-title">🎯 Job Type Breakdown</div>
+                <div class="ha-card">
+                    <div class="ha-card-header">🎯 Job Type Breakdown</div>
                     <div class="chart-container-small">
                         <canvas id="jobTypeChart"></canvas>
                     </div>
@@ -425,8 +376,8 @@ $month_labels = [
             </div>
 
             <!-- Month Comparison -->
-            <div class="chart-card" style="margin-bottom: 24px;">
-                <div class="chart-title">📊 Month Comparison</div>
+            <div class="ha-card" style="margin-bottom: 24px;">
+                <div class="ha-card-header">📊 Month Comparison</div>
                 <div class="chart-container-small">
                     <canvas id="monthChart"></canvas>
                 </div>
@@ -434,7 +385,7 @@ $month_labels = [
 
             <!-- Best Days & Weeks -->
             <div class="insights-grid">
-                <div class="insight-card">
+                <div class="ha-card">
                     <div class="insight-title">🏆 Best Days</div>
                     <ul class="insight-list">
                         <?php foreach ($best_days as $idx => $day): ?>
@@ -452,7 +403,7 @@ $month_labels = [
                     </ul>
                 </div>
 
-                <div class="insight-card">
+                <div class="ha-card">
                     <div class="insight-title">🚀 Best Weeks</div>
                     <ul class="insight-list">
                         <?php foreach ($best_weeks as $idx => $week): ?>

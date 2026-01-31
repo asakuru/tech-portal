@@ -195,45 +195,8 @@ ksort($breakdown_data);
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
+            gap: 16px;
             margin-bottom: 25px;
-        }
-
-        .kpi-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .kpi-label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-        }
-
-        .kpi-value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--text-main);
-            margin-top: 10px;
-        }
-
-        .kpi-sub {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 5px;
-        }
-
-        .positive {
-            color: var(--success-text);
-        }
-
-        .negative {
-            color: var(--danger-text);
         }
 
         .data-table {
@@ -245,12 +208,17 @@ ksort($breakdown_data);
         .data-table th {
             text-align: left;
             background: var(--bg-input);
-            padding: 10px;
+            padding: 12px 10px;
             border-bottom: 2px solid var(--border);
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
         }
 
         .data-table td {
-            padding: 10px;
+            padding: 12px 10px;
             border-bottom: 1px solid var(--border);
         }
 
@@ -258,77 +226,92 @@ ksort($breakdown_data);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             flex-wrap: wrap;
             gap: 15px;
         }
 
         .view-tabs {
             display: flex;
-            gap: 5px;
+            gap: 8px;
+            background: var(--bg-input);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
         }
 
         .view-tab {
             padding: 8px 16px;
-            border: 1px solid var(--border);
-            background: var(--bg-input);
-            color: var(--text-main);
+            color: var(--text-muted);
             text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
+            border-radius: 7px;
+            font-weight: 700;
+            font-size: 0.85rem;
             transition: all 0.2s;
         }
 
         .view-tab.active {
             background: var(--primary);
             color: white;
-            border-color: var(--primary);
+            box-shadow: 0 4px 12px var(--primary-glow);
         }
 
         .period-nav {
             display: flex;
             align-items: center;
             gap: 15px;
+            margin-bottom: 20px;
         }
 
         .period-nav a {
-            font-size: 1.5rem;
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50%;
             text-decoration: none;
             color: var(--text-main);
-            font-weight: bold;
+            font-weight: 800;
+            transition: var(--transition);
+        }
+
+        .period-nav a:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
         .period-label {
             font-weight: 800;
-            font-size: 1.1rem;
-            min-width: 180px;
-            text-align: center;
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
         }
 
         .info-bar {
-            background: var(--bg-input);
-            padding: 10px 15px;
-            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 20px;
+            border-radius: var(--radius);
             font-size: 0.85rem;
             color: var(--text-muted);
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             display: flex;
-            gap: 20px;
+            gap: 30px;
             flex-wrap: wrap;
+            border: 1px solid var(--border);
         }
 
         @media (max-width: 600px) {
             .header-controls {
                 flex-direction: column;
-                align-items: stretch;
-            }
-
-            .view-tabs {
-                justify-content: center;
+                align-items: flex-start;
             }
 
             .period-nav {
-                justify-content: center;
+                width: 100%;
+                justify-content: space-between;
             }
         }
     </style>

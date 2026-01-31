@@ -173,21 +173,7 @@ unset($v);
             margin-bottom: 30px;
         }
 
-        .vehicle-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            position: relative;
-            transition: all 0.2s ease;
-        }
-
-        .vehicle-card:hover {
-            border-color: var(--primary);
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
-        }
-
-        .vehicle-card.primary {
+        .ha-card.primary-vehicle {
             border-left: 4px solid var(--primary);
         }
 
@@ -195,37 +181,41 @@ unset($v);
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
 
         .vehicle-title {
             font-size: 1.25rem;
-            font-weight: 700;
+            font-weight: 800;
             color: var(--text-main);
             margin: 0;
+            letter-spacing: -0.02em;
         }
 
         .vehicle-subtitle {
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             margin-top: 4px;
+            font-weight: 500;
         }
 
         .vehicle-nickname {
             background: var(--primary);
             color: white;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .vehicle-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-            padding: 15px 0;
+            gap: 12px;
+            margin: 16px 0;
+            padding: 16px 0;
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
         }
@@ -236,15 +226,17 @@ unset($v);
 
         .stat-value {
             font-size: 1.1rem;
-            font-weight: 700;
+            font-weight: 800;
             color: var(--text-main);
         }
 
         .stat-label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
         }
 
         .vehicle-meta {
@@ -252,23 +244,26 @@ unset($v);
             gap: 15px;
             font-size: 0.85rem;
             color: var(--text-muted);
-            margin-bottom: 15px;
+            margin-bottom: 16px;
+            font-weight: 600;
         }
 
         .vehicle-actions {
             display: flex;
             gap: 8px;
+            margin-top: 4px;
         }
 
         .vehicle-actions .btn {
             flex: 1;
-            text-align: center;
-            padding: 8px;
-            font-size: 0.85rem;
+            padding: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
         }
 
         .add-vehicle-form {
             display: none;
+            margin-bottom: 30px;
         }
 
         .add-vehicle-form.active {
@@ -278,54 +273,42 @@ unset($v);
         .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            gap: 20px;
         }
 
         .form-section {
-            background: var(--bg-input);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 24px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
         }
 
         .form-section h4 {
-            margin: 0 0 15px 0;
+            margin: 0 0 20px 0;
             color: var(--primary);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.08em;
+            font-weight: 800;
         }
 
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 80px 40px;
             background: var(--bg-card);
             border: 2px dashed var(--border);
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
         }
 
         .empty-state h3 {
-            margin: 20px 0 10px;
-            color: var(--text-main);
+            margin: 24px 0 12px;
+            font-weight: 800;
         }
 
         .empty-state p {
             color: var(--text-muted);
-            margin-bottom: 20px;
-        }
-
-        .cost-badge {
-            background: var(--danger-bg);
-            color: var(--danger-text);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .cost-badge.fuel {
-            background: var(--warning-bg);
-            color: var(--warning-text);
+            margin-bottom: 24px;
         }
     </style>
 </head>
@@ -531,7 +514,7 @@ unset($v);
             <?php else: ?>
                 <div class="vehicle-grid">
                     <?php foreach ($vehicles as $v): ?>
-                        <div class="vehicle-card <?= $v['is_primary_vehicle'] ? 'primary' : '' ?>">
+                        <div class="ha-card <?= $v['is_primary_vehicle'] ? 'primary-vehicle' : '' ?>">
                             <div class="vehicle-header">
                                 <div>
                                     <h3 class="vehicle-title">
