@@ -537,11 +537,13 @@ usort($display_rows, function ($a, $b) {
             background: var(--bg-card);
             color: var(--text-main);
             padding: 30px;
-            box-shadow: var(--shadow);
-            max-width: 1000px;
+            box-shadow: var(--shadow-lg);
+            max-width: 1200px;
             margin: 0 auto 40px auto;
-            border-radius: 12px;
+            border-radius: 16px;
             border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .summary-table,
@@ -619,29 +621,68 @@ usort($display_rows, function ($a, $b) {
         }
 
         .st-match {
-            color: #10b981 !important;
+            color: var(--success-text) !important;
             font-weight: bold;
         }
 
         .st-var {
-            color: #f59e0b !important;
+            color: var(--accent) !important;
             font-weight: bold;
         }
 
         .st-miss {
-            color: #ef4444 !important;
+            color: var(--danger-text) !important;
             font-weight: bold;
         }
 
         .st-extra {
-            color: #3b82f6 !important;
+            color: var(--primary) !important;
             font-weight: bold;
         }
 
         .profit-row td {
-            border-top: 1px solid #000;
+            border-top: 1px solid var(--border);
             font-weight: bold;
             font-size: 1.1em;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .pill-missing {
+            background: rgba(229, 115, 115, 0.1);
+            color: var(--danger-text);
+            border-color: rgba(229, 115, 115, 0.2);
+        }
+
+        .pill-extra {
+            background: rgba(3, 169, 244, 0.1);
+            color: var(--primary);
+            border-color: rgba(3, 169, 244, 0.2);
+        }
+
+        .pill-variance {
+            background: rgba(255, 152, 0, 0.1);
+            color: var(--accent);
+            border-color: rgba(255, 152, 0, 0.2);
+        }
+
+        .pill-match {
+            background: rgba(129, 199, 132, 0.1);
+            color: var(--success-text);
+            border-color: rgba(129, 199, 132, 0.2);
         }
     </style>
 </head>
@@ -666,22 +707,43 @@ usort($display_rows, function ($a, $b) {
             </div>
 
             <!-- Reconciliation Status Banner -->
-            <div
-                style="background:<?= $is_reconciled ? '#dcfce7' : '#fef3c7' ?>; border:1px solid <?= $is_reconciled ? '#16a34a' : '#d97706' ?>; border-radius:8px; padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <div style="display:flex; align-items:center; gap:10px;">
+            <div style="background: <?= $is_reconciled ? 'rgba(129, 199, 132, 0.1)' : 'rgba(255, 152, 0, 0.1)' ?>; 
+                       border: 1px solid <?= $is_reconciled ? 'rgba(129, 199, 132, 0.2)' : 'rgba(255, 152, 0, 0.2)' ?>; 
+                       border-radius: var(--radius); padding: 16px 20px; margin-bottom: 25px; 
+                       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
+                       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                <div style="display:flex; align-items:center; gap:12px;">
                     <?php if ($is_reconciled): ?>
-                        <span style="font-size:1.5rem;">✅</span>
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 50%; background: var(--success-text); display: flex; align-items: center; justify-content: center; color: #111;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
                         <div>
-                            <div style="font-weight:bold; color:#15803d;">Reconciled</div>
+                            <div style="font-weight:800; color:var(--success-text); font-size: 1.1rem;">Reconciled</div>
                             <?php if ($reconciliation && $reconciliation['reconciled_at']): ?>
-                                <div style="font-size:0.8rem; color:#166534;">
-                                    <?= date('M j, Y g:i A', strtotime($reconciliation['reconciled_at'])) ?>
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-top: 2px;">
+                                    Finalized on <?= date('M j, Y g:i A', strtotime($reconciliation['reconciled_at'])) ?>
                                 </div>
                             <?php endif; ?>
                         </div>
                     <?php else: ?>
-                        <span style="font-size:1.5rem;">⚪</span>
-                        <div style="font-weight:bold; color:#92400e;">Not Reconciled</div>
+                        <div
+                            style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #111;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <div style="font-weight:800; color:var(--accent); font-size: 1.1rem;">Pending Review</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-top: 2px;">This week has not been
+                                marked as reconciled yet.</div>
+                        </div>
                     <?php endif; ?>
                 </div>
                 <div style="display:flex; gap:10px; align-items:center;">
@@ -711,14 +773,14 @@ usort($display_rows, function ($a, $b) {
             <div class="paper-sheet">
 
                 <div
-                    style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; padding-bottom:10px; border-bottom:2px solid #000;">
+                    style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; padding-bottom:10px; border-bottom:2px solid var(--border);">
                     <div>
-                        <h2 style="margin:0; font-size:1.4rem; text-transform:uppercase; color:#000;">Weekly Summary
+                        <h2 style="margin:0; font-size:1.4rem; text-transform:uppercase; color:var(--text-main);">Weekly Summary
                         </h2>
                     </div>
                     <div style="text-align:right;">
-                        <div style="font-size:0.8rem; text-transform:uppercase; color:#666;">Miles Driven</div>
-                        <div style="font-size:1.2rem; font-weight:800; color:#000;"><?= number_format($total_miles) ?>
+                        <div style="font-size:0.8rem; text-transform:uppercase; color:var(--text-muted);">Miles Driven</div>
+                        <div style="font-size:1.2rem; font-weight:800; color:var(--text-main);"><?= number_format($total_miles) ?>
                             mi
                         </div>
                     </div>
@@ -765,12 +827,12 @@ usort($display_rows, function ($a, $b) {
                                         $<?= number_format($grand_total_tally, 2) ?></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="4" style="text-align:right; color:#dc2626;">LESS FUEL COST</td>
-                                    <td class="num" style="color:#dc2626;">-$<?= number_format($total_fuel, 2) ?></td>
+                                    <td colspan="4" style="text-align:right; color:var(--danger-text);">LESS FUEL COST</td>
+                                    <td class="num" style="color:var(--danger-text);">-$<?= number_format($total_fuel, 2) ?></td>
                                 </tr>
                                 <tr class="profit-row">
-                                    <td colspan="4" style="text-align:right; color:#15803d;">NET PROFIT</td>
-                                    <td class="num" style="color:#15803d; border-bottom:2px solid #000;">
+                                    <td colspan="4" style="text-align:right; color:var(--success-text);">NET PROFIT</td>
+                                    <td class="num" style="color:var(--success-text); border-bottom:2px solid var(--border);">
                                         $<?= number_format($net_profit, 2) ?></td>
                                 </tr>
                             <?php endif; ?>
@@ -779,31 +841,31 @@ usort($display_rows, function ($a, $b) {
                 </div>
 
                 <?php if (!$comparison_mode && !$is_reconciled): ?>
-                    <h3 style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000;">Reconcile Scrub
+                    <h3 style="margin:20px 0 15px 0; font-size:1rem; text-transform:uppercase; color:var(--text-main);">Reconcile Scrub
                     </h3>
                     <div class="upload-options">
                         <div
-                            style="background:#f9fafb; border:1px dashed #999; padding:15px; text-align:center; border-radius:4px;">
+                            style="background:var(--bg-input); border:1px dashed var(--border); padding:15px; text-align:center; border-radius:var(--radius-sm);">
                             <form method="post" enctype="multipart/form-data">
-                                <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:#333;">Option 1:
+                                <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:var(--text-main);">Option 1:
                                     Upload CSV</div>
                                 <input type="file" name="scrub_csv" accept=".csv"
-                                    style="font-size:0.9rem; max-width:200px; color:#333; margin-bottom:10px;">
+                                    style="font-size:0.9rem; max-width:200px; color:var(--text-muted); margin-bottom:10px;">
                                 <br><button type="submit" class="btn"
-                                    style="padding:5px 15px; background:#000; color:#fff; border:none; cursor:pointer;">Compare
+                                    style="padding:8px 20px; border-radius:var(--radius-sm);">Compare
                                     CSV</button>
                             </form>
                         </div>
                         <div
-                            style="background:#f9fafb; border:1px dashed #999; padding:15px; text-align:center; border-radius:4px;">
+                            style="background:var(--bg-input); border:1px dashed var(--border); padding:15px; text-align:center; border-radius:var(--radius-sm);">
                             <form method="post">
-                                <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:#333;">Option 2:
+                                <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px; color:var(--text-main);">Option 2:
                                     Paste
                                     Text</div>
                                 <textarea name="scrub_text" rows="3" placeholder="Paste report text..."
-                                    style="width:100%; font-size:0.8rem; margin-bottom:10px; border:1px solid #ccc;"></textarea>
-                                <br><button type="submit" class="btn"
-                                    style="padding:5px 15px; background:#000; color:#fff; border:none; cursor:pointer;">Compare
+                                    style="width:100%; font-size:0.8rem; margin-bottom:10px; background:rgba(255,255,255,0.05); color:var(--text-main); border:1px solid var(--border); border-radius:4px; padding:8px;"></textarea>
+                                <br><button type="submit" class="btn btn-secondary"
+                                    style="padding:8px 20px; border-radius:var(--radius-sm);">Compare
                                     Text</button>
                             </form>
                         </div>
@@ -812,22 +874,22 @@ usort($display_rows, function ($a, $b) {
 
                 <?php if ($comparison_mode && !empty($code_variance)): ?>
                     <h3
-                        style="margin:20px 0 10px 0; font-size:1rem; text-transform:uppercase; color:#000; border-bottom:2px solid #000; padding-bottom:5px;">
+                        style="margin:20px 0 15px 0; font-size:1rem; text-transform:uppercase; color:var(--text-main); border-bottom:2px solid var(--border); padding-bottom:8px;">
                         📊 Code Comparison
                     </h3>
-                    <div style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:10px; font-size:0.85rem;">
-                        <span
-                            style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; border:1px solid #fecaca;">🔴
-                            <b>MISSING</b>: Found in your log, not in the scrub.</span>
-                        <span
-                            style="background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:4px; border:1px solid #bbf7d0;">🟢
-                            <b>EXTRA</b>: Found in the scrub, not in your log.</span>
-                        <span
-                            style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; border:1px solid #fde68a;">🟡
-                            <b>VARIANCE</b>: Quantity or dollar amount discrepancy.</span>
-                        <span
-                            style="background:#f3f4f6; color:#10b981; padding:3px 8px; border-radius:4px; border:1px solid #e5e7eb;">✅
-                            <b>MATCH</b>: Everything matches perfectly.</span>
+                    <div style="margin-bottom:20px; display:flex; flex-wrap:wrap; gap:12px;">
+                        <span class="status-pill pill-missing">
+                            🔴 <b>MISSING</b>
+                        </span>
+                        <span class="status-pill pill-extra">
+                            🟢 <b>EXTRA</b>
+                        </span>
+                        <span class="status-pill pill-variance">
+                            🟡 <b>VARIANCE</b>
+                        </span>
+                        <span class="status-pill pill-match">
+                            ✅ <b>MATCH</b>
+                        </span>
                     </div>
                     <div class="table-wrap">
                         <table class="summary-table" style="margin-bottom:20px;">
@@ -849,20 +911,20 @@ usort($display_rows, function ($a, $b) {
                                     $status_color = '';
 
                                     if ($v['status'] === 'missing') {
-                                        $row_bg = 'background:#fee2e2;';
+                                        $row_bg = 'background:rgba(229, 115, 115, 0.1);';
                                         $status_text = 'MISSING';
-                                        $status_color = 'color:#dc2626; font-weight:bold;';
+                                        $status_color = 'color:var(--danger-text); font-weight:bold;';
                                     } elseif ($v['status'] === 'extra') {
-                                        $row_bg = 'background:#dcfce7;';
+                                        $row_bg = 'background:rgba(3, 169, 244, 0.1);';
                                         $status_text = 'EXTRA';
-                                        $status_color = 'color:#16a34a; font-weight:bold;';
+                                        $status_color = 'color:var(--primary); font-weight:bold;';
                                     } elseif ($v['status'] === 'variance') {
-                                        $row_bg = 'background:#fef3c7;';
+                                        $row_bg = 'background:rgba(255, 152, 0, 0.1);';
                                         $status_text = 'VARIANCE';
-                                        $status_color = 'color:#d97706; font-weight:bold;';
+                                        $status_color = 'color:var(--accent); font-weight:bold;';
                                     } else {
                                         $status_text = '✓ Match';
-                                        $status_color = 'color:#10b981;';
+                                        $status_color = 'color:var(--success-text);';
                                     }
                                     ?>
                                     <tr style="<?= $row_bg ?>">
@@ -889,13 +951,13 @@ usort($display_rows, function ($a, $b) {
                                 }
                                 $total_diff = $total_local_amount - $total_scrub_amount;
                                 ?>
-                                <tr style="border-top:2px solid #000; font-weight:bold; background:#f0f0f0;">
-                                    <td colspan="2" style="text-align:right;">TOTALS:</td>
-                                    <td style="text-align:center;"><?= $total_local_qty ?></td>
-                                    <td style="text-align:center;"><?= $total_scrub_qty ?></td>
-                                    <td class="num">$<?= number_format($total_local_amount, 2) ?></td>
-                                    <td class="num">$<?= number_format($total_scrub_amount, 2) ?></td>
-                                    <td><?= (abs($total_diff) < 0.01 && $total_local_qty == $total_scrub_qty) ? '✓' : '⚠️' ?>
+                                <tr style="border-top:2px solid var(--border); font-weight:bold; background:var(--bg-input);">
+                                    <td colspan="2" style="text-align:right; color:var(--text-muted);">TOTALS:</td>
+                                    <td style="text-align:center; color:var(--text-main);"><?= $total_local_qty ?></td>
+                                    <td style="text-align:center; color:var(--text-main);"><?= $total_scrub_qty ?></td>
+                                    <td class="num" style="color:var(--text-main);">$<?= number_format($total_local_amount, 2) ?></td>
+                                    <td class="num" style="color:var(--text-main);">$<?= number_format($total_scrub_amount, 2) ?></td>
+                                    <td><?= (abs($total_diff) < 0.01 && $total_local_qty == $total_scrub_qty) ? '✅' : '⚠️' ?>
                                     </td>
                                 </tr>
                             </tbody>
@@ -935,7 +997,7 @@ usort($display_rows, function ($a, $b) {
                 <?php endif; ?>
 
                 <h3
-                    style="margin:0 0 10px 0; font-size:1rem; text-transform:uppercase; border-bottom:1px solid #000; padding-bottom:5px; color:#000;">
+                    style="margin:0 0 10px 0; font-size:1rem; text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:10px; color:var(--text-main);">
                     Job Detail List</h3>
                 <div class="table-wrap">
                     <table class="sheet-table">
@@ -956,7 +1018,7 @@ usort($display_rows, function ($a, $b) {
                         <tbody>
                             <?php if (empty($display_rows)): ?>
                                 <tr>
-                                    <td colspan="8" style="text-align:center; padding:30px; color:#555;">No jobs recorded.
+                                    <td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">No jobs recorded.
                                     </td>
                                 </tr>
                             <?php else: ?>
@@ -986,7 +1048,7 @@ usort($display_rows, function ($a, $b) {
                                             ?>
                                             <td class="num"><?= ($scrub_pay != 0) ? number_format($scrub_pay, 2) : '-' ?>
                                             </td>
-                                            <td class="num" style="color:<?= $diff >= 0 ? '#10b981' : '#ef4444' ?>;">
+                                            <td class="num" style="color:<?= $diff >= 0 ? 'var(--success-text)' : 'var(--danger-text)' ?>;">
                                                 <?= ($diff != 0) ? number_format($diff, 2) : '-' ?>
                                             </td>
                                             <td style="padding-left:10px;" class="<?= htmlspecialchars($st_class) ?>">
