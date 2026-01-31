@@ -534,7 +534,7 @@ svg {
 
 /* Mobile Nav Tweak */
 .navbar-mobile {
-    display: flex;
+    display: none;
     position: fixed;
     top: 0;
     left: 0;

@@ -200,6 +200,9 @@ try {
         $pay_amount
     ]);
 
+    // --- INVENTORY AUTO-DEDUCT ---
+    deduct_inventory($db, $user_id, $input); // Note: $input is used here as it's the JSON decoded data
+
     echo json_encode(['success' => true, 'id' => $db->lastInsertId()]);
 
 } catch (Exception $e) {

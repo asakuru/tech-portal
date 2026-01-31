@@ -329,4 +329,52 @@ if (!function_exists('get_return_url')) {
     }
 }
 
+// --- 8. INVENTORY AUTO-DEDUCT ---
+if (!function_exists('deduct_inventory')) {
+    function deduct_inventory($db, $user_id, $data)
+    {
+        $deductions = [];
+
+        // 1. Hardware Serials
+        if (!empty($data['ont_serial'])) {
+            $deductions['ONT'] = 1;
+        }
+        if (!empty($data['eeros_serial'])) {
+            // Default to 6E
+            $deductions['EERO-6E'] = 1;
+        }
+
+        // 2. NIDs
+        $nid = $data['nid_installed'] ?? '';
+        if ($nid === 'Small')
+            $deductions['NID-SM'] = 1;
+        if ($nid === 'Medium')
+            $deductions['NID-MD'] = 1;
+        if ($nid === 'Large')
+            $deductions['NID-LG'] = 1;
+
+        // 3. Consumables
+        $jacks = (int) ($data['jacks_installed'] ?? 0);
+        if ($jacks > 0) {
+            $deductions['JACK'] = $jacks;
+        }
+
+        foreach ($deductions as $key => $qty) {
+            try {
+                $stmt = $db->prepare("UPDATE inventory SET qty = qty - ? WHERE user_id = ? AND item_key = ?");
+                $stmt->execute([$qty, $user_id, $key]);
+
+                if ($stmt->rowCount() > 0) {
+                    $stmt = $db->prepare("SELECT qty FROM inventory WHERE user_id = ? AND item_key = ?");
+                    $stmt->execute([$user_id, $key]);
+                    $new_qty = $stmt->fetchColumn();
+
+                    $stmt = $db->prepare("INSERT INTO inventory_logs (user_id, item_key, change_amount, new_qty, reason) VALUES (?, ?, ?, ?, ?)");
+                    $stmt->execute([$user_id, $key, -$qty, $new_qty, "Job Auto-Deduct"]);
+                }
+            } catch (Exception $e) {
+            }
+        }
+    }
+}
 ?>

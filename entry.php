@@ -207,7 +207,7 @@ if (isset($_POST['add_job']) || isset($_POST['save_draft'])) {
             ':notes' => $final_notes,
             ':pay' => $pay,
             ':extra_pd' => 'No',
-            ':nid' => isset($_POST['nid_installed']) ? 'Yes' : 'No',
+            ':nid' => $_POST['nid_installed'] ?? 'No',
             ':sealed' => isset($_POST['exterior_sealed']) ? 'Yes' : 'No',
             ':copper' => isset($_POST['copper_removed']) ? 'Yes' : 'No',
             ':tici' => $tici,
