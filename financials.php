@@ -20,7 +20,7 @@ $is_admin = is_admin();
 
 // --- FETCH RATES ---
 $rates = get_active_rates($db);
-$mileage_rate = $rates['IRS_MILEAGE'] ?? 0.67;
+$mileage_rate = $rates['IRS_MILEAGE'] ?? 0.725;
 $tax_percent = $rates['TAX_PERCENT'] ?? 0.25;
 $lead_pay_rate = get_lead_pay_amount($db);
 

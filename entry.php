@@ -269,7 +269,7 @@ if (!$show_entry_mode) {
     // ... (Admin Logic) ...
     $start_date = date('Y-m-01');
     $end_date = date('Y-m-d');
-    $mileage_rate = 0.67;
+    $mileage_rate = 0.725;
     $lead_pay_rate = 500.00;
     try {
         $rows = $db->query("SELECT rate_key, amount FROM rate_card WHERE rate_key IN ('IRS_MILEAGE', 'LEAD_PAY')")->fetchAll(PDO::FETCH_ASSOC);
