@@ -14,6 +14,12 @@ Field technician portal for tracking jobs, pay (piece rate), expenses, and recon
 - **Financials**: `financials.php` (Revenue vs. Expenses / Tax Estimator)
 
 ## Recent Changes (Jan 2026)
+### Data Normalization
+- **City Names**: Implemented `normalize_city()` in `functions.php` to standardize city names (Title Case, no state suffix). Applied to `entry.php`, `edit_job.php`, and `api_sync.php`.
+
+### Rate Configuration
+- **Fallbacks**: Updated `config.php` fallback rates to include `IRS_MILEAGE` (0.67), `LEAD_PAY` (500.00), and `TAX_PERCENT` (0.25) to ensure stability if DB is unreachable.
+
 ### Codebase Refinement & Architecture
 - **Logic Centralization**: Consolidated all payroll and earnings logic into `functions.php` (`calculate_daily_payroll()`, `calculate_weekly_payroll()`). All reports now use the same source of truth.
 - **UI Componentization**: Extracted repeating UI elements into root-level components for consistency and easier maintenance:

@@ -60,7 +60,10 @@ if (empty($rates)) {
         'jack_next_add' => 19.00,
         'copper_remove' => 19.50,
         'extra_pd' => 50.00,
-        'per_diem' => 125.00
+        'per_diem' => 125.00,
+        'IRS_MILEAGE' => 0.67,
+        'LEAD_PAY' => 500.00,
+        'TAX_PERCENT' => 0.25
     ];
 }
 

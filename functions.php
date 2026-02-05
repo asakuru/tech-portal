@@ -89,6 +89,24 @@ if (!function_exists('get_rate_descriptions')) {
     }
 }
 
+// --- 2.5 CITY NORMALIZATION ---
+if (!function_exists('normalize_city')) {
+    function normalize_city($city)
+    {
+        if (empty($city)) return '';
+        $city = trim($city);
+        // Remove state abbreviations if present (e.g. "City, ST")
+        $city = preg_replace('/,\s*[A-Z]{2}$/i', '', $city);
+        // Title Case
+        $city = ucwords(strtolower($city));
+        // Fix Mc prefixes (e.g. Mcdonald -> McDonald)
+        $city = preg_replace_callback('/\bMc([a-z])/', function ($m) {
+            return 'Mc' . strtoupper($m[1]);
+        }, $city);
+        return $city;
+    }
+}
+
 // --- 3. DETAILED JOB BREAKDOWN ---
 if (!function_exists('calculate_job_details')) {
     function calculate_job_details($data, $rates)

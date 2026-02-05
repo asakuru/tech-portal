@@ -185,7 +185,7 @@ if ($job && (isset($_POST['update_job']) || isset($_POST['save_draft']))) {
             $_POST['cust_fname'],
             $_POST['cust_lname'],
             $_POST['cust_street'],
-            $_POST['cust_city'],
+            normalize_city($_POST['cust_city']),
             $_POST['cust_state'],
             $_POST['cust_zip'],
             $_POST['cust_phone'],

@@ -47,7 +47,7 @@ try {
     $cust_name = trim("$cust_fname $cust_lname");
 
     $cust_street = trim($input['cust_street'] ?? '');
-    $cust_city = trim($input['cust_city'] ?? '');
+    $cust_city = normalize_city($input['cust_city'] ?? '');
     $cust_state = trim($input['cust_state'] ?? '');
     $cust_zip = trim($input['cust_zip'] ?? '');
     $cust_phone = trim($input['cust_phone'] ?? ''); // New field

@@ -189,7 +189,7 @@ if (isset($_POST['add_job']) || isset($_POST['save_draft'])) {
             ':fname' => $_POST['cust_fname'] ?? '',
             ':lname' => $_POST['cust_lname'] ?? '',
             ':street' => $_POST['cust_street'] ?? '',
-            ':city' => $_POST['cust_city'] ?? '',
+            ':city' => normalize_city($_POST['cust_city'] ?? ''),
             ':state' => $_POST['cust_state'] ?? '',
             ':zip' => $_POST['cust_zip'] ?? '',
             ':phone' => $_POST['cust_phone'] ?? '',
